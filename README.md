@@ -1,4 +1,6 @@
-# SimpleVim
+# SimpleVim (statiolake)
+
+**This is a fork of [jpotterm/vscode-simple-vim](https://github.com/jpotterm/vscode-simple-vim) with personal customizations by statiolake.**
 
 An opinionated Vim-like extension for VSCode that prioritizes simplicity (of use and implementation) and integration with native VSCode features.
 

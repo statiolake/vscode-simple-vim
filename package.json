@@ -1,13 +1,13 @@
 {
-    "name": "simple-vim",
-    "displayName": "Simple Vim",
-    "description": "Vim extension for VSCode",
+    "name": "simple-vim-statiolake",
+    "displayName": "Simple Vim (statiolake)",
+    "description": "Vim extension for VSCode (forked from jpotterm/vscode-simple-vim)",
     "version": "0.0.5",
     "license": "MIT",
-    "publisher": "jpotterm",
+    "publisher": "statiolake",
     "repository": {
         "type": "git",
-        "url": "https://github.com/jpotterm/vscode-simple-vim.git"
+        "url": "https://github.com/statiolake/vscode-simple-vim.git"
     },
     "engines": {
         "vscode": "^1.22.2"
