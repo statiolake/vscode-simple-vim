@@ -2,7 +2,7 @@
   "name": "simple-vim-statiolake",
   "displayName": "Simple Vim (statiolake)",
   "description": "Simple Vim extension for VSCode (forked from jpotterm/vscode-simple-vim)",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "license": "MIT",
   "publisher": "statiolake",
   "repository": {
@@ -77,7 +77,10 @@
           "description": "Custom key bindings that execute VSCode commands.",
           "items": {
             "type": "object",
-            "required": ["keys", "commands"],
+            "required": [
+              "keys",
+              "commands"
+            ],
             "properties": {
               "keys": {
                 "type": "array",
@@ -91,7 +94,12 @@
                 "description": "Vim modes where this binding is active. If not specified, applies to all modes.",
                 "items": {
                   "type": "string",
-                  "enum": ["normal", "visual", "visualLine", "insert"]
+                  "enum": [
+                    "normal",
+                    "visual",
+                    "visualLine",
+                    "insert"
+                  ]
                 }
               },
               "commands": {
@@ -99,7 +107,9 @@
                 "description": "Array of VSCode commands to execute sequentially.",
                 "items": {
                   "type": "object",
-                  "required": ["command"],
+                  "required": [
+                    "command"
+                  ],
                   "properties": {
                     "command": {
                       "type": "string",
