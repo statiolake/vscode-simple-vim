@@ -129,6 +129,26 @@ Actions are miscellaneous commands that don't follow the well-defined patterns o
 | `,` | Repeat the last `f`, `F`, `t` or `T` motion backward. |
 
 
+## LSP Actions
+
+These actions integrate with VSCode's Language Server Protocol features for code intelligence.
+
+| Keys | Description |
+|-|-|
+| `gh` | Show hover information (type info, documentation). |
+| `gd` | Go to definition. |
+| `gD` | Go to declaration. |
+| `gy` | Go to type definition. |
+| `gI` | Go to implementation. |
+| `gr` | Go to references. |
+| `gR` | Rename symbol. |
+| `g.` | Show code actions / quick fix. |
+| `gp` | Open problems panel. |
+| `[d` | Go to previous diagnostic/problem. |
+| `]d` | Go to next diagnostic/problem. |
+| `gf` | Format document. |
+
+
 ## Differences From Vim
 
 SimpleVim prioritizes simplicity and integration with native VSCode features over compatability with Vim. If full Vim compatibility is important to you, consider trying a different extension. Here are some of the ways SimpleVim is different from Vim.
