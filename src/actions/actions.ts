@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { Action } from '../action_types';
+import { isVscodeNativeCursor } from '../config';
 import { enterInsertMode, enterVisualLineMode, enterVisualMode, setModeCursorStyle } from '../modes';
 import { Mode } from '../modes_types';
 import { parseKeysExact } from '../parse_keys';
@@ -31,10 +32,14 @@ export const actions: Action[] = [
     }),
 
     parseKeysExact(['a'], [Mode.Normal], (vimState, editor) => {
-        editor.selections = editor.selections.map((selection) => {
-            const newPosition = positionUtils.right(editor.document, selection.active);
-            return new vscode.Selection(newPosition, newPosition);
-        });
+        // In vscode-native mode, don't move cursor (already between characters)
+        // In vim-traditional mode, move cursor right (from character to after character)
+        if (!isVscodeNativeCursor()) {
+            editor.selections = editor.selections.map((selection) => {
+                const newPosition = positionUtils.right(editor.document, selection.active);
+                return new vscode.Selection(newPosition, newPosition);
+            });
+        }
 
         enterInsertMode(vimState);
         setModeCursorStyle(vimState.mode, editor);
@@ -55,13 +60,20 @@ export const actions: Action[] = [
 
     parseKeysExact(['v'], [Mode.Normal, Mode.VisualLine], (vimState, editor) => {
         if (vimState.mode === Mode.Normal) {
-            editor.selections = editor.selections.map((selection) => {
-                const lineLength = editor.document.lineAt(selection.active.line).text.length;
+            // In vscode-native mode, don't extend selection (cursor already between characters)
+            // In vim-traditional mode, extend selection to right (to select one character)
+            if (!isVscodeNativeCursor()) {
+                editor.selections = editor.selections.map((selection) => {
+                    const lineLength = editor.document.lineAt(selection.active.line).text.length;
 
-                if (lineLength === 0) return selection;
+                    if (lineLength === 0) return selection;
 
-                return new vscode.Selection(selection.active, positionUtils.right(editor.document, selection.active));
-            });
+                    return new vscode.Selection(
+                        selection.active,
+                        positionUtils.right(editor.document, selection.active),
+                    );
+                });
+            }
         }
 
         enterVisualMode(vimState);

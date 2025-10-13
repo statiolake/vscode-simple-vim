@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { arrayFindLast } from '../array_utils';
+import { isVscodeNativeCursor } from '../config';
 import { indentLevelRange } from '../indent_utils';
 import { paragraphBackward, paragraphForward, paragraphRangeInner, paragraphRangeOuter } from '../paragraph_utils';
 import { createOperatorRangeExactKeys, createOperatorRangeRegex } from '../parse_keys';
@@ -72,8 +73,13 @@ export const operatorRanges: OperatorRange[] = [
         const result = lineText.indexOf(match[1], position.character + 1);
 
         if (result >= 0) {
-            // Include the target character
-            return new vscode.Range(position, positionUtils.right(document, position.with({ character: result })));
+            // In vscode-native mode, range is from position to after the character (include the character)
+            // In vim-traditional mode, range is from position to the character (include the character)
+            if (isVscodeNativeCursor()) {
+                return new vscode.Range(position, position.with({ character: result + 1 }));
+            } else {
+                return new vscode.Range(position, positionUtils.right(document, position.with({ character: result })));
+            }
         } else {
             return undefined;
         }
@@ -84,7 +90,7 @@ export const operatorRanges: OperatorRange[] = [
         const result = lineText.lastIndexOf(match[1], position.character - 1);
 
         if (result >= 0) {
-            // Include the target character
+            // In both modes, range is from the character position to current position (include the character)
             return new vscode.Range(position.with({ character: result }), position);
         } else {
             return undefined;
@@ -96,6 +102,9 @@ export const operatorRanges: OperatorRange[] = [
         const result = lineText.indexOf(match[1], position.character + 1);
 
         if (result >= 0) {
+            // In vscode-native mode, range is from position to before the character
+            // In vim-traditional mode, range is from position to before the character (same for both)
+            // Note: for operators, the range should not include the target character
             return new vscode.Range(position, position.with({ character: result }));
         } else {
             return undefined;

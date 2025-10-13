@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { Action } from '../action_types';
+import { isVscodeNativeCursor } from '../config';
 import { Mode } from '../modes_types';
 import { paragraphBackward, paragraphForward } from '../paragraph_utils';
 import { parseKeysExact, parseKeysRegex } from '../parse_keys';
@@ -164,7 +165,13 @@ export const motions: Action[] = [
     parseKeysExact(['$'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (vimState, editor) => {
         execMotion(vimState, editor, ({ document, position }) => {
             const lineLength = document.lineAt(position.line).text.length;
-            return position.with({ character: Math.max(lineLength - 1, 0) });
+            // In vscode-native mode, move to end-of-line (after last character)
+            // In vim-traditional mode, move to last character
+            if (isVscodeNativeCursor()) {
+                return position.with({ character: lineLength });
+            } else {
+                return position.with({ character: Math.max(lineLength - 1, 0) });
+            }
         });
     }),
 
@@ -304,7 +311,14 @@ function findForward(vimState: VimState, editor: vscode.TextEditor, outerMatch: 
         const result = lineText.indexOf(match[1], position.character + 1);
 
         if (result >= 0) {
-            return position.with({ character: result });
+            // In vscode-native mode, move after the character
+            // In vim-traditional mode, move to the character position
+            if (isVscodeNativeCursor()) {
+                const lineLength = document.lineAt(position.line).text.length;
+                return position.with({ character: Math.min(result + 1, lineLength) });
+            } else {
+                return position.with({ character: result });
+            }
         } else {
             return position;
         }
@@ -330,7 +344,13 @@ function tillForward(vimState: VimState, editor: vscode.TextEditor, outerMatch: 
         const result = lineText.indexOf(match[1], position.character + 1);
 
         if (result >= 0) {
-            return position.with({ character: result });
+            // In vscode-native mode, move before the character (one position back)
+            // In vim-traditional mode, move to the character position
+            if (isVscodeNativeCursor()) {
+                return position.with({ character: result });
+            } else {
+                return position.with({ character: Math.max(result - 1, 0) });
+            }
         } else {
             return position;
         }
@@ -343,7 +363,14 @@ function tillBackward(vimState: VimState, editor: vscode.TextEditor, outerMatch:
         const result = lineText.lastIndexOf(match[1], position.character - 1);
 
         if (result >= 0) {
-            return position.with({ character: result });
+            // In vscode-native mode, move after the character (one position forward)
+            // In vim-traditional mode, move to the character position
+            if (isVscodeNativeCursor()) {
+                const lineLength = document.lineAt(position.line).text.length;
+                return position.with({ character: Math.min(result + 1, lineLength) });
+            } else {
+                return position.with({ character: result });
+            }
         } else {
             return position;
         }

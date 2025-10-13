@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { isVscodeNativeCursor } from './config';
 
 export function left(position: vscode.Position, count: number = 1): vscode.Position {
     return position.with({
@@ -18,6 +19,12 @@ export function rightNormal(
     position: vscode.Position,
     count: number = 1,
 ): vscode.Position {
+    // In vscode-native mode, allow cursor to move to end-of-line + 1
+    if (isVscodeNativeCursor()) {
+        return right(document, position, count);
+    }
+
+    // In vim-traditional mode, limit cursor to last character
     const lineLength = document.lineAt(position.line).text.length;
 
     if (lineLength === 0) {

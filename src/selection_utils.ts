@@ -1,11 +1,18 @@
 import * as vscode from 'vscode';
 
+import { isVscodeNativeCursor } from './config';
 import * as positionUtils from './position_utils';
 
 export function vscodeToVimVisualSelection(
     _document: vscode.TextDocument,
     vscodeSelection: vscode.Selection,
 ): vscode.Selection {
+    // In vscode-native mode, use selection as-is
+    // In vim-traditional mode, adjust selection for Vim's character-based positioning
+    if (isVscodeNativeCursor()) {
+        return vscodeSelection;
+    }
+
     if (vscodeSelection.active.isBefore(vscodeSelection.anchor)) {
         return new vscode.Selection(positionUtils.left(vscodeSelection.anchor), vscodeSelection.active);
     } else {
@@ -17,6 +24,12 @@ export function vimToVscodeVisualSelection(
     document: vscode.TextDocument,
     vimSelection: vscode.Selection,
 ): vscode.Selection {
+    // In vscode-native mode, use selection as-is
+    // In vim-traditional mode, adjust selection for VS Code's between-character positioning
+    if (isVscodeNativeCursor()) {
+        return vimSelection;
+    }
+
     if (vimSelection.active.isBefore(vimSelection.anchor)) {
         return new vscode.Selection(positionUtils.right(document, vimSelection.anchor), vimSelection.active);
     } else {
