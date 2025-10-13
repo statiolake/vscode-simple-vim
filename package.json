@@ -61,7 +61,7 @@
       "type": "object",
       "title": "SimpleVim Configuration",
       "properties": {
-        "simpleVim.yankHighlightBackgroundColor": {
+        "simple-vim.yankHighlightBackgroundColor": {
           "type": "string",
           "default": "#F8F3AB",
           "description": "Background color that flashes to show the range when yanking."
