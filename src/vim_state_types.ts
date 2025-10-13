@@ -1,11 +1,13 @@
 import type * as vscode from 'vscode';
 
+import type { Action } from './action_types';
 import type { Mode } from './modes_types';
 
 export type VimState = {
     typeSubscription: vscode.Disposable | undefined;
     mode: Mode;
     keysPressed: string[];
+    actions: Action[];
     registers: {
         contentsList: (string | undefined)[];
         linewise: boolean;

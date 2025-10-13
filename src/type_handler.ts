@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { actions } from './actions';
 import { ParseKeysStatus } from './parse_keys_types';
 import type { VimState } from './vim_state_types';
 
@@ -12,7 +11,7 @@ export function typeHandler(vimState: VimState, char: string): void {
 
     try {
         let could = false;
-        for (const action of actions) {
+        for (const action of vimState.actions) {
             const result = action(vimState, vimState.keysPressed, editor);
 
             if (result === ParseKeysStatus.YES) {

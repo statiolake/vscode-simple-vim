@@ -158,6 +158,8 @@ SimpleVim prioritizes simplicity and integration with native VSCode features ove
 
 ## Settings
 
+### Yank Highlight Color
+
 The `y` (yank) operator temporarily changes the background color of the range being yanked to make it obvious what you're yanking. Otherwise you might not realize you yanked the wrong thing until you tried to put it somewhere else. You can change the background color it uses with the `simpleVim.yankHighlightBackgroundColor` setting.
 
 ```json
@@ -165,3 +167,81 @@ The `y` (yank) operator temporarily changes the background color of the range be
     "simpleVim.yankHighlightBackgroundColor": "#F8F3AB"
 }
 ```
+
+### Custom Key Bindings
+
+You can add custom key bindings that execute VSCode commands using the `simple-vim.customBindings` setting. This allows you to extend SimpleVim with your own key mappings.
+
+```json
+{
+    "simple-vim.customBindings": [
+        {
+            "keys": ["g", "d"],
+            "modes": ["normal", "visual"],
+            "commands": [
+                {
+                    "command": "editor.action.revealDefinition"
+                }
+            ]
+        },
+        {
+            "keys": ["g", "r"],
+            "modes": ["normal"],
+            "commands": [
+                {
+                    "command": "editor.action.goToReferences"
+                }
+            ]
+        },
+        {
+            "keys": ["space", "f"],
+            "modes": ["normal"],
+            "commands": [
+                {
+                    "command": "workbench.action.quickOpen"
+                }
+            ]
+        },
+        {
+            "keys": ["g", "f"],
+            "modes": ["normal"],
+            "commands": [
+                {
+                    "command": "editor.action.formatDocument"
+                }
+            ]
+        }
+    ]
+}
+```
+
+You can also execute multiple commands sequentially:
+
+```json
+{
+    "simple-vim.customBindings": [
+        {
+            "keys": ["space", "w"],
+            "modes": ["normal"],
+            "commands": [
+                {
+                    "command": "workbench.action.files.save"
+                },
+                {
+                    "command": "workbench.action.closeActiveEditor"
+                }
+            ]
+        }
+    ]
+}
+```
+
+Each binding has the following properties:
+
+- `keys` (required): An array of strings representing the key sequence (e.g., `["g", "d"]`)
+- `commands` (required): An array of command objects to execute sequentially. Each command object has:
+  - `command` (required): The VSCode command to execute (e.g., `"editor.action.revealDefinition"`)
+  - `args` (optional): Arguments to pass to the command
+- `modes` (optional): An array of modes where this binding is active. Valid values are `"normal"`, `"visual"`, `"visualLine"`, and `"insert"`. If not specified, the binding applies to all modes except insert mode.
+
+Custom bindings are checked before default bindings, so you can override built-in key mappings if needed.

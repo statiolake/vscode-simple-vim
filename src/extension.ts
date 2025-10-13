@@ -1,26 +1,11 @@
 import * as vscode from 'vscode';
+import { buildActions } from './actions';
+import { reloadCustomBindings } from './custom_bindings';
 import { escapeHandler } from './escape_handler';
 import { enterNormalMode, enterVisualMode, setModeCursorStyle } from './modes';
 import { Mode } from './modes_types';
 import { typeHandler } from './type_handler';
-import { addTypeSubscription, removeTypeSubscription } from './type_subscription';
 import type { VimState } from './vim_state_types';
-
-const globalVimState: VimState = {
-    typeSubscription: undefined,
-    mode: Mode.Insert,
-    keysPressed: [],
-    registers: {
-        contentsList: [],
-        linewise: true,
-    },
-    semicolonAction: () => undefined,
-    commaAction: () => undefined,
-    lastPutRanges: {
-        ranges: [],
-        linewise: true,
-    },
-};
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     if (vimState.mode === Mode.Insert) return;
@@ -62,21 +47,47 @@ function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEdit
     vimState.keysPressed = [];
 }
 
-export function activate(context: vscode.ExtensionContext): void {
-    context.subscriptions.push(
-        vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(globalVimState, editor)),
-        vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(globalVimState, e)),
-        vscode.commands.registerCommand('simple-vim.escapeKey', () => escapeHandler(globalVimState)),
-    );
-
-    enterNormalMode(globalVimState);
-    addTypeSubscription(globalVimState, typeHandler);
-
-    if (vscode.window.activeTextEditor) {
-        onDidChangeActiveTextEditor(globalVimState, vscode.window.activeTextEditor);
+function onDidChangeConfiguration(vimState: VimState, e: vscode.ConfigurationChangeEvent): void {
+    if (e.affectsConfiguration('simple-vim.customBindings')) {
+        reloadCustomBindings();
+        vimState.actions = buildActions();
     }
 }
 
-export function deactivate(): void {
-    removeTypeSubscription(globalVimState);
+export function activate(context: vscode.ExtensionContext): void {
+    const vimState: VimState = {
+        typeSubscription: undefined,
+        mode: Mode.Insert,
+        keysPressed: [],
+        actions: buildActions(),
+        registers: {
+            contentsList: [],
+            linewise: true,
+        },
+        semicolonAction: () => undefined,
+        commaAction: () => undefined,
+        lastPutRanges: {
+            ranges: [],
+            linewise: true,
+        },
+    };
+
+    // Register type command subscription
+    vimState.typeSubscription = vscode.commands.registerCommand('type', (e) => {
+        typeHandler(vimState, e.text);
+    });
+
+    context.subscriptions.push(
+        vimState.typeSubscription,
+        vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(vimState, editor)),
+        vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(vimState, e)),
+        vscode.workspace.onDidChangeConfiguration((e) => onDidChangeConfiguration(vimState, e)),
+        vscode.commands.registerCommand('simple-vim.escapeKey', () => escapeHandler(vimState)),
+    );
+
+    enterNormalMode(vimState);
+
+    if (vscode.window.activeTextEditor) {
+        onDidChangeActiveTextEditor(vimState, vscode.window.activeTextEditor);
+    }
 }
