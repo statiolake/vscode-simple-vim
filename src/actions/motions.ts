@@ -4,7 +4,6 @@ import { Mode } from '../modes_types';
 import { paragraphBackward, paragraphForward } from '../paragraph_utils';
 import { parseKeysExact, parseKeysRegex } from '../parse_keys';
 import * as positionUtils from '../position_utils';
-import { searchBackward, searchForward } from '../search_utils';
 import {
     vimToVscodeVisualLineSelection,
     vimToVscodeVisualSelection,
@@ -90,7 +89,7 @@ export const motions: Action[] = [
     parseKeysExact(['e'], [Mode.Normal, Mode.Visual], createWordEndHandler(wordRanges)),
     parseKeysExact(['E'], [Mode.Normal, Mode.Visual], createWordEndHandler(whitespaceWordRanges)),
 
-    parseKeysRegex(/^f(..)$/, /^(f|f.)$/, [Mode.Normal, Mode.Visual], (vimState, editor, match) => {
+    parseKeysRegex(/^f(.)$/, /^f$/, [Mode.Normal, Mode.Visual], (vimState, editor, match) => {
         findForward(vimState, editor, match);
 
         vimState.semicolonAction = (innerVimState, innerEditor) => {
@@ -102,7 +101,7 @@ export const motions: Action[] = [
         };
     }),
 
-    parseKeysRegex(/^F(..)$/, /^(F|F.)$/, [Mode.Normal, Mode.Visual], (vimState, editor, match) => {
+    parseKeysRegex(/^F(.)$/, /^F$/, [Mode.Normal, Mode.Visual], (vimState, editor, match) => {
         findBackward(vimState, editor, match);
 
         vimState.semicolonAction = (innerVimState, innerEditor) => {
@@ -301,11 +300,11 @@ function execMotion(vimState: VimState, editor: vscode.TextEditor, motion: (args
 
 function findForward(vimState: VimState, editor: vscode.TextEditor, outerMatch: RegExpMatchArray): void {
     execRegexMotion(vimState, editor, outerMatch, ({ document, position, match }) => {
-        const fromPosition = position.with({ character: position.character + 1 });
-        const result = searchForward(document, match[1], fromPosition);
+        const lineText = document.lineAt(position.line).text;
+        const result = lineText.indexOf(match[1], position.character + 1);
 
-        if (result) {
-            return result;
+        if (result >= 0) {
+            return position.with({ character: result });
         } else {
             return position;
         }
@@ -314,11 +313,11 @@ function findForward(vimState: VimState, editor: vscode.TextEditor, outerMatch: 
 
 function findBackward(vimState: VimState, editor: vscode.TextEditor, outerMatch: RegExpMatchArray): void {
     execRegexMotion(vimState, editor, outerMatch, ({ document, position, match }) => {
-        const fromPosition = positionLeftWrap(document, position);
-        const result = searchBackward(document, match[1], fromPosition);
+        const lineText = document.lineAt(position.line).text;
+        const result = lineText.lastIndexOf(match[1], position.character - 1);
 
-        if (result) {
-            return result;
+        if (result >= 0) {
+            return position.with({ character: result });
         } else {
             return position;
         }
@@ -349,19 +348,6 @@ function tillBackward(vimState: VimState, editor: vscode.TextEditor, outerMatch:
             return position;
         }
     });
-}
-
-function positionLeftWrap(document: vscode.TextDocument, position: vscode.Position): vscode.Position {
-    if (position.character === 0) {
-        if (position.line === 0) {
-            return position;
-        } else {
-            const lineLength = document.lineAt(position.line - 1).text.length;
-            return new vscode.Position(position.line - 1, lineLength);
-        }
-    } else {
-        return position.with({ character: position.character - 1 });
-    }
 }
 
 function createWordForwardHandler(

@@ -6,7 +6,7 @@ import { createOperatorRangeExactKeys, createOperatorRangeRegex } from '../parse
 import type { OperatorRange } from '../parse_keys_types';
 import * as positionUtils from '../position_utils';
 import { findQuoteRange, quoteRanges } from '../quote_utils';
-import { searchBackward, searchBackwardBracket, searchForward, searchForwardBracket } from '../search_utils';
+import { searchBackwardBracket, searchForwardBracket } from '../search_utils';
 import { getTags } from '../tag_utils';
 import type { VimState } from '../vim_state_types';
 import { whitespaceWordRanges, wordRanges } from '../word_utils';
@@ -67,23 +67,25 @@ export const operatorRanges: OperatorRange[] = [
     createOperatorRangeExactKeys(['a', 'w'], false, createOuterWordHandler(wordRanges)),
     createOperatorRangeExactKeys(['a', 'W'], false, createOuterWordHandler(whitespaceWordRanges)),
 
-    createOperatorRangeRegex(/^f(..)$/, /^(f|f.)$/, false, (_vimState, document, position, match) => {
-        const fromPosition = position.with({ character: position.character + 1 });
-        const result = searchForward(document, match[1], fromPosition);
+    createOperatorRangeRegex(/^f(.)$/, /^f$/, false, (_vimState, document, position, match) => {
+        const lineText = document.lineAt(position.line).text;
+        const result = lineText.indexOf(match[1], position.character + 1);
 
-        if (result) {
-            return new vscode.Range(position, result);
+        if (result >= 0) {
+            // Include the target character
+            return new vscode.Range(position, positionUtils.right(document, position.with({ character: result })));
         } else {
             return undefined;
         }
     }),
 
-    createOperatorRangeRegex(/^F(..)$/, /^(F|F.)$/, false, (_vimState, document, position, match) => {
-        const fromPosition = position.with({ character: position.character - 1 });
-        const result = searchBackward(document, match[1], fromPosition);
+    createOperatorRangeRegex(/^F(.)$/, /^F$/, false, (_vimState, document, position, match) => {
+        const lineText = document.lineAt(position.line).text;
+        const result = lineText.lastIndexOf(match[1], position.character - 1);
 
-        if (result) {
-            return new vscode.Range(position, result);
+        if (result >= 0) {
+            // Include the target character
+            return new vscode.Range(position.with({ character: result }), position);
         } else {
             return undefined;
         }
