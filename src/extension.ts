@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { escapeHandler } from './escape_handler';
 import { enterNormalMode, enterVisualMode, setModeCursorStyle } from './modes';
 import { Mode } from './modes_types';
-import * as scrollCommands from './scroll_commands';
 import { typeHandler } from './type_handler';
 import { addTypeSubscription, removeTypeSubscription } from './type_subscription';
 import type { VimState } from './vim_state_types';
@@ -68,10 +67,6 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(globalVimState, editor)),
         vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(globalVimState, e)),
         vscode.commands.registerCommand('extension.simpleVim.escapeKey', () => escapeHandler(globalVimState)),
-        vscode.commands.registerCommand('extension.simpleVim.scrollDownHalfPage', scrollCommands.scrollDownHalfPage),
-        vscode.commands.registerCommand('extension.simpleVim.scrollUpHalfPage', scrollCommands.scrollUpHalfPage),
-        vscode.commands.registerCommand('extension.simpleVim.scrollDownPage', scrollCommands.scrollDownPage),
-        vscode.commands.registerCommand('extension.simpleVim.scrollUpPage', scrollCommands.scrollUpPage),
     );
 
     enterNormalMode(globalVimState);
