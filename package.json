@@ -40,6 +40,21 @@
         "key": "ctrl+u",
         "command": "cursorPageUp",
         "when": "editorTextFocus && simple-vim.mode != 'insert'"
+      },
+      {
+        "key": "ctrl+o",
+        "command": "-lineBreakInsert",
+        "when": "textInputFocus && !editorReadonly"
+      },
+      {
+        "key": "ctrl+o",
+        "command": "workbench.action.navigateBack",
+        "when": "editorTextFocus && simple-vim.mode == 'normal'"
+      },
+      {
+        "key": "ctrl+i",
+        "command": "workbench.action.navigateForward",
+        "when": "editorTextFocus && simple-vim.mode == 'normal'"
       }
     ],
     "configuration": {
