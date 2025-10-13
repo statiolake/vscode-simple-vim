@@ -23,7 +23,7 @@ export const operators: Action[] = [
             setModeCursorStyle(vimState.mode, editor);
         }
     }),
-    parseKeysOperator(['c'], operatorRanges, (vimState, editor, ranges, linewise) => {
+    parseKeysOperator(['c'], operatorRanges, (vimState, editor, ranges, _linewise) => {
         if (ranges.every(x => x === undefined)) return;
 
         cursorsToRangesStart(editor, ranges);

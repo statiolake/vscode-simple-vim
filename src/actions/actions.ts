@@ -112,7 +112,7 @@ export const actions: Action[] = [
         }
     }),
 
-    parseKeysExact(['u'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (vimState, editor) => {
+    parseKeysExact(['u'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (_vimState, _editor) => {
         vscode.commands.executeCommand('undo');
     }),
 
@@ -120,7 +120,7 @@ export const actions: Action[] = [
         deleteLine(vimState, editor);
     }),
 
-    parseKeysExact(['D'], [Mode.Normal], (vimState, editor) => {
+    parseKeysExact(['D'], [Mode.Normal], (_vimState, _editor) => {
         vscode.commands.executeCommand('deleteAllRight');
     }),
 
@@ -209,7 +209,7 @@ export const actions: Action[] = [
         setModeCursorStyle(vimState.mode, editor);
     }),
 
-    parseKeysExact(['x'], [Mode.Normal], (vimState, editor) => {
+    parseKeysExact(['x'], [Mode.Normal], (_vimState, _editor) => {
         vscode.commands.executeCommand('deleteRight');
     }),
 

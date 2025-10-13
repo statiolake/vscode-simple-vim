@@ -28,15 +28,15 @@ export const motions: Action[] = [
     }),
 
     parseKeysExact(['h'], [Mode.Normal, Mode.Visual], (vimState, editor) => {
-        execMotion(vimState, editor, ({ document, position }) => {
+        execMotion(vimState, editor, ({ position }) => {
             return positionUtils.left(position);
         });
     }),
 
-    parseKeysExact(['k'], [Mode.Normal], (vimState, editor) => {
+    parseKeysExact(['k'], [Mode.Normal], (_vimState, _editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'wrappedLine' });
     }),
-    parseKeysExact(['k'], [Mode.Visual], (vimState, editor) => {
+    parseKeysExact(['k'], [Mode.Visual], (_vimState, editor) => {
         const originalSelections = editor.selections;
 
         vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'wrappedLine', select: true }).then(() => {
@@ -49,10 +49,10 @@ export const motions: Action[] = [
         });
     }),
 
-    parseKeysExact(['j'], [Mode.Normal], (vimState, editor) => {
+    parseKeysExact(['j'], [Mode.Normal], (_vimState, _editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'wrappedLine' });
     }),
-    parseKeysExact(['j'], [Mode.Visual], (vimState, editor) => {
+    parseKeysExact(['j'], [Mode.Visual], (_vimState, editor) => {
         const originalSelections = editor.selections;
 
         vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'wrappedLine', select: true }).then(() => {
@@ -123,13 +123,13 @@ export const motions: Action[] = [
     }),
 
     parseKeysExact(['g', 'g'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (vimState, editor) => {
-        execMotion(vimState, editor, ({ document, position }) => {
+        execMotion(vimState, editor, () => {
             return new vscode.Position(0, 0);
         });
     }),
 
     parseKeysExact(['G'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (vimState, editor) => {
-        execMotion(vimState, editor, ({ document, position }) => {
+        execMotion(vimState, editor, ({ document }) => {
             return new vscode.Position(document.lineCount - 1, 0);
         });
     }),
@@ -160,10 +160,10 @@ export const motions: Action[] = [
         });
     }),
 
-    parseKeysExact(['H'], [Mode.Normal], (vimState, editor) => {
+    parseKeysExact(['H'], [Mode.Normal], (_vimState, _editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortTop', by: 'line' });
     }),
-    parseKeysExact(['H'], [Mode.Visual], (vimState, editor) => {
+    parseKeysExact(['H'], [Mode.Visual], (_vimState, editor) => {
         const originalSelections = editor.selections;
 
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortTop', by: 'line', select: true }).then(() => {
@@ -176,10 +176,10 @@ export const motions: Action[] = [
         });
     }),
 
-    parseKeysExact(['M'], [Mode.Normal], (vimState, editor) => {
+    parseKeysExact(['M'], [Mode.Normal], (_vimState, _editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortCenter', by: 'line' });
     }),
-    parseKeysExact(['M'], [Mode.Visual], (vimState, editor) => {
+    parseKeysExact(['M'], [Mode.Visual], (_vimState, editor) => {
         const originalSelections = editor.selections;
 
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortCenter', by: 'line', select: true }).then(() => {
@@ -192,10 +192,10 @@ export const motions: Action[] = [
         });
     }),
 
-    parseKeysExact(['L'], [Mode.Normal], (vimState, editor) => {
+    parseKeysExact(['L'], [Mode.Normal], (_vimState, _editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortBottom', by: 'line' });
     }),
-    parseKeysExact(['L'], [Mode.Visual], (vimState, editor) => {
+    parseKeysExact(['L'], [Mode.Visual], (_vimState, editor) => {
         const originalSelections = editor.selections;
 
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortBottom', by: 'line', select: true }).then(() => {

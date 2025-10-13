@@ -165,10 +165,10 @@ export function parseKeysOperator(
             ranges = motionResult.ranges;
             linewise = motionResult.linewise;
         } else if (vimState.mode === Mode.VisualLine) {
-            ranges = editor.selections;
+            ranges = Array.from(editor.selections);
             linewise = true;
         } else {
-            ranges = editor.selections;
+            ranges = Array.from(editor.selections);
             linewise = false;
         }
 

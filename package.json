@@ -1,80 +1,80 @@
 {
-    "name": "simple-vim-statiolake",
-    "displayName": "Simple Vim (statiolake)",
-    "description": "Vim extension for VSCode (forked from jpotterm/vscode-simple-vim)",
-    "version": "0.0.5",
-    "license": "MIT",
-    "publisher": "statiolake",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/statiolake/vscode-simple-vim.git"
-    },
-    "engines": {
-        "vscode": "^1.22.2"
-    },
-    "categories": [
-        "Other"
+  "name": "simple-vim-statiolake",
+  "displayName": "Simple Vim (statiolake)",
+  "description": "Simple Vim extension for VSCode (forked from jpotterm/vscode-simple-vim)",
+  "version": "0.0.5",
+  "license": "MIT",
+  "publisher": "statiolake",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/statiolake/vscode-simple-vim.git"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "keybindings": [
+      {
+        "key": "Escape",
+        "command": "extension.simpleVim.escapeKey",
+        "when": "editorTextFocus"
+      },
+      {
+        "key": "ctrl+r",
+        "command": "redo",
+        "when": "editorTextFocus && !extension.simpleVim.insertMode"
+      },
+      {
+        "key": "ctrl+d",
+        "command": "extension.simpleVim.scrollDownHalfPage",
+        "when": "editorTextFocus && !extension.simpleVim.insertMode"
+      },
+      {
+        "key": "ctrl+u",
+        "command": "extension.simpleVim.scrollUpHalfPage",
+        "when": "editorTextFocus && !extension.simpleVim.insertMode"
+      },
+      {
+        "key": "ctrl+f",
+        "command": "extension.simpleVim.scrollDownPage",
+        "when": "editorTextFocus && !extension.simpleVim.insertMode"
+      },
+      {
+        "key": "ctrl+b",
+        "command": "extension.simpleVim.scrollUpPage",
+        "when": "editorTextFocus && !extension.simpleVim.insertMode"
+      }
     ],
-    "activationEvents": [
-        "*"
-    ],
-    "main": "./out/extension",
-    "contributes": {
-        "keybindings": [
-            {
-                "key": "Escape",
-                "command": "extension.simpleVim.escapeKey",
-                "when": "editorTextFocus"
-            },
-            {
-                "key": "ctrl+r",
-                "command": "redo",
-                "when": "editorTextFocus && !extension.simpleVim.insertMode"
-            },
-            {
-                "key": "ctrl+d",
-                "command": "extension.simpleVim.scrollDownHalfPage",
-                "when": "editorTextFocus && !extension.simpleVim.insertMode"
-            },
-            {
-                "key": "ctrl+u",
-                "command": "extension.simpleVim.scrollUpHalfPage",
-                "when": "editorTextFocus && !extension.simpleVim.insertMode"
-            },
-            {
-                "key": "ctrl+f",
-                "command": "extension.simpleVim.scrollDownPage",
-                "when": "editorTextFocus && !extension.simpleVim.insertMode"
-            },
-            {
-                "key": "ctrl+b",
-                "command": "extension.simpleVim.scrollUpPage",
-                "when": "editorTextFocus && !extension.simpleVim.insertMode"
-            }
-        ],
-        "configuration": {
-            "type": "object",
-            "title": "SimpleVim Configuration",
-            "properties": {
-                "simpleVim.yankHighlightBackgroundColor": {
-                    "type": "string",
-                    "default": "#F8F3AB",
-                    "description": "Background color that flashes to show the range when yanking."
-                }
-            }
+    "configuration": {
+      "type": "object",
+      "title": "SimpleVim Configuration",
+      "properties": {
+        "simpleVim.yankHighlightBackgroundColor": {
+          "type": "string",
+          "default": "#F8F3AB",
+          "description": "Background color that flashes to show the range when yanking."
         }
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install",
-        "lint": "tslint -c tslint.json 'src/**/*.ts' --exclude 'src/test/*.ts'"
-    },
-    "devDependencies": {
-        "@types/node": "^10.5.1",
-        "tslint": "^5.10.0",
-        "typescript": "^2.9.2",
-        "vscode": "^1.1.18"
+      }
     }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "24.7.2",
+    "@types/vscode": "^1.75.0",
+    "eslint": "9.37.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.46.0"
+  }
 }
