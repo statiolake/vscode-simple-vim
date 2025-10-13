@@ -393,6 +393,19 @@ function createWordForwardHandler(
             if (result) {
                 return position.with({ character: result.start });
             } else {
+                // Try to wrap to next line (move to beginning of next line)
+                if (position.line < document.lineCount - 1) {
+                    const nextLine = position.line + 1;
+                    const nextLineText = document.lineAt(nextLine).text;
+                    const nextRanges = wordRangesFunction(nextLineText);
+
+                    if (nextRanges.length > 0) {
+                        return new vscode.Position(nextLine, nextRanges[0].start);
+                    } else {
+                        // Empty line - move to beginning of line
+                        return new vscode.Position(nextLine, 0);
+                    }
+                }
                 return position;
             }
         });
@@ -412,6 +425,20 @@ function createWordBackwardHandler(
             if (result) {
                 return position.with({ character: result.start });
             } else {
+                // Try to wrap to previous line
+                if (position.line > 0) {
+                    const prevLine = position.line - 1;
+                    const prevLineText = document.lineAt(prevLine).text;
+                    const prevRanges = wordRangesFunction(prevLineText);
+
+                    if (prevRanges.length > 0) {
+                        const lastRange = prevRanges[prevRanges.length - 1];
+                        return new vscode.Position(prevLine, lastRange.start);
+                    } else {
+                        // Empty line - move to beginning of line
+                        return new vscode.Position(prevLine, 0);
+                    }
+                }
                 return position;
             }
         });
@@ -437,6 +464,24 @@ function createWordEndHandler(
                     return position.with({ character: result.end });
                 }
             } else {
+                // Try to wrap to next line
+                if (position.line < document.lineCount - 1) {
+                    const nextLine = position.line + 1;
+                    const nextLineText = document.lineAt(nextLine).text;
+                    const nextRanges = wordRangesFunction(nextLineText);
+
+                    if (nextRanges.length > 0) {
+                        const firstRange = nextRanges[0];
+                        if (isVscodeNativeCursor()) {
+                            return new vscode.Position(nextLine, Math.min(firstRange.end + 1, nextLineText.length));
+                        } else {
+                            return new vscode.Position(nextLine, firstRange.end);
+                        }
+                    } else {
+                        // Empty line - move to beginning of line
+                        return new vscode.Position(nextLine, 0);
+                    }
+                }
                 return position;
             }
         });
@@ -451,8 +496,11 @@ function createWordEndBackwardHandler(
             const lineText = document.lineAt(position.line).text;
             const ranges = wordRangesFunction(lineText);
 
-            // Find the previous word end (end < current position)
-            const result = ranges.reverse().find((x) => x.end < position.character);
+            // Find the previous word end
+            // In vscode-native mode: end < position.character (cursor is after character)
+            // In vim-traditional mode: end < position.character (cursor is on character, so we need strictly less)
+            const searchChar = isVscodeNativeCursor() ? position.character : position.character;
+            const result = ranges.reverse().find((x) => x.end < searchChar);
 
             if (result) {
                 // In vscode-native mode, move to after the last character (result.end + 1)
@@ -463,6 +511,24 @@ function createWordEndBackwardHandler(
                     return position.with({ character: result.end });
                 }
             } else {
+                // Try to wrap to previous line
+                if (position.line > 0) {
+                    const prevLine = position.line - 1;
+                    const prevLineText = document.lineAt(prevLine).text;
+                    const prevRanges = wordRangesFunction(prevLineText);
+
+                    if (prevRanges.length > 0) {
+                        const lastRange = prevRanges[prevRanges.length - 1];
+                        if (isVscodeNativeCursor()) {
+                            return new vscode.Position(prevLine, Math.min(lastRange.end + 1, prevLineText.length));
+                        } else {
+                            return new vscode.Position(prevLine, lastRange.end);
+                        }
+                    } else {
+                        // Empty line - move to beginning of line
+                        return new vscode.Position(prevLine, 0);
+                    }
+                }
                 return position;
             }
         });
