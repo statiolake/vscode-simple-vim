@@ -7,21 +7,32 @@ import type { VimState } from './vim_state_types';
 export function enterInsertMode(vimState: VimState): void {
     vimState.mode = Mode.Insert;
     setModeContext('insert');
+    updateStatusBarFromExtension(Mode.Insert);
 }
 
 export function enterNormalMode(vimState: VimState): void {
     vimState.mode = Mode.Normal;
     setModeContext('normal');
+    updateStatusBarFromExtension(Mode.Normal);
 }
 
 export function enterVisualMode(vimState: VimState): void {
     vimState.mode = Mode.Visual;
     setModeContext('visual');
+    updateStatusBarFromExtension(Mode.Visual);
 }
 
 export function enterVisualLineMode(vimState: VimState): void {
     vimState.mode = Mode.VisualLine;
     setModeContext('visualLine');
+    updateStatusBarFromExtension(Mode.VisualLine);
+}
+
+function updateStatusBarFromExtension(mode: Mode): void {
+    // Import dynamically to avoid circular dependency
+    import('./extension').then((ext) => {
+        ext.updateStatusBar(mode);
+    });
 }
 
 function setModeContext(mode: 'insert' | 'normal' | 'visual' | 'visualLine') {

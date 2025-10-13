@@ -7,6 +7,29 @@ import { Mode } from './modes_types';
 import { typeHandler } from './type_handler';
 import type { VimState } from './vim_state_types';
 
+let statusBarItem: vscode.StatusBarItem;
+
+export function updateStatusBar(mode: Mode): void {
+    if (!statusBarItem) return;
+
+    switch (mode) {
+        case Mode.Normal:
+            statusBarItem.text = '-- NORMAL --';
+            break;
+        case Mode.Insert:
+            statusBarItem.text = '-- INSERT --';
+            break;
+        case Mode.Visual:
+            statusBarItem.text = '-- VISUAL --';
+            break;
+        case Mode.VisualLine:
+            statusBarItem.text = '-- VISUAL LINE --';
+            break;
+    }
+
+    statusBarItem.show();
+}
+
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     if (vimState.mode === Mode.Insert) return;
 
@@ -20,11 +43,13 @@ function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChan
         ) {
             enterNormalMode(vimState);
             setModeCursorStyle(vimState.mode, e.textEditor);
+            updateStatusBar(vimState.mode);
         }
     } else {
         if (vimState.mode === Mode.Normal) {
             enterVisualMode(vimState);
             setModeCursorStyle(vimState.mode, e.textEditor);
+            updateStatusBar(vimState.mode);
         }
     }
 }
@@ -43,6 +68,7 @@ function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEdit
     }
 
     setModeCursorStyle(vimState.mode, editor);
+    updateStatusBar(vimState.mode);
 
     vimState.keysPressed = [];
 }
@@ -72,6 +98,11 @@ export function activate(context: vscode.ExtensionContext): void {
         },
     };
 
+    // Create status bar item
+    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
+
     // Register type command subscription
     vimState.typeSubscription = vscode.commands.registerCommand('type', (e) => {
         typeHandler(vimState, e.text);
@@ -86,6 +117,7 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     enterNormalMode(vimState);
+    updateStatusBar(vimState.mode);
 
     if (vscode.window.activeTextEditor) {
         onDidChangeActiveTextEditor(vimState, vscode.window.activeTextEditor);
