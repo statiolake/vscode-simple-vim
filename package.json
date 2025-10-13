@@ -2,7 +2,7 @@
   "name": "simple-vim-statiolake",
   "displayName": "Simple Vim (statiolake)",
   "description": "Simple Vim extension for VSCode (forked from jpotterm/vscode-simple-vim)",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "publisher": "statiolake",
   "repository": {
