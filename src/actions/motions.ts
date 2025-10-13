@@ -178,6 +178,19 @@ export const motions: Action[] = [
         });
     }),
 
+    parseKeysExact(['0'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (vimState, editor) => {
+        execMotion(vimState, editor, ({ position }) => {
+            return position.with({ character: 0 });
+        });
+    }),
+
+    parseKeysExact(['^'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (vimState, editor) => {
+        execMotion(vimState, editor, ({ document, position }) => {
+            const line = document.lineAt(position.line);
+            return position.with({ character: line.firstNonWhitespaceCharacterIndex });
+        });
+    }),
+
     parseKeysExact(['_'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (vimState, editor) => {
         execMotion(vimState, editor, ({ document, position }) => {
             const line = document.lineAt(position.line);

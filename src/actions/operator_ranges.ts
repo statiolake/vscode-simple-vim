@@ -269,6 +269,22 @@ export const operatorRanges: OperatorRange[] = [
             new vscode.Position(simpleRange.end, document.lineAt(simpleRange.end).text.length),
         );
     }),
+
+    createOperatorRangeExactKeys(['0'], false, (_vimState, _document, position) => {
+        if (position.character === 0) {
+            return undefined;
+        }
+        return new vscode.Range(position.with({ character: 0 }), position);
+    }),
+
+    createOperatorRangeExactKeys(['^'], false, (_vimState, document, position) => {
+        const line = document.lineAt(position.line);
+        const firstNonWhitespace = line.firstNonWhitespaceCharacterIndex;
+        if (position.character <= firstNonWhitespace) {
+            return undefined;
+        }
+        return new vscode.Range(position.with({ character: firstNonWhitespace }), position);
+    }),
 ];
 
 function createInnerBracketHandler(
