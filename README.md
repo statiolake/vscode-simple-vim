@@ -13,10 +13,9 @@ Operators act on a range of text. In Normal mode the range is specified by the O
 
 | Keys | Description |
 |-|-|
-| `d` | Delete range. |
+| `d` | Yank and delete range. |
 | `c` | Delete range and enter insert mode. |
 | `y` | Yank range. |
-| `r` | Yank and delete range. |
 | `s` | Select range and enter Visual mode. |
 
 
@@ -142,7 +141,7 @@ SimpleVim prioritizes simplicity and integration with native VSCode features ove
 
 - SimpleVim lets the cursor go one past the last character of the line in Normal mode. It would be nice to prevent this, but because of VSCode's selection model and extension API there is no good way to do it. It would require ugly hacks and would make other parts of the SimpleVim experience buggy.
 
-- SimpleVim has no registers. Instead the operators have been modified so deleting text does not overwrite the text you yanked. A new `r` operator has been added for when you want to yank and delete text at the same time.
+- SimpleVim has no registers. The `d` operator has been modified to yank (copy to clipboard) and delete text at the same time, so deleting text will also copy it to the clipboard.
 
 - SimpleVim's `f` and `t` motions work slightly differently from Vim's. `t` and `f` behave like Vim's `/` command, but `t` takes one character and `f` takes two. Or in other words, `t` works like Vim's `t` in Normal mode but Vim's `f` in Visual mode. And `f` behaves like the vim-sneak plugin.
 

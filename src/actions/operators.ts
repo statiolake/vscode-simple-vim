@@ -15,6 +15,7 @@ export const operators: Action[] = [
 
         cursorsToRangesStart(editor, ranges);
 
+        yank(vimState, editor, ranges, linewise);
         delete_(editor, ranges, linewise);
 
         if (vimState.mode === Mode.Visual || vimState.mode === Mode.VisualLine) {
@@ -61,19 +62,6 @@ export const operators: Action[] = [
                 }
             });
             flashYankHighlight(editor, highlightRanges);
-        }
-    }),
-    parseKeysOperator(['r'], operatorRanges, (vimState, editor, ranges, linewise) => {
-        if (ranges.every(x => x === undefined)) return;
-
-        cursorsToRangesStart(editor, ranges);
-
-        yank(vimState, editor, ranges, linewise);
-        delete_(editor, ranges, linewise);
-
-        if (vimState.mode === Mode.Visual || vimState.mode === Mode.VisualLine) {
-            enterNormalMode(vimState);
-            setModeCursorStyle(vimState.mode, editor);
         }
     }),
     parseKeysOperator(['s'], operatorRanges, (vimState, editor, ranges, linewise) => {
