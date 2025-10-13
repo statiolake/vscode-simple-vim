@@ -90,6 +90,9 @@ export const motions: Action[] = [
     parseKeysExact(['e'], [Mode.Normal, Mode.Visual], createWordEndHandler(wordRanges)),
     parseKeysExact(['E'], [Mode.Normal, Mode.Visual], createWordEndHandler(whitespaceWordRanges)),
 
+    parseKeysExact(['g', 'e'], [Mode.Normal, Mode.Visual], createWordEndBackwardHandler(wordRanges)),
+    parseKeysExact(['g', 'E'], [Mode.Normal, Mode.Visual], createWordEndBackwardHandler(whitespaceWordRanges)),
+
     parseKeysRegex(/^f(.)$/, /^f$/, [Mode.Normal, Mode.Visual], (vimState, editor, match) => {
         findForward(vimState, editor, match);
 
@@ -424,6 +427,32 @@ function createWordEndHandler(
             const ranges = wordRangesFunction(lineText);
 
             const result = ranges.find((x) => x.end > position.character);
+
+            if (result) {
+                // In vscode-native mode, move to after the last character (result.end + 1)
+                // In vim-traditional mode, move to the last character (result.end)
+                if (isVscodeNativeCursor()) {
+                    return position.with({ character: Math.min(result.end + 1, lineText.length) });
+                } else {
+                    return position.with({ character: result.end });
+                }
+            } else {
+                return position;
+            }
+        });
+    };
+}
+
+function createWordEndBackwardHandler(
+    wordRangesFunction: (text: string) => { start: number; end: number }[],
+): (vimState: VimState, editor: vscode.TextEditor) => void {
+    return (vimState, editor) => {
+        execMotion(vimState, editor, ({ document, position }) => {
+            const lineText = document.lineAt(position.line).text;
+            const ranges = wordRangesFunction(lineText);
+
+            // Find the previous word end (end < current position)
+            const result = ranges.reverse().find((x) => x.end < position.character);
 
             if (result) {
                 // In vscode-native mode, move to after the last character (result.end + 1)

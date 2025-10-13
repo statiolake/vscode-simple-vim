@@ -62,6 +62,9 @@ export const operatorRanges: OperatorRange[] = [
     createOperatorRangeExactKeys(['e'], false, createWordEndHandler(wordRanges)),
     createOperatorRangeExactKeys(['E'], false, createWordEndHandler(whitespaceWordRanges)),
 
+    createOperatorRangeExactKeys(['g', 'e'], false, createWordEndBackwardHandler(wordRanges)),
+    createOperatorRangeExactKeys(['g', 'E'], false, createWordEndBackwardHandler(whitespaceWordRanges)),
+
     createOperatorRangeExactKeys(['i', 'w'], false, createInnerWordHandler(wordRanges)),
     createOperatorRangeExactKeys(['i', 'W'], false, createInnerWordHandler(whitespaceWordRanges)),
 
@@ -427,6 +430,33 @@ function createWordEndHandler(
                     position,
                     positionUtils.right(document, position.with({ character: result.end })),
                 );
+            }
+        } else {
+            return undefined;
+        }
+    };
+}
+
+function createWordEndBackwardHandler(
+    wordRangesFunction: (text: string) => { start: number; end: number }[],
+): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
+    return (_vimState, document, position) => {
+        const lineText = document.lineAt(position.line).text;
+        const ranges = wordRangesFunction(lineText);
+
+        // Find the previous word end (end < current position)
+        const result = ranges.reverse().find((x) => x.end < position.character);
+
+        if (result) {
+            // In vscode-native mode, range ends after the last character (result.end + 1)
+            // In vim-traditional mode, range ends at the last character position
+            if (isVscodeNativeCursor()) {
+                return new vscode.Range(
+                    position.with({ character: Math.min(result.end + 1, lineText.length) }),
+                    position,
+                );
+            } else {
+                return new vscode.Range(position.with({ character: result.end }), position);
             }
         } else {
             return undefined;
