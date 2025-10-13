@@ -23,7 +23,7 @@
     "keybindings": [
       {
         "key": "Escape",
-        "command": "extension.simpleVim.escapeKey",
+        "command": "simple-vim.escapeKey",
         "when": "editorTextFocus"
       },
       {

@@ -66,7 +66,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(globalVimState, editor)),
         vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(globalVimState, e)),
-        vscode.commands.registerCommand('extension.simpleVim.escapeKey', () => escapeHandler(globalVimState)),
+        vscode.commands.registerCommand('simple-vim.escapeKey', () => escapeHandler(globalVimState)),
     );
 
     enterNormalMode(globalVimState);
