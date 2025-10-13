@@ -29,17 +29,17 @@
       {
         "key": "ctrl+r",
         "command": "redo",
-        "when": "editorTextFocus && !extension.simpleVim.insertMode"
+        "when": "editorTextFocus && simple-vim.mode != 'insert'"
       },
       {
         "key": "ctrl+d",
         "command": "cursorPageDown",
-        "when": "editorTextFocus && !extension.simpleVim.insertMode"
+        "when": "editorTextFocus && simple-vim.mode != 'insert'"
       },
       {
         "key": "ctrl+u",
         "command": "cursorPageUp",
-        "when": "editorTextFocus && !extension.simpleVim.insertMode"
+        "when": "editorTextFocus && simple-vim.mode != 'insert'"
       }
     ],
     "configuration": {
