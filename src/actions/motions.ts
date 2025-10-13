@@ -30,9 +30,19 @@ export const motions: Action[] = [
     }),
 
     parseKeysExact(['k'], [Mode.Normal], (_vimState, _editor) => {
-        vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'wrappedLine' });
+        vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'line' });
     }),
     parseKeysExact(['k'], [Mode.Visual], (_vimState, editor) => {
+        const originalSelections = editor.selections;
+
+        vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'line', select: true }).then(() => {
+            setVisualSelections(editor, originalSelections);
+        });
+    }),
+    parseKeysExact(['g', 'k'], [Mode.Normal], (_vimState, _editor) => {
+        vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'wrappedLine' });
+    }),
+    parseKeysExact(['g', 'k'], [Mode.Visual], (_vimState, editor) => {
         const originalSelections = editor.selections;
 
         vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'wrappedLine', select: true }).then(() => {
@@ -46,9 +56,19 @@ export const motions: Action[] = [
     }),
 
     parseKeysExact(['j'], [Mode.Normal], (_vimState, _editor) => {
-        vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'wrappedLine' });
+        vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'line' });
     }),
     parseKeysExact(['j'], [Mode.Visual], (_vimState, editor) => {
+        const originalSelections = editor.selections;
+
+        vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'line', select: true }).then(() => {
+            setVisualSelections(editor, originalSelections);
+        });
+    }),
+    parseKeysExact(['g', 'j'], [Mode.Normal], (_vimState, _editor) => {
+        vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'wrappedLine' });
+    }),
+    parseKeysExact(['g', 'j'], [Mode.Visual], (_vimState, editor) => {
         const originalSelections = editor.selections;
 
         vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'wrappedLine', select: true }).then(() => {
