@@ -1,24 +1,20 @@
 import * as vscode from 'vscode';
-
+import type { Action } from '../action_types';
 import { Mode } from '../modes_types';
-import { Action } from '../action_types';
+import { paragraphBackward, paragraphForward } from '../paragraph_utils';
+import { parseKeysExact, parseKeysRegex } from '../parse_keys';
+import * as positionUtils from '../position_utils';
+import { searchBackward, searchForward } from '../search_utils';
 import {
-    parseKeysExact,
-    parseKeysRegex,
-} from '../parse_keys';
-import {
-    vscodeToVimVisualSelection,
     vimToVscodeVisualLineSelection,
     vimToVscodeVisualSelection,
     vscodeToVimVisualLineSelection,
+    vscodeToVimVisualSelection,
 } from '../selection_utils';
-import * as positionUtils from '../position_utils';
-import { VimState } from '../vim_state_types';
-import { wordRanges, whitespaceWordRanges } from '../word_utils';
-import { searchForward, searchBackward } from '../search_utils';
-import { paragraphForward, paragraphBackward } from '../paragraph_utils';
+import type { VimState } from '../vim_state_types';
 import { setVisualLineSelections } from '../visual_line_utils';
 import { setVisualSelections } from '../visual_utils';
+import { whitespaceWordRanges, wordRanges } from '../word_utils';
 
 export const motions: Action[] = [
     parseKeysExact(['l'], [Mode.Normal, Mode.Visual], (vimState, editor) => {
@@ -43,7 +39,7 @@ export const motions: Action[] = [
             setVisualSelections(editor, originalSelections);
         });
     }),
-    parseKeysExact(['k'], [Mode.VisualLine], (vimState, editor) => {
+    parseKeysExact(['k'], [Mode.VisualLine], (_vimState, editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'line', select: true }).then(() => {
             setVisualLineSelections(editor);
         });
@@ -59,7 +55,7 @@ export const motions: Action[] = [
             setVisualSelections(editor, originalSelections);
         });
     }),
-    parseKeysExact(['j'], [Mode.VisualLine], (vimState, editor) => {
+    parseKeysExact(['j'], [Mode.VisualLine], (_vimState, editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'line', select: true }).then(() => {
             setVisualLineSelections(editor);
         });
@@ -170,7 +166,7 @@ export const motions: Action[] = [
             setVisualSelections(editor, originalSelections);
         });
     }),
-    parseKeysExact(['H'], [Mode.VisualLine], (vimState, editor) => {
+    parseKeysExact(['H'], [Mode.VisualLine], (_vimState, editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortTop', by: 'line', select: true }).then(() => {
             setVisualLineSelections(editor);
         });
@@ -186,7 +182,7 @@ export const motions: Action[] = [
             setVisualSelections(editor, originalSelections);
         });
     }),
-    parseKeysExact(['M'], [Mode.VisualLine], (vimState, editor) => {
+    parseKeysExact(['M'], [Mode.VisualLine], (_vimState, editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortCenter', by: 'line', select: true }).then(() => {
             setVisualLineSelections(editor);
         });
@@ -202,7 +198,7 @@ export const motions: Action[] = [
             setVisualSelections(editor, originalSelections);
         });
     }),
-    parseKeysExact(['L'], [Mode.VisualLine], (vimState, editor) => {
+    parseKeysExact(['L'], [Mode.VisualLine], (_vimState, editor) => {
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortBottom', by: 'line', select: true }).then(() => {
             setVisualLineSelections(editor);
         });
@@ -210,18 +206,18 @@ export const motions: Action[] = [
 ];
 
 type MotionArgs = {
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    selectionIndex: number,
-    vimState: VimState,
+    document: vscode.TextDocument;
+    position: vscode.Position;
+    selectionIndex: number;
+    vimState: VimState;
 };
 
 type RegexMotionArgs = {
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    selectionIndex: number,
-    vimState: VimState,
-    match: RegExpMatchArray,
+    document: vscode.TextDocument;
+    position: vscode.Position;
+    selectionIndex: number;
+    vimState: VimState;
+    match: RegExpMatchArray;
 };
 
 function execRegexMotion(
@@ -230,7 +226,7 @@ function execRegexMotion(
     match: RegExpMatchArray,
     regexMotion: (args: RegexMotionArgs) => vscode.Position,
 ) {
-    return execMotion(vimState, editor, motionArgs => {
+    return execMotion(vimState, editor, (motionArgs) => {
         return regexMotion({
             ...motionArgs,
             match: match,
@@ -356,7 +352,7 @@ function createWordForwardHandler(
             const lineText = document.lineAt(position.line).text;
             const ranges = wordRangesFunction(lineText);
 
-            const result = ranges.find(x => x.start > position.character);
+            const result = ranges.find((x) => x.start > position.character);
 
             if (result) {
                 return position.with({ character: result.start });
@@ -375,7 +371,7 @@ function createWordBackwardHandler(
             const lineText = document.lineAt(position.line).text;
             const ranges = wordRangesFunction(lineText);
 
-            const result = ranges.reverse().find(x => x.start < position.character);
+            const result = ranges.reverse().find((x) => x.start < position.character);
 
             if (result) {
                 return position.with({ character: result.start });
@@ -394,7 +390,7 @@ function createWordEndHandler(
             const lineText = document.lineAt(position.line).text;
             const ranges = wordRangesFunction(lineText);
 
-            const result = ranges.find(x => x.end > position.character);
+            const result = ranges.find((x) => x.end > position.character);
 
             if (result) {
                 return position.with({ character: result.end });

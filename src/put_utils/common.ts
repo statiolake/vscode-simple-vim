@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { VimState } from '../vim_state_types';
+import type { VimState } from '../vim_state_types';
 
 export function getRegisterContentsList(vimState: VimState, editor: vscode.TextEditor) {
     if (vimState.registers.contentsList.length === 0) return undefined;
@@ -10,7 +10,7 @@ export function getRegisterContentsList(vimState: VimState, editor: vscode.TextE
     // Handle putting with a different number of cursors than when you yanked
     if (vimState.registers.contentsList.length !== editor.selections.length) {
         const combinedContents = vimState.registers.contentsList.join('\n');
-        registerContentsList = editor.selections.map(_selection => combinedContents);
+        registerContentsList = editor.selections.map((_selection) => combinedContents);
     }
 
     return registerContentsList;
@@ -28,7 +28,7 @@ export function getInsertRangesFromEnd(
 
         const lines = contents.split(/\r?\n/);
 
-        let beginningPosition;
+        let beginningPosition: vscode.Position;
         if (lines.length > 1) {
             const beginningLine = position.line - (lines.length - 1);
             const beginningCharacter = document.lineAt(beginningLine).text.length - lines[0].length;
@@ -50,10 +50,7 @@ export function getInsertRangesFromBeginning(positions: vscode.Position[], conte
 
         const lines = contents.split(/\r?\n/);
         const endLine = position.line + lines.length - 1;
-        const endCharacter = (lines.length === 1 ?
-            position.character + lines[0].length :
-            lines[lines.length - 1].length
-        );
+        const endCharacter = lines.length === 1 ? position.character + lines[0].length : lines[lines.length - 1].length;
 
         return new vscode.Range(position, new vscode.Position(endLine, endCharacter));
     });
@@ -104,9 +101,8 @@ export function adjustInsertPositions(positions: vscode.Position[], contentsList
                 if (contentsLines.length === 1) {
                     characterOffset += contentsLines[0].length;
                 } else {
-                    characterOffset += (
-                        contentsLines[contentsLines.length - 1].length - indexPosition.position.character
-                    );
+                    characterOffset +=
+                        contentsLines[contentsLines.length - 1].length - indexPosition.position.character;
                 }
             } else {
                 characterOffset = 0;
@@ -115,6 +111,6 @@ export function adjustInsertPositions(positions: vscode.Position[], contentsList
         }
     }
 
-    adjustedIndexPositions.sort((a, b) => (a.originalIndex - b.originalIndex));
-    return adjustedIndexPositions.map(indexPosition => indexPosition.position);
+    adjustedIndexPositions.sort((a, b) => a.originalIndex - b.originalIndex);
+    return adjustedIndexPositions.map((indexPosition) => indexPosition.position);
 }

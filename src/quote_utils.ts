@@ -1,15 +1,15 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
-import { SimpleRange } from './simple_range_types';
+import type { SimpleRange } from './simple_range_types';
 
 export function findQuoteRange(ranges: SimpleRange[], position: vscode.Position): SimpleRange | undefined {
-    const insideResult = ranges.find(x => x.start <= position.character && x.end >= position.character);
+    const insideResult = ranges.find((x) => x.start <= position.character && x.end >= position.character);
 
     if (insideResult) {
         return insideResult;
     }
 
-    const outsideResult = ranges.find(x => x.start > position.character);
+    const outsideResult = ranges.find((x) => x.start > position.character);
 
     if (outsideResult) {
         return outsideResult;

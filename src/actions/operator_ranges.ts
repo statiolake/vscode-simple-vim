@@ -1,19 +1,18 @@
 import * as vscode from 'vscode';
-
-import { createOperatorRangeExactKeys, createOperatorRangeRegex } from '../parse_keys';
-import { OperatorRange } from '../parse_keys_types';
-import { searchForward, searchBackward, searchBackwardBracket, searchForwardBracket } from '../search_utils';
-import * as positionUtils from '../position_utils';
-import { wordRanges, whitespaceWordRanges } from '../word_utils';
-import { paragraphForward, paragraphBackward, paragraphRangeOuter, paragraphRangeInner } from '../paragraph_utils';
-import { VimState } from '../vim_state_types';
-import { quoteRanges, findQuoteRange } from '../quote_utils';
-import { indentLevelRange } from '../indent_utils';
-import { getTags } from '../tag_utils';
 import { arrayFindLast } from '../array_utils';
+import { indentLevelRange } from '../indent_utils';
+import { paragraphBackward, paragraphForward, paragraphRangeInner, paragraphRangeOuter } from '../paragraph_utils';
+import { createOperatorRangeExactKeys, createOperatorRangeRegex } from '../parse_keys';
+import type { OperatorRange } from '../parse_keys_types';
+import * as positionUtils from '../position_utils';
+import { findQuoteRange, quoteRanges } from '../quote_utils';
+import { searchBackward, searchBackwardBracket, searchForward, searchForwardBracket } from '../search_utils';
+import { getTags } from '../tag_utils';
+import type { VimState } from '../vim_state_types';
+import { whitespaceWordRanges, wordRanges } from '../word_utils';
 
 export const operatorRanges: OperatorRange[] = [
-    createOperatorRangeExactKeys(['l'], false, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['l'], false, (_vimState, document, position) => {
         const right = positionUtils.right(document, position);
 
         if (right.isEqual(position)) {
@@ -22,7 +21,7 @@ export const operatorRanges: OperatorRange[] = [
             return new vscode.Range(position, right);
         }
     }),
-    createOperatorRangeExactKeys(['h'], false, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['h'], false, (_vimState, _document, position) => {
         const left = positionUtils.left(position);
 
         if (left.isEqual(position)) {
@@ -31,12 +30,9 @@ export const operatorRanges: OperatorRange[] = [
             return new vscode.Range(position, left);
         }
     }),
-    createOperatorRangeExactKeys(['k'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['k'], true, (_vimState, document, position) => {
         if (position.line === 0) {
-            return new vscode.Range(
-                new vscode.Position(0, 0),
-                positionUtils.lineEnd(document, position),
-            );
+            return new vscode.Range(new vscode.Position(0, 0), positionUtils.lineEnd(document, position));
         } else {
             return new vscode.Range(
                 new vscode.Position(position.line - 1, 0),
@@ -45,12 +41,9 @@ export const operatorRanges: OperatorRange[] = [
         }
     }),
 
-    createOperatorRangeExactKeys(['j'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['j'], true, (_vimState, document, position) => {
         if (position.line === document.lineCount - 1) {
-            return new vscode.Range(
-                new vscode.Position(position.line, 0),
-                positionUtils.lineEnd(document, position),
-            );
+            return new vscode.Range(new vscode.Position(position.line, 0), positionUtils.lineEnd(document, position));
         } else {
             return new vscode.Range(
                 new vscode.Position(position.line, 0),
@@ -74,7 +67,7 @@ export const operatorRanges: OperatorRange[] = [
     createOperatorRangeExactKeys(['a', 'w'], false, createOuterWordHandler(wordRanges)),
     createOperatorRangeExactKeys(['a', 'W'], false, createOuterWordHandler(whitespaceWordRanges)),
 
-    createOperatorRangeRegex(/^f(..)$/, /^(f|f.)$/, false, (vimState, document, position, match) => {
+    createOperatorRangeRegex(/^f(..)$/, /^(f|f.)$/, false, (_vimState, document, position, match) => {
         const fromPosition = position.with({ character: position.character + 1 });
         const result = searchForward(document, match[1], fromPosition);
 
@@ -85,7 +78,7 @@ export const operatorRanges: OperatorRange[] = [
         }
     }),
 
-    createOperatorRangeRegex(/^F(..)$/, /^(F|F.)$/, false, (vimState, document, position, match) => {
+    createOperatorRangeRegex(/^F(..)$/, /^(F|F.)$/, false, (_vimState, document, position, match) => {
         const fromPosition = position.with({ character: position.character - 1 });
         const result = searchBackward(document, match[1], fromPosition);
 
@@ -96,7 +89,7 @@ export const operatorRanges: OperatorRange[] = [
         }
     }),
 
-    createOperatorRangeRegex(/^t(.)$/, /^t$/, false, (vimState, document, position, match) => {
+    createOperatorRangeRegex(/^t(.)$/, /^t$/, false, (_vimState, document, position, match) => {
         const lineText = document.lineAt(position.line).text;
         const result = lineText.indexOf(match[1], position.character + 1);
 
@@ -107,7 +100,7 @@ export const operatorRanges: OperatorRange[] = [
         }
     }),
 
-    createOperatorRangeRegex(/^T(.)$/, /^T$/, false, (vimState, document, position, match) => {
+    createOperatorRangeRegex(/^T(.)$/, /^T$/, false, (_vimState, document, position, match) => {
         const lineText = document.lineAt(position.line).text;
         const result = lineText.lastIndexOf(match[1], position.character - 1);
 
@@ -119,16 +112,13 @@ export const operatorRanges: OperatorRange[] = [
         }
     }),
 
-    createOperatorRangeExactKeys(['g', 'g'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['g', 'g'], true, (_vimState, document, position) => {
         const lineLength = document.lineAt(position.line).text.length;
 
-        return new vscode.Range(
-            new vscode.Position(0, 0),
-            position.with({ character: lineLength }),
-        );
+        return new vscode.Range(new vscode.Position(0, 0), position.with({ character: lineLength }));
     }),
 
-    createOperatorRangeExactKeys(['G'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['G'], true, (_vimState, document, position) => {
         const lineLength = document.lineAt(document.lineCount - 1).text.length;
 
         return new vscode.Range(
@@ -138,7 +128,7 @@ export const operatorRanges: OperatorRange[] = [
     }),
 
     // TODO: return undefined?
-    createOperatorRangeExactKeys(['}'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['}'], true, (_vimState, document, position) => {
         return new vscode.Range(
             position.with({ character: 0 }),
             new vscode.Position(paragraphForward(document, position.line), 0),
@@ -146,14 +136,14 @@ export const operatorRanges: OperatorRange[] = [
     }),
 
     // TODO: return undefined?
-    createOperatorRangeExactKeys(['{'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['{'], true, (_vimState, document, position) => {
         return new vscode.Range(
             new vscode.Position(paragraphBackward(document, position.line), 0),
             position.with({ character: 0 }),
         );
     }),
 
-    createOperatorRangeExactKeys(['i', 'p'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['i', 'p'], true, (_vimState, document, position) => {
         const result = paragraphRangeInner(document, position.line);
 
         if (result) {
@@ -166,7 +156,7 @@ export const operatorRanges: OperatorRange[] = [
         }
     }),
 
-    createOperatorRangeExactKeys(['a', 'p'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['a', 'p'], true, (_vimState, document, position) => {
         const result = paragraphRangeOuter(document, position.line);
 
         if (result) {
@@ -200,15 +190,12 @@ export const operatorRanges: OperatorRange[] = [
     createOperatorRangeExactKeys(['i', '<'], false, createInnerBracketHandler('<', '>')),
     createOperatorRangeExactKeys(['a', '<'], false, createOuterBracketHandler('<', '>')),
 
-    createOperatorRangeExactKeys(['i', 't'], false, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['i', 't'], false, (_vimState, document, position) => {
         const tags = getTags(document);
 
-        const closestTag = arrayFindLast(tags, tag => {
+        const closestTag = arrayFindLast(tags, (tag) => {
             if (tag.closing) {
-                return (
-                    position.isAfterOrEqual(tag.opening.start) &&
-                    position.isBeforeOrEqual(tag.closing.end)
-                );
+                return position.isAfterOrEqual(tag.opening.start) && position.isBeforeOrEqual(tag.closing.end);
             } else {
                 // Self-closing tags have no inside
                 return false;
@@ -229,10 +216,10 @@ export const operatorRanges: OperatorRange[] = [
         }
     }),
 
-    createOperatorRangeExactKeys(['a', 't'], false, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['a', 't'], false, (_vimState, document, position) => {
         const tags = getTags(document);
 
-        const closestTag = arrayFindLast(tags, tag => {
+        const closestTag = arrayFindLast(tags, (tag) => {
             const afterStart = position.isAfterOrEqual(tag.opening.start);
 
             if (tag.closing) {
@@ -260,7 +247,7 @@ export const operatorRanges: OperatorRange[] = [
     }),
 
     // TODO: return undefined?
-    createOperatorRangeExactKeys(['i', 'i'], true, (vimState, document, position) => {
+    createOperatorRangeExactKeys(['i', 'i'], true, (_vimState, document, position) => {
         const simpleRange = indentLevelRange(document, position.line);
 
         return new vscode.Range(
@@ -274,7 +261,7 @@ function createInnerBracketHandler(
     openingChar: string,
     closingChar: string,
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const bracketRange = getBracketRange(document, position, openingChar, closingChar);
 
         if (bracketRange) {
@@ -292,7 +279,7 @@ function createOuterBracketHandler(
     openingChar: string,
     closingChar: string,
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const bracketRange = getBracketRange(document, position, openingChar, closingChar);
 
         if (bracketRange) {
@@ -315,23 +302,13 @@ function getBracketRange(
     const lineText = document.lineAt(position.line).text;
     const currentChar = lineText[position.character];
 
-    let start;
-    let end;
+    let start: vscode.Position | undefined;
+    let end: vscode.Position | undefined;
     if (currentChar === openingChar) {
         start = position;
-        end = searchForwardBracket(
-            document,
-            openingChar,
-            closingChar,
-            positionUtils.rightWrap(document, position),
-        );
+        end = searchForwardBracket(document, openingChar, closingChar, positionUtils.rightWrap(document, position));
     } else if (currentChar === closingChar) {
-        start = searchBackwardBracket(
-            document,
-            openingChar,
-            closingChar,
-            positionUtils.leftWrap(document, position),
-        );
+        start = searchBackwardBracket(document, openingChar, closingChar, positionUtils.leftWrap(document, position));
         end = position;
     } else {
         start = searchBackwardBracket(document, openingChar, closingChar, position);
@@ -348,7 +325,7 @@ function getBracketRange(
 function createInnerQuoteHandler(
     quoteChar: string,
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const lineText = document.lineAt(position.line).text;
         const ranges = quoteRanges(quoteChar, lineText);
         const result = findQuoteRange(ranges, position);
@@ -367,7 +344,7 @@ function createInnerQuoteHandler(
 function createOuterQuoteHandler(
     quoteChar: string,
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const lineText = document.lineAt(position.line).text;
         const ranges = quoteRanges(quoteChar, lineText);
         const result = findQuoteRange(ranges, position);
@@ -386,11 +363,11 @@ function createOuterQuoteHandler(
 function createWordForwardHandler(
     wordRangesFunction: (text: string) => { start: number; end: number }[],
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const lineText = document.lineAt(position.line).text;
         const ranges = wordRangesFunction(lineText);
 
-        const result = ranges.find(x => x.start > position.character);
+        const result = ranges.find((x) => x.start > position.character);
 
         if (result) {
             return new vscode.Range(position, position.with({ character: result.start }));
@@ -403,11 +380,11 @@ function createWordForwardHandler(
 function createWordBackwardHandler(
     wordRangesFunction: (text: string) => { start: number; end: number }[],
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const lineText = document.lineAt(position.line).text;
         const ranges = wordRangesFunction(lineText);
 
-        const result = ranges.reverse().find(x => x.start < position.character);
+        const result = ranges.reverse().find((x) => x.start < position.character);
 
         if (result) {
             return new vscode.Range(position.with({ character: result.start }), position);
@@ -420,17 +397,14 @@ function createWordBackwardHandler(
 function createWordEndHandler(
     wordRangesFunction: (text: string) => { start: number; end: number }[],
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const lineText = document.lineAt(position.line).text;
         const ranges = wordRangesFunction(lineText);
 
-        const result = ranges.find(x => x.end > position.character);
+        const result = ranges.find((x) => x.end > position.character);
 
         if (result) {
-            return new vscode.Range(
-                position,
-                positionUtils.right(document, position.with({ character: result.end })),
-            );
+            return new vscode.Range(position, positionUtils.right(document, position.with({ character: result.end })));
         } else {
             return undefined;
         }
@@ -440,11 +414,11 @@ function createWordEndHandler(
 function createInnerWordHandler(
     wordRangesFunction: (text: string) => { start: number; end: number }[],
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const lineText = document.lineAt(position.line).text;
         const ranges = wordRangesFunction(lineText);
 
-        const result = ranges.find(x => x.start <= position.character && position.character <= x.end);
+        const result = ranges.find((x) => x.start <= position.character && position.character <= x.end);
 
         if (result) {
             return new vscode.Range(
@@ -460,7 +434,7 @@ function createInnerWordHandler(
 function createOuterWordHandler(
     wordRangesFunction: (text: string) => { start: number; end: number }[],
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
-    return (vimState, document, position) => {
+    return (_vimState, document, position) => {
         const lineText = document.lineAt(position.line).text;
         const ranges = wordRangesFunction(lineText);
 

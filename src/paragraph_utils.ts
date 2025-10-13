@@ -1,5 +1,5 @@
-import * as vscode from 'vscode';
-import { SimpleRange } from './simple_range_types';
+import type * as vscode from 'vscode';
+import type { SimpleRange } from './simple_range_types';
 
 export function paragraphForward(document: vscode.TextDocument, line: number): number {
     let visitedNonEmptyLine = false;

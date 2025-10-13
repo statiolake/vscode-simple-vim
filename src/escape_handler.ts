@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
-
-import { VimState } from './vim_state_types';
 import { enterNormalMode, setModeCursorStyle } from './modes';
-import { addTypeSubscription } from './type_subscription';
-import { typeHandler } from './type_handler';
-import * as positionUtils from './position_utils';
 import { Mode } from './modes_types';
+import * as positionUtils from './position_utils';
+import { typeHandler } from './type_handler';
+import { addTypeSubscription } from './type_subscription';
+import type { VimState } from './vim_state_types';
 
 export function escapeHandler(vimState: VimState): void {
     const editor = vscode.window.activeTextEditor;
@@ -13,7 +12,7 @@ export function escapeHandler(vimState: VimState): void {
     if (!editor) return;
 
     if (vimState.mode === Mode.Insert) {
-        editor.selections = editor.selections.map(selection => {
+        editor.selections = editor.selections.map((selection) => {
             const newPosition = positionUtils.left(selection.active);
             return new vscode.Selection(newPosition, newPosition);
         });
@@ -27,15 +26,15 @@ export function escapeHandler(vimState: VimState): void {
             editor.selections = [editor.selections[0]];
         }
     } else if (vimState.mode === Mode.Visual) {
-        editor.selections = editor.selections.map(selection => {
+        editor.selections = editor.selections.map((selection) => {
             const newPosition = new vscode.Position(selection.active.line, Math.max(selection.active.character - 1, 0));
             return new vscode.Selection(newPosition, newPosition);
         });
 
         enterNormalMode(vimState);
         setModeCursorStyle(vimState.mode, editor);
-    }  else if (vimState.mode === Mode.VisualLine) {
-        editor.selections = editor.selections.map(selection => {
+    } else if (vimState.mode === Mode.VisualLine) {
+        editor.selections = editor.selections.map((selection) => {
             const newPosition = selection.active.with({
                 character: Math.max(selection.active.character - 1, 0),
             });

@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
-
-import { ParseKeysStatus } from './parse_keys_types';
 import { actions } from './actions';
-import { VimState } from './vim_state_types';
+import { ParseKeysStatus } from './parse_keys_types';
+import type { VimState } from './vim_state_types';
 
 export function typeHandler(vimState: VimState, char: string): void {
     const editor = vscode.window.activeTextEditor;

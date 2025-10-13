@@ -1,6 +1,6 @@
 const NON_WORD_CHARACTERS = '/\\()"\':,.;<>~!@#$%^&*|+=[]{}`?-';
 
-export function whitespaceWordRanges(text: string): { start: number, end: number }[] {
+export function whitespaceWordRanges(text: string): { start: number; end: number }[] {
     enum State {
         Whitespace,
         Word,
@@ -40,7 +40,7 @@ export function whitespaceWordRanges(text: string): { start: number, end: number
     return ranges;
 }
 
-export function wordRanges(text: string): { start: number, end: number }[] {
+export function wordRanges(text: string): { start: number; end: number }[] {
     enum State {
         Whitespace,
         Word,

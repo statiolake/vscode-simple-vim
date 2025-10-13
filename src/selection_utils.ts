@@ -3,19 +3,13 @@ import * as vscode from 'vscode';
 import * as positionUtils from './position_utils';
 
 export function vscodeToVimVisualSelection(
-    document: vscode.TextDocument,
+    _document: vscode.TextDocument,
     vscodeSelection: vscode.Selection,
 ): vscode.Selection {
     if (vscodeSelection.active.isBefore(vscodeSelection.anchor)) {
-        return new vscode.Selection(
-            positionUtils.left(vscodeSelection.anchor),
-            vscodeSelection.active,
-        );
+        return new vscode.Selection(positionUtils.left(vscodeSelection.anchor), vscodeSelection.active);
     } else {
-        return new vscode.Selection(
-            vscodeSelection.anchor,
-            positionUtils.left(vscodeSelection.active),
-        );
+        return new vscode.Selection(vscodeSelection.anchor, positionUtils.left(vscodeSelection.active));
     }
 }
 
@@ -24,20 +18,14 @@ export function vimToVscodeVisualSelection(
     vimSelection: vscode.Selection,
 ): vscode.Selection {
     if (vimSelection.active.isBefore(vimSelection.anchor)) {
-        return new vscode.Selection(
-            positionUtils.right(document, vimSelection.anchor),
-            vimSelection.active,
-        );
+        return new vscode.Selection(positionUtils.right(document, vimSelection.anchor), vimSelection.active);
     } else {
-        return new vscode.Selection(
-            vimSelection.anchor,
-            positionUtils.right(document, vimSelection.active),
-        );
+        return new vscode.Selection(vimSelection.anchor, positionUtils.right(document, vimSelection.active));
     }
 }
 
 export function vscodeToVimVisualLineSelection(
-    document: vscode.TextDocument,
+    _document: vscode.TextDocument,
     vscodeSelection: vscode.Selection,
 ): vscode.Selection {
     return new vscode.Selection(

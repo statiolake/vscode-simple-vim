@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { SimpleRange } from './simple_range_types';
+import type { SimpleRange } from './simple_range_types';
 
 type PartialTagOpening = {
     kind: 'opening';
@@ -43,7 +43,7 @@ export function getTags(document: vscode.TextDocument): PositionTag[] {
 }
 
 function positionTags(document: vscode.TextDocument, offsetTags: OffsetTag[]): PositionTag[] {
-    return offsetTags.map(tag => {
+    return offsetTags.map((tag) => {
         const openingRange = new vscode.Range(
             document.positionAt(tag.opening.start),
             document.positionAt(tag.opening.end),
@@ -53,10 +53,7 @@ function positionTags(document: vscode.TextDocument, offsetTags: OffsetTag[]): P
             return {
                 name: tag.name,
                 opening: openingRange,
-                closing: new vscode.Range(
-                    document.positionAt(tag.closing.start),
-                    document.positionAt(tag.closing.end),
-                ),
+                closing: new vscode.Range(document.positionAt(tag.closing.start), document.positionAt(tag.closing.end)),
             };
         } else {
             return {
@@ -71,7 +68,7 @@ function matchTags(partialTags: PartialTag[]): OffsetTag[] {
     const tags: OffsetTag[] = [];
     const openingStack: PartialTagOpening[] = [];
 
-    partialTags.forEach(partialTag => {
+    partialTags.forEach((partialTag) => {
         if (partialTag.kind === 'opening') {
             openingStack.push(partialTag);
         } else if (partialTag.kind === 'self_closing') {
@@ -108,7 +105,7 @@ function matchTags(partialTags: PartialTag[]): OffsetTag[] {
 }
 
 function getPartialTags(text: string): PartialTag[] {
-    const regex = /\<(\/)?([^\>\<\s]+)[^\>\<]*?(\/?)\>/g;
+    const regex = /<(\/)?([^><\s]+)[^><]*?(\/?)>/g;
     const tagRanges: PartialTag[] = [];
     let match = regex.exec(text);
 

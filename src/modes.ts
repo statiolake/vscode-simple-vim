@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { Mode } from './modes_types';
-import { VimState } from './vim_state_types';
+import type { VimState } from './vim_state_types';
 
 export function enterInsertMode(vimState: VimState): void {
     vimState.mode = Mode.Insert;
@@ -31,7 +31,7 @@ function setModeContext(key: string) {
         'extension.simpleVim.visualLineMode',
     ];
 
-    modeKeys.forEach(modeKey => {
+    modeKeys.forEach((modeKey) => {
         vscode.commands.executeCommand('setContext', modeKey, key === modeKey);
     });
 }

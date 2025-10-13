@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
-import { Mode } from './modes_types';
+import type { Mode } from './modes_types';
 
 export type VimState = {
     typeSubscription: vscode.Disposable | undefined;

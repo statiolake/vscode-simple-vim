@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
-import { VimState } from './vim_state_types';
+import type { VimState } from './vim_state_types';
 
 export enum ParseKeysStatus {
     YES,

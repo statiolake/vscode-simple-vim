@@ -1,15 +1,14 @@
-import * as vscode from 'vscode';
-
-import { VimState } from './vim_state_types';
+import type * as vscode from 'vscode';
+import type { Action } from './action_types';
 import { Mode } from './modes_types';
 import {
+    type OperatorRange,
+    type ParseFailure,
     ParseKeysStatus,
-    OperatorRange,
-    ParseFailure,
-    ParseOperatorPartSuccess,
-    ParseOperatorRangeSuccess,
+    type ParseOperatorPartSuccess,
+    type ParseOperatorRangeSuccess,
 } from './parse_keys_types';
-import { Action } from './action_types';
+import type { VimState } from './vim_state_types';
 
 export function arrayStartsWith<T>(prefix: T[], xs: T[]) {
     if (xs.length < prefix.length) {
@@ -184,7 +183,7 @@ export function createOperatorRangeExactKeys(
 ): OperatorRange {
     return (vimState, keys, editor) => {
         if (arrayEquals(keys, matchKeys)) {
-            const ranges = editor.selections.map(selection => {
+            const ranges = editor.selections.map((selection) => {
                 return f(vimState, editor.document, selection.active);
             });
             return {
@@ -222,7 +221,7 @@ export function createOperatorRangeRegex(
         const doesMatch = keysStr.match(doesPattern);
 
         if (doesMatch) {
-            const ranges = editor.selections.map(selection => {
+            const ranges = editor.selections.map((selection) => {
                 return f(vimState, editor.document, selection.active, doesMatch);
             });
             return {
