@@ -415,7 +415,19 @@ function createWordEndHandler(
         const result = ranges.find((x) => x.end > position.character);
 
         if (result) {
-            return new vscode.Range(position, positionUtils.right(document, position.with({ character: result.end })));
+            // In vscode-native mode, range ends after the last character (result.end + 1)
+            // In vim-traditional mode, range ends at the last character position
+            if (isVscodeNativeCursor()) {
+                return new vscode.Range(
+                    position,
+                    position.with({ character: Math.min(result.end + 1, lineText.length) }),
+                );
+            } else {
+                return new vscode.Range(
+                    position,
+                    positionUtils.right(document, position.with({ character: result.end })),
+                );
+            }
         } else {
             return undefined;
         }
