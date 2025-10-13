@@ -444,8 +444,15 @@ function createWordEndBackwardHandler(
         const lineText = document.lineAt(position.line).text;
         const ranges = wordRangesFunction(lineText);
 
-        // Find the previous word end (end < current position)
-        const result = ranges.reverse().find((x) => x.end < position.character);
+        // Find the previous word end
+        // In vscode-native mode: cursor is after character, so we need x.end + 1 < position.character
+        // In vim-traditional mode: cursor is on character, so we need x.end < position.character
+        let result: { start: number; end: number } | undefined;
+        if (isVscodeNativeCursor()) {
+            result = ranges.reverse().find((x) => x.end + 1 < position.character);
+        } else {
+            result = ranges.reverse().find((x) => x.end < position.character);
+        }
 
         if (result) {
             // In vscode-native mode, range ends after the last character (result.end + 1)
