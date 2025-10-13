@@ -123,7 +123,8 @@
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts && biome check .",
     "format": "biome format --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "package": "vsce package"
   },
   "lint-staged": {
     "*.{ts,js,mjs,json}": [
