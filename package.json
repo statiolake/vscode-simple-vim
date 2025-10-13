@@ -55,6 +55,11 @@
         "key": "ctrl+i",
         "command": "workbench.action.navigateForward",
         "when": "editorTextFocus && simple-vim.mode == 'normal'"
+      },
+      {
+        "key": "ctrl+w",
+        "command": "deleteWordLeft",
+        "when": "textInputFocus && !editorReadonly && simple-vim.mode == 'insert'"
       }
     ],
     "configuration": {
