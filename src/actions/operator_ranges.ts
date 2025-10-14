@@ -287,7 +287,7 @@ export const operatorRanges: OperatorRange[] = [
     }),
 ];
 
-function createInnerBracketHandler(
+export function createInnerBracketHandler(
     openingChar: string,
     closingChar: string,
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
@@ -305,7 +305,7 @@ function createInnerBracketHandler(
     };
 }
 
-function createOuterBracketHandler(
+export function createOuterBracketHandler(
     openingChar: string,
     closingChar: string,
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
@@ -352,7 +352,7 @@ function getBracketRange(
     }
 }
 
-function createInnerQuoteHandler(
+export function createInnerQuoteHandler(
     quoteChar: string,
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
     return (_vimState, document, position) => {
@@ -371,7 +371,7 @@ function createInnerQuoteHandler(
     };
 }
 
-function createOuterQuoteHandler(
+export function createOuterQuoteHandler(
     quoteChar: string,
 ): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
     return (_vimState, document, position) => {

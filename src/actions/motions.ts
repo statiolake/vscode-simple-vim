@@ -2,9 +2,10 @@ import * as vscode from 'vscode';
 import type { Action } from '../action_types';
 import { isVscodeNativeCursor } from '../config';
 import { Mode } from '../modes_types';
-import { paragraphBackward, paragraphForward } from '../paragraph_utils';
+import { paragraphBackward, paragraphForward, paragraphRangeInner, paragraphRangeOuter } from '../paragraph_utils';
 import { parseKeysExact, parseKeysRegex } from '../parse_keys';
 import * as positionUtils from '../position_utils';
+import { searchBackwardBracket, searchForwardBracket } from '../search_utils';
 import {
     vimToVscodeVisualLineSelection,
     vimToVscodeVisualSelection,
@@ -15,6 +16,12 @@ import type { VimState } from '../vim_state_types';
 import { setVisualLineSelections } from '../visual_line_utils';
 import { setVisualSelections } from '../visual_utils';
 import { whitespaceWordRanges, wordRanges } from '../word_utils';
+import {
+    createInnerBracketHandler,
+    createInnerQuoteHandler,
+    createOuterBracketHandler,
+    createOuterQuoteHandler,
+} from './operator_ranges';
 
 export const motions: Action[] = [
     parseKeysExact(['l'], [Mode.Normal, Mode.Visual], (vimState, editor) => {
@@ -244,6 +251,124 @@ export const motions: Action[] = [
         vscode.commands.executeCommand('cursorMove', { to: 'viewPortBottom', by: 'line', select: true }).then(() => {
             setVisualLineSelections(editor);
         });
+    }),
+
+    // Text object selections for visual mode
+    parseKeysExact(['i', 'w'], [Mode.Visual], createTextObjectHandler(createInnerWordHandler(wordRanges))),
+    parseKeysExact(['i', 'W'], [Mode.Visual], createTextObjectHandler(createInnerWordHandler(whitespaceWordRanges))),
+    parseKeysExact(['a', 'w'], [Mode.Visual], createTextObjectHandler(createOuterWordHandler(wordRanges))),
+    parseKeysExact(['a', 'W'], [Mode.Visual], createTextObjectHandler(createOuterWordHandler(whitespaceWordRanges))),
+
+    // Bracket text objects
+    parseKeysExact(['i', '('], [Mode.Visual], createTextObjectHandler(createInnerBracketHandler('(', ')'))),
+    parseKeysExact(['i', 'b'], [Mode.Visual], createTextObjectHandler(createInnerBracketHandler('(', ')'))),
+    parseKeysExact(['a', '('], [Mode.Visual], createTextObjectHandler(createOuterBracketHandler('(', ')'))),
+    parseKeysExact(['a', 'b'], [Mode.Visual], createTextObjectHandler(createOuterBracketHandler('(', ')'))),
+
+    parseKeysExact(['i', '{'], [Mode.Visual], createTextObjectHandler(createInnerBracketHandler('{', '}'))),
+    parseKeysExact(['i', 'B'], [Mode.Visual], createTextObjectHandler(createInnerBracketHandler('{', '}'))),
+    parseKeysExact(['a', '{'], [Mode.Visual], createTextObjectHandler(createOuterBracketHandler('{', '}'))),
+    parseKeysExact(['a', 'B'], [Mode.Visual], createTextObjectHandler(createOuterBracketHandler('{', '}'))),
+
+    parseKeysExact(['i', '['], [Mode.Visual], createTextObjectHandler(createInnerBracketHandler('[', ']'))),
+    parseKeysExact(['a', '['], [Mode.Visual], createTextObjectHandler(createOuterBracketHandler('[', ']'))),
+
+    parseKeysExact(['i', '<'], [Mode.Visual], createTextObjectHandler(createInnerBracketHandler('<', '>'))),
+    parseKeysExact(['a', '<'], [Mode.Visual], createTextObjectHandler(createOuterBracketHandler('<', '>'))),
+
+    // Quote text objects
+    parseKeysExact(['i', "'"], [Mode.Visual], createTextObjectHandler(createInnerQuoteHandler("'"))),
+    parseKeysExact(['a', "'"], [Mode.Visual], createTextObjectHandler(createOuterQuoteHandler("'"))),
+
+    parseKeysExact(['i', '"'], [Mode.Visual], createTextObjectHandler(createInnerQuoteHandler('"'))),
+    parseKeysExact(['a', '"'], [Mode.Visual], createTextObjectHandler(createOuterQuoteHandler('"'))),
+
+    parseKeysExact(['i', '`'], [Mode.Visual], createTextObjectHandler(createInnerQuoteHandler('`'))),
+    parseKeysExact(['a', '`'], [Mode.Visual], createTextObjectHandler(createOuterQuoteHandler('`'))),
+
+    // Jump to matching bracket in visual mode
+    parseKeysExact(['%'], [Mode.Visual], (vimState, editor) => {
+        execMotion(vimState, editor, ({ document, position }) => {
+            const lineText = document.lineAt(position.line).text;
+            const currentChar = lineText[position.character];
+
+            const bracketPairs = [
+                ['(', ')'],
+                ['{', '}'],
+                ['[', ']'],
+                ['<', '>'],
+            ];
+
+            // Find which bracket pair we're on
+            for (const [open, close] of bracketPairs) {
+                if (currentChar === open) {
+                    const target = searchForwardBracket(
+                        document,
+                        open,
+                        close,
+                        positionUtils.rightWrap(document, position),
+                    );
+                    if (target) {
+                        // In vscode-native mode, move after the closing bracket
+                        // In vim-traditional mode, move to the closing bracket
+                        if (isVscodeNativeCursor()) {
+                            return positionUtils.right(document, target);
+                        } else {
+                            return target;
+                        }
+                    }
+                } else if (currentChar === close) {
+                    const target = searchBackwardBracket(
+                        document,
+                        open,
+                        close,
+                        positionUtils.leftWrap(document, position),
+                    );
+                    if (target) {
+                        return target;
+                    }
+                }
+            }
+
+            return position;
+        });
+    }),
+
+    // Paragraph text objects
+    parseKeysExact(['i', 'p'], [Mode.Visual], (_vimState, editor) => {
+        const document = editor.document;
+        const newSelections = editor.selections.map((selection) => {
+            const vimSelection = vscodeToVimVisualSelection(document, selection);
+            const result = paragraphRangeInner(document, vimSelection.active.line);
+
+            if (result) {
+                return new vscode.Selection(
+                    new vscode.Position(result.start, 0),
+                    new vscode.Position(result.end, document.lineAt(result.end).text.length),
+                );
+            } else {
+                return selection;
+            }
+        });
+        editor.selections = newSelections;
+    }),
+
+    parseKeysExact(['a', 'p'], [Mode.Visual], (_vimState, editor) => {
+        const document = editor.document;
+        const newSelections = editor.selections.map((selection) => {
+            const vimSelection = vscodeToVimVisualSelection(document, selection);
+            const result = paragraphRangeOuter(document, vimSelection.active.line);
+
+            if (result) {
+                return new vscode.Selection(
+                    new vscode.Position(result.start, 0),
+                    new vscode.Position(result.end, document.lineAt(result.end).text.length),
+                );
+            } else {
+                return selection;
+            }
+        });
+        editor.selections = newSelections;
     }),
 ];
 
@@ -549,5 +674,85 @@ function createWordEndBackwardHandler(
                 return position;
             }
         });
+    };
+}
+
+function createTextObjectHandler(
+    rangeFunction: (
+        vimState: VimState,
+        document: vscode.TextDocument,
+        position: vscode.Position,
+    ) => vscode.Range | undefined,
+): (vimState: VimState, editor: vscode.TextEditor) => void {
+    return (vimState, editor) => {
+        const document = editor.document;
+
+        const newSelections = editor.selections.map((selection) => {
+            const vimSelection = vscodeToVimVisualSelection(document, selection);
+            const range = rangeFunction(vimState, document, vimSelection.active);
+
+            if (range) {
+                // Create a new selection that spans from the start to the end of the range
+                return new vscode.Selection(range.start, range.end);
+            } else {
+                return selection;
+            }
+        });
+
+        editor.selections = newSelections;
+    };
+}
+
+function createInnerWordHandler(
+    wordRangesFunction: (text: string) => { start: number; end: number }[],
+): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
+    return (_vimState, document, position) => {
+        const lineText = document.lineAt(position.line).text;
+        const ranges = wordRangesFunction(lineText);
+
+        const result = ranges.find((x) => x.start <= position.character && position.character <= x.end);
+
+        if (result) {
+            return new vscode.Range(
+                position.with({ character: result.start }),
+                positionUtils.right(document, position.with({ character: result.end })),
+            );
+        } else {
+            return undefined;
+        }
+    };
+}
+
+function createOuterWordHandler(
+    wordRangesFunction: (text: string) => { start: number; end: number }[],
+): (vimState: VimState, document: vscode.TextDocument, position: vscode.Position) => vscode.Range | undefined {
+    return (_vimState, document, position) => {
+        const lineText = document.lineAt(position.line).text;
+        const ranges = wordRangesFunction(lineText);
+
+        for (let i = 0; i < ranges.length; ++i) {
+            const range = ranges[i];
+
+            if (range.start <= position.character && position.character <= range.end) {
+                if (i < ranges.length - 1) {
+                    return new vscode.Range(
+                        position.with({ character: range.start }),
+                        position.with({ character: ranges[i + 1].start }),
+                    );
+                } else if (i > 0) {
+                    return new vscode.Range(
+                        positionUtils.right(document, position.with({ character: ranges[i - 1].end })),
+                        positionUtils.right(document, position.with({ character: range.end })),
+                    );
+                } else {
+                    return new vscode.Range(
+                        position.with({ character: range.start }),
+                        positionUtils.right(document, position.with({ character: range.end })),
+                    );
+                }
+            }
+        }
+
+        return undefined;
     };
 }

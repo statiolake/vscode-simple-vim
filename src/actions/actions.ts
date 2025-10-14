@@ -13,7 +13,7 @@ import { setVisualLineSelections } from '../visual_line_utils';
 import { flashYankHighlight } from '../yank_highlight';
 
 export const actions: Action[] = [
-    parseKeysExact(['i'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (vimState, editor) => {
+    parseKeysExact(['i'], [Mode.Normal], (vimState, editor) => {
         enterInsertMode(vimState);
         setModeCursorStyle(vimState.mode, editor);
         removeTypeSubscription(vimState);
@@ -247,6 +247,14 @@ export const actions: Action[] = [
 
     parseKeysExact([','], [Mode.Normal], (vimState, editor) => {
         vimState.commaAction(vimState, editor);
+    }),
+
+    parseKeysExact(['J'], [Mode.Normal, Mode.Visual, Mode.VisualLine], (_vimState, _editor) => {
+        vscode.commands.executeCommand('editor.action.joinLines');
+    }),
+
+    parseKeysExact(['%'], [Mode.Normal], (_vimState, _editor) => {
+        vscode.commands.executeCommand('editor.action.jumpToBracket');
     }),
 ];
 
