@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
-import { buildActions } from './actions';
-import { reloadCustomBindings } from './custom_bindings';
+import { buildActions } from './actionSystem/actions';
+import { typeHandler } from './actionSystem/typeHandler';
 import { escapeHandler } from './escape_handler';
 import { enterNormalMode, enterVisualMode, setModeCursorStyle } from './modes';
-import { Mode } from './modes_types';
-import { typeHandler } from './type_handler';
-import type { VimState } from './vim_state_types';
+import { Mode } from './modesTypes';
+import type { VimState } from './vimStateTypes';
 
 let statusBarItem: vscode.StatusBarItem;
 
@@ -31,26 +30,30 @@ export function updateStatusBar(mode: Mode): void {
 }
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
-    if (vimState.mode === Mode.Insert) return;
-
     if (e.selections.every((selection) => selection.isEmpty)) {
         // It would be nice if we could always go from visual to normal mode when all selections are empty
         // but visual mode on an empty line will yield an empty selection and there's no good way of
         // distinguishing that case from the rest. So we only do it for mouse events.
-        if (
-            (vimState.mode === Mode.Visual || vimState.mode === Mode.VisualLine) &&
-            e.kind === vscode.TextEditorSelectionChangeKind.Mouse
-        ) {
+        if (e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
             enterNormalMode(vimState);
             setModeCursorStyle(vimState.mode, e.textEditor);
             updateStatusBar(vimState.mode);
         }
+    } else if (vimState.mode === Mode.VisualLine) {
+        e.textEditor.selections = e.textEditor.selections.map((selection) => {
+            const anchorLine = selection.anchor.line;
+            const activeLine = selection.active.line;
+            const anchorCharacter = anchorLine <= activeLine ? 0 : e.textEditor.document.lineAt(anchorLine).text.length;
+            const activeCharacter = anchorLine <= activeLine ? e.textEditor.document.lineAt(activeLine).text.length : 0;
+            return new vscode.Selection(
+                new vscode.Position(selection.anchor.line, anchorCharacter),
+                new vscode.Position(selection.active.line, activeCharacter),
+            );
+        });
     } else {
-        if (vimState.mode === Mode.Normal) {
-            enterVisualMode(vimState);
-            setModeCursorStyle(vimState.mode, e.textEditor);
-            updateStatusBar(vimState.mode);
-        }
+        enterVisualMode(vimState);
+        setModeCursorStyle(vimState.mode, e.textEditor);
+        updateStatusBar(vimState.mode);
     }
 }
 
@@ -74,8 +77,7 @@ function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEdit
 }
 
 function onDidChangeConfiguration(vimState: VimState, e: vscode.ConfigurationChangeEvent): void {
-    if (e.affectsConfiguration('simple-vim.customBindings')) {
-        reloadCustomBindings();
+    if (e.affectsConfiguration('simple-vim')) {
         vimState.actions = buildActions();
     }
 }
@@ -90,8 +92,7 @@ export function activate(context: vscode.ExtensionContext): void {
             contentsList: [],
             linewise: true,
         },
-        semicolonAction: () => undefined,
-        commaAction: () => undefined,
+        lastFtChar: '',
         lastPutRanges: {
             ranges: [],
             linewise: true,

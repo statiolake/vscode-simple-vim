@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { isVscodeNativeCursor } from './config';
+// VS Codeネイティブカーソル動作を常に使用
 
 export function left(position: vscode.Position, count: number = 1): vscode.Position {
     return position.with({
@@ -19,21 +19,8 @@ export function rightNormal(
     position: vscode.Position,
     count: number = 1,
 ): vscode.Position {
-    // In vscode-native mode, allow cursor to move to end-of-line + 1
-    if (isVscodeNativeCursor()) {
-        return right(document, position, count);
-    }
-
-    // In vim-traditional mode, limit cursor to last character
-    const lineLength = document.lineAt(position.line).text.length;
-
-    if (lineLength === 0) {
-        return position.with({ character: 0 });
-    } else {
-        return position.with({
-            character: Math.min(position.character + count, lineLength - 1),
-        });
-    }
+    // VS Codeネイティブ：行末+1の位置まで移動可能
+    return right(document, position, count);
 }
 
 export function leftWrap(document: vscode.TextDocument, position: vscode.Position): vscode.Position {

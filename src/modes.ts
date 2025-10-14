@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
-import { isVscodeNativeCursor } from './config';
-import { Mode } from './modes_types';
-import type { VimState } from './vim_state_types';
+import { Mode } from './modesTypes';
+import type { VimState } from './vimStateTypes';
+// VS Codeネイティブカーソル動作を常に使用
 
 export function enterInsertMode(vimState: VimState): void {
     vimState.mode = Mode.Insert;
@@ -43,11 +43,8 @@ export function setModeCursorStyle(mode: Mode, editor: vscode.TextEditor): void 
     if (mode === Mode.Insert) {
         editor.options.cursorStyle = vscode.TextEditorCursorStyle.Line;
     } else if (mode === Mode.Normal) {
-        if (isVscodeNativeCursor()) {
-            editor.options.cursorStyle = vscode.TextEditorCursorStyle.Line;
-        } else {
-            editor.options.cursorStyle = vscode.TextEditorCursorStyle.Block;
-        }
+        // VS Codeネイティブ：常にLineカーソルを使用
+        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Line;
     } else if (mode === Mode.Visual || mode === Mode.VisualLine) {
         editor.options.cursorStyle = vscode.TextEditorCursorStyle.LineThin;
     }

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { enterNormalMode, setModeCursorStyle } from '../modes';
-import { Mode } from '../modes_types';
+import { Mode } from '../modesTypes';
 import * as positionUtils from '../position_utils';
-import type { VimState } from '../vim_state_types';
+import type { VimState } from '../vimStateTypes';
 import {
     adjustInsertPositions,
     getInsertRangesFromBeginning,

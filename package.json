@@ -74,19 +74,6 @@
           "default": "#F8F3AB",
           "description": "Background color that flashes to show the range when yanking."
         },
-        "simple-vim.cursorBehavior": {
-          "type": "string",
-          "enum": [
-            "vscode-native",
-            "vim-traditional"
-          ],
-          "default": "vscode-native",
-          "enumDescriptions": [
-            "Cursor positions between characters (VS Code native behavior). Allows cursor at end-of-line + 1. In Normal mode, 't' moves before character, 'f' moves after character.",
-            "Cursor positions on characters (traditional Vim behavior). Cursor limited to last character. In Normal mode, 't' and 'f' both move to character position."
-          ],
-          "description": "Controls cursor positioning behavior in Normal mode."
-        },
         "simple-vim.customBindings": {
           "type": "array",
           "default": [],

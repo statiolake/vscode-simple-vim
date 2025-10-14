@@ -1,21 +1,22 @@
 import type * as vscode from 'vscode';
+import type { Mode } from './modesTypes';
+import type { Action } from './actionSystem/actionTypes';
 
-import type { Action } from './action_types';
-import type { Mode } from './modes_types';
-
+/**
+ * Vimの状態 (mutableに変更される)
+ */
 export type VimState = {
-    typeSubscription: vscode.Disposable | undefined;
     mode: Mode;
+    typeSubscription: vscode.Disposable | undefined;
     keysPressed: string[];
     actions: Action[];
     registers: {
         contentsList: (string | undefined)[];
         linewise: boolean;
     };
-    semicolonAction: (vimState: VimState, editor: vscode.TextEditor) => void;
-    commaAction: (vimState: VimState, editor: vscode.TextEditor) => void;
     lastPutRanges: {
         ranges: (vscode.Range | undefined)[];
         linewise: boolean;
     };
+    lastFtChar: string; // f/F/t/T で検索した文字を保持
 };

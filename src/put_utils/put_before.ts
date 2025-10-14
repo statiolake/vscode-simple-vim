@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import * as positionUtils from '../position_utils';
-import type { VimState } from '../vim_state_types';
+import type { VimState } from '../vimStateTypes';
 import { adjustInsertPositions, getInsertRangesFromBeginning, getRegisterContentsList } from './common';
 
 export function putBefore(vimState: VimState, editor: vscode.TextEditor) {

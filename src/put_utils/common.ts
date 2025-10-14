@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { VimState } from '../vim_state_types';
+import type { VimState } from '../vimStateTypes';
 
 export function getRegisterContentsList(vimState: VimState, editor: vscode.TextEditor) {
     if (vimState.registers.contentsList.length === 0) return undefined;

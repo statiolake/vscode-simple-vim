@@ -1,40 +1,20 @@
 import * as vscode from 'vscode';
-
-import { isVscodeNativeCursor } from './config';
-import * as positionUtils from './position_utils';
+// VS Codeネイティブカーソル動作を常に使用
 
 export function vscodeToVimVisualSelection(
     _document: vscode.TextDocument,
     vscodeSelection: vscode.Selection,
 ): vscode.Selection {
-    // In vscode-native mode, use selection as-is
-    // In vim-traditional mode, adjust selection for Vim's character-based positioning
-    if (isVscodeNativeCursor()) {
-        return vscodeSelection;
-    }
-
-    if (vscodeSelection.active.isBefore(vscodeSelection.anchor)) {
-        return new vscode.Selection(positionUtils.left(vscodeSelection.anchor), vscodeSelection.active);
-    } else {
-        return new vscode.Selection(vscodeSelection.anchor, positionUtils.left(vscodeSelection.active));
-    }
+    // VS Codeネイティブ：selectionをそのまま使用
+    return vscodeSelection;
 }
 
 export function vimToVscodeVisualSelection(
-    document: vscode.TextDocument,
+    _document: vscode.TextDocument,
     vimSelection: vscode.Selection,
 ): vscode.Selection {
-    // In vscode-native mode, use selection as-is
-    // In vim-traditional mode, adjust selection for VS Code's between-character positioning
-    if (isVscodeNativeCursor()) {
-        return vimSelection;
-    }
-
-    if (vimSelection.active.isBefore(vimSelection.anchor)) {
-        return new vscode.Selection(positionUtils.right(document, vimSelection.anchor), vimSelection.active);
-    } else {
-        return new vscode.Selection(vimSelection.anchor, positionUtils.right(document, vimSelection.active));
-    }
+    // VS Codeネイティブ：selectionをそのまま使用
+    return vimSelection;
 }
 
 export function vscodeToVimVisualLineSelection(

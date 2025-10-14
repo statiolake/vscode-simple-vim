@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { VimState } from './vim_state_types';
+import type { VimState } from './vimStateTypes';
 
 export function addTypeSubscription(vimState: VimState, typeHandler: (vimState: VimState, char: string) => void): void {
     vimState.typeSubscription = vscode.commands.registerCommand('type', (e) => {

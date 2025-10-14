@@ -22,7 +22,7 @@ export function whitespaceWordRanges(text: string): { start: number; end: number
             if (isWhitespaceCharacter(char)) {
                 ranges.push({
                     start: startIndex,
-                    end: i - 1,
+                    end: i,
                 });
 
                 state = State.Whitespace;
@@ -33,7 +33,7 @@ export function whitespaceWordRanges(text: string): { start: number; end: number
     if (state === State.Word) {
         ranges.push({
             start: startIndex,
-            end: text.length - 1,
+            end: text.length,
         });
     }
 
@@ -63,7 +63,7 @@ export function wordRanges(text: string): { start: number; end: number }[] {
             if (!isWordCharacter(char)) {
                 ranges.push({
                     start: startIndex,
-                    end: i - 1,
+                    end: i,
                 });
 
                 if (isWhitespaceCharacter(char)) {
@@ -77,7 +77,7 @@ export function wordRanges(text: string): { start: number; end: number }[] {
             if (!isNonWordCharacter(char)) {
                 ranges.push({
                     start: startIndex,
-                    end: i - 1,
+                    end: i,
                 });
 
                 if (isWhitespaceCharacter(char)) {
@@ -93,7 +93,7 @@ export function wordRanges(text: string): { start: number; end: number }[] {
     if (state !== State.Whitespace) {
         ranges.push({
             start: startIndex,
-            end: text.length - 1,
+            end: text.length,
         });
     }
 
