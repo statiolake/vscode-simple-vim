@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { typeHandler } from './actionSystem/typeHandler';
 import type { Mode } from './modesTypes';
 import type { VimState } from './vimStateTypes';
+import { expandSelectionsToFullLines } from './visualLineUtils';
 
 export function enterMode(vimState: VimState, editor: vscode.TextEditor | undefined, mode: Mode): void {
     vimState.mode = mode;
@@ -9,6 +10,11 @@ export function enterMode(vimState: VimState, editor: vscode.TextEditor | undefi
     updateCursorStyle(editor, mode);
     updateStatusBar(vimState, mode);
     updateTypeHandler(vimState, mode);
+
+    if (mode === 'visualLine' && editor) {
+        // Visual Line モードに入ったら、選択範囲を行全体に拡張する
+        expandSelectionsToFullLines(editor);
+    }
 }
 
 function updateModeContext(mode: Mode) {

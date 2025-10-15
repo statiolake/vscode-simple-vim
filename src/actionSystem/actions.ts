@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { enterMode } from '../modes';
 import { buildMotions } from '../motionSystem/motions';
 import { buildTextObjects } from '../textObjectSystem/textObjects';
-import { expandSelectionsToFullLines } from '../visualLineUtils';
 import { motionToAction, newAction, newOperatorAction } from './actionBuilder';
 import type { Action } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用
@@ -95,7 +94,6 @@ export function buildActions(): Action[] {
             modes: ['normal', 'visual'],
             execute: (context, vimState) => {
                 enterMode(vimState, context.editor, 'visualLine');
-                expandSelectionsToFullLines(context.editor);
             },
         }),
 
