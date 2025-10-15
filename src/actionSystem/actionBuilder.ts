@@ -5,7 +5,6 @@ import type { KeysParser } from '../keysParser/keysParserTypes';
 import type { Mode } from '../modesTypes';
 import type { Motion } from '../motionSystem/motionTypes';
 import type { TextObject } from '../textObjectSystem/textObjectTypes';
-import type { VimState } from '../vimStateTypes';
 import type { Action, ActionResult } from './actionTypes';
 
 /**
@@ -14,11 +13,11 @@ import type { Action, ActionResult } from './actionTypes';
 function createAction(
     keysParser: KeysParser,
     modes: Mode[],
-    execute: (context: Context, vimState: VimState, variables: Record<string, string>) => void,
+    execute: (context: Context, variables: Record<string, string>) => void,
 ): Action {
-    return (context: Context, keys: string[], vimState: VimState): ActionResult => {
+    return (context: Context, keys: string[]): ActionResult => {
         // モードチェック
-        if (!modes.includes(vimState.mode)) {
+        if (!modes.includes(context.vimState.mode)) {
             return 'noMatch';
         }
 
@@ -34,7 +33,7 @@ function createAction(
         }
 
         // 実行 (variablesを渡す)
-        execute(context, vimState, parseResult.variables);
+        execute(context, parseResult.variables);
         return 'executed';
     };
 }
@@ -42,14 +41,10 @@ function createAction(
 /**
  * 通常のActionを作成
  */
-export function newAction(config: {
-    keys: string[];
-    modes: Mode[];
-    execute: (context: Context, vimState: VimState) => void;
-}): Action {
+export function newAction(config: { keys: string[]; modes: Mode[]; execute: (context: Context) => void }): Action {
     const keysParser = keysParserPrefix(config.keys);
-    return createAction(keysParser, config.modes, (context, vimState, _variables) => {
-        config.execute(context, vimState);
+    return createAction(keysParser, config.modes, (context, _variables) => {
+        config.execute(context);
     });
 }
 
@@ -60,7 +55,7 @@ export function newRegexAction(config: {
     pattern: RegExp;
     partial: RegExp;
     modes: Mode[];
-    execute: (context: Context, vimState: VimState, variables: Record<string, string>) => void;
+    execute: (context: Context, variables: Record<string, string>) => void;
 }): Action {
     const keysParser = keysParserRegex(config.pattern, config.partial);
     return createAction(keysParser, config.modes, config.execute);
@@ -72,9 +67,9 @@ export function newRegexAction(config: {
  */
 export function motionToAction(motion: Motion): Action {
     const modes = ['normal'];
-    return (context: Context, keys: string[], vimState: VimState): ActionResult => {
+    return (context: Context, keys: string[]): ActionResult => {
         // モードチェック
-        if (!modes.includes(vimState.mode)) {
+        if (!modes.includes(context.vimState.mode)) {
             return 'noMatch';
         }
 
@@ -102,7 +97,7 @@ export function motionToAction(motion: Motion): Action {
                 return currentSelection;
             }
 
-            if (vimState.mode === 'visual' || vimState.mode === 'visualLine') {
+            if (context.vimState.mode === 'visual' || context.vimState.mode === 'visualLine') {
                 // Visual モードでは選択範囲を拡張する
                 return new vscode.Selection(currentSelection.anchor, result.position);
             } else {
@@ -123,9 +118,9 @@ export function motionToAction(motion: Motion): Action {
 
 export function textObjectToVisualAction(textObject: TextObject): Action {
     const modes = ['visual', 'visualLine'];
-    return (context: Context, keys: string[], vimState: VimState): ActionResult => {
+    return (context: Context, keys: string[]): ActionResult => {
         // モードチェック
-        if (!modes.includes(vimState.mode)) {
+        if (!modes.includes(context.vimState.mode)) {
             return 'noMatch';
         }
 
@@ -188,13 +183,13 @@ export function newOperatorAction(config: {
     modes: Mode[];
     wholeLineTextObject: TextObject;
     textObjects: TextObject[];
-    execute: (context: Context, vimState: VimState, ranges: vscode.Range[]) => void;
+    execute: (context: Context, ranges: vscode.Range[]) => void;
 }): Action {
     const operatorParser = keysParserPrefix(config.operatorKeys);
 
-    return (context: Context, keys: string[], vimState: VimState): ActionResult => {
+    return (context: Context, keys: string[]): ActionResult => {
         // モードチェック
-        if (!config.modes.includes(vimState.mode)) {
+        if (!config.modes.includes(context.vimState.mode)) {
             return 'noMatch';
         }
 
@@ -257,7 +252,7 @@ export function newOperatorAction(config: {
                 return new vscode.Range(currentSelection.active, currentSelection.active);
             });
 
-            config.execute(context, vimState, ranges);
+            config.execute(context, ranges);
             return 'executed';
         }
 

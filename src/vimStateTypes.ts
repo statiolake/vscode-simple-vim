@@ -15,5 +15,7 @@ export type VimState = {
     register: {
         contents: (string | undefined)[];
     };
-    lastFtChar: string; // f/F/t/T で検索した文字を保持
+    // f/F/t/T の繰り返し用
+    lastFtChar: string; // 最後に検索した文字
+    lastFtCommand: 'f' | 'F' | 't' | 'T' | undefined; // 最後に使ったコマンド
 };

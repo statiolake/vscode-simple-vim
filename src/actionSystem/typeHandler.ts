@@ -18,6 +18,7 @@ export function typeHandler(vimState: VimState, char: string): void {
     const context: Context = {
         editor,
         document: editor.document,
+        vimState,
     };
 
     // Try to execute an action
@@ -25,7 +26,7 @@ export function typeHandler(vimState: VimState, char: string): void {
     let needsMore = false;
 
     for (const action of vimState.actions) {
-        const result = action(context, vimState.keysPressed, vimState);
+        const result = action(context, vimState.keysPressed);
 
         if (result === 'executed') {
             executed = true;

@@ -61,6 +61,7 @@ export function activate(context: vscode.ExtensionContext): void {
             contents: [],
         },
         lastFtChar: '',
+        lastFtCommand: undefined,
     };
 
     enterMode(vimState, vscode.window.activeTextEditor, 'normal');
