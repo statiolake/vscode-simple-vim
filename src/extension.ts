@@ -30,16 +30,13 @@ export function updateStatusBar(mode: Mode): void {
 }
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
-    if (e.selections.every((selection) => selection.isEmpty)) {
-        // It would be nice if we could always go from visual to normal mode when all selections are empty
-        // but visual mode on an empty line will yield an empty selection and there's no good way of
-        // distinguishing that case from the rest. So we only do it for mouse events.
-        if (e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
-            enterNormalMode(vimState);
-            setModeCursorStyle(vimState.mode, e.textEditor);
-            updateStatusBar(vimState.mode);
-        }
+    if (e.selections.every((selection) => selection.isEmpty) && e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
+        // マウスをクリックしたことにより選択範囲が無になった場合は、ノーマルモードに戻る
+        enterNormalMode(vimState);
+        setModeCursorStyle(vimState.mode, e.textEditor);
+        updateStatusBar(vimState.mode);
     } else if (vimState.mode === Mode.VisualLine) {
+        // Visual Line モードでは、常に選択範囲を行全体に拡張する
         e.textEditor.selections = e.textEditor.selections.map((selection) => {
             const anchorLine = selection.anchor.line;
             const activeLine = selection.active.line;
@@ -51,6 +48,7 @@ function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChan
             );
         });
     } else {
+        // それ以外のモードで選択状態になった場合は Visual モードへ移行する
         enterVisualMode(vimState);
         setModeCursorStyle(vimState.mode, e.textEditor);
         updateStatusBar(vimState.mode);
