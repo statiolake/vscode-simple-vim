@@ -71,7 +71,7 @@ export function newRegexAction(config: {
  * Motion自体がキーパースを行うため、単純に委譲する
  */
 export function motionToAction(motion: Motion): Action {
-    const modes = ['normal', 'visual', 'visualLine'];
+    const modes = ['normal'];
     return (context: Context, keys: string[], vimState: VimState): ActionResult => {
         // モードチェック
         if (!modes.includes(vimState.mode)) {
@@ -116,6 +116,62 @@ export function motionToAction(motion: Motion): Action {
             new vscode.Range(newSelections[0].active, newSelections[0].active),
             vscode.TextEditorRevealType.Default,
         );
+
+        return 'executed';
+    };
+}
+
+export function textObjectToVisualAction(textObject: TextObject): Action {
+    const modes = ['visual', 'visualLine'];
+    return (context: Context, keys: string[], vimState: VimState): ActionResult => {
+        // モードチェック
+        if (!modes.includes(vimState.mode)) {
+            return 'noMatch';
+        }
+
+        // 各カーソル位置で TextObject を実行
+        // 一つでも match 以外があれば、すぐ返す
+        const results = [];
+        for (const selection of context.editor.selections) {
+            const result = textObject(context, keys, selection.active);
+            if (result.result !== 'match') {
+                return result.result;
+            }
+            results.push(result);
+        }
+
+        // 基本的には、anchor は動かさず active をセットする。ただし、anchor
+        // が遡るような range が帰ってきた場合は、anchor も調整する。
+        context.editor.selections = results.map((result, index) => {
+            const currentSelection = context.editor.selections[index];
+
+            // どちらが anchor になるのかは少し考える必要がある。 w, b などの
+            // 通常のモーションであれば、片方は今のカーソル位置と一致している
+            // はず。そちらを anchor とする。iw など両方が変化してしまう場合
+            // は、anchor == start, active == end とみなす。
+            const resultAnchor = currentSelection.active.isEqual(result.range.end)
+                ? result.range.end
+                : result.range.start;
+            const resultActive = currentSelection.active.isEqual(result.range.end)
+                ? result.range.start
+                : result.range.end;
+
+            if (currentSelection.isEmpty) {
+                return new vscode.Selection(resultAnchor, resultActive);
+            }
+
+            if (!currentSelection.isReversed) {
+                return new vscode.Selection(
+                    currentSelection.anchor.isAfterOrEqual(resultAnchor) ? resultAnchor : currentSelection.anchor,
+                    resultActive,
+                );
+            }
+
+            return new vscode.Selection(
+                currentSelection.anchor.isBeforeOrEqual(resultAnchor) ? resultAnchor : currentSelection.anchor,
+                resultActive,
+            );
+        });
 
         return 'executed';
     };

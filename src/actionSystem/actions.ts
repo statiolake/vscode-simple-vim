@@ -3,7 +3,7 @@ import { enterMode } from '../modes';
 import { buildMotions } from '../motionSystem/motions';
 import { newWholeLineTextObject } from '../textObjectSystem/textObjectBuilder';
 import { buildTextObjects } from '../textObjectSystem/textObjects';
-import { motionToAction, newAction, newOperatorAction } from './actionBuilder';
+import { motionToAction, newAction, newOperatorAction, textObjectToVisualAction } from './actionBuilder';
 import type { Action } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用
 
@@ -242,6 +242,9 @@ export function buildActions(): Action[] {
     // オペレータ: d, y, c
     // TextObjects (Motionsから変換されたものも含む)をターゲットとして使用
     const textObjects = buildTextObjects(motions);
+
+    // ビジュアルモードで選択範囲をテキストオブジェクトで指定するためのやつ
+    actions.push(...textObjects.map((obj) => textObjectToVisualAction(obj)));
 
     console.log(`Building operator actions with ${textObjects.length} text objects`);
 
