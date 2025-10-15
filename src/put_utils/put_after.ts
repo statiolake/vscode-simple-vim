@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { enterNormalMode, setModeCursorStyle } from '../modes';
+import { enterNormalMode } from '../modes';
 import { Mode } from '../modesTypes';
 import * as positionUtils from '../position_utils';
 import type { VimState } from '../vimStateTypes';
@@ -135,8 +135,7 @@ function visualMode(vimState: VimState, editor: vscode.TextEditor, registerConte
             });
         });
 
-    enterNormalMode(vimState);
-    setModeCursorStyle(vimState.mode, editor);
+    enterNormalMode(vimState, editor);
 }
 
 function visualLineMode(vimState: VimState, editor: vscode.TextEditor, registerContentsList: (string | undefined)[]) {
@@ -159,7 +158,6 @@ function visualLineMode(vimState: VimState, editor: vscode.TextEditor, registerC
                 return new vscode.Selection(selection.start, selection.start);
             });
 
-            enterNormalMode(vimState);
-            setModeCursorStyle(vimState.mode, editor);
+            enterNormalMode(vimState, editor);
         });
 }

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { enterInsertMode, enterNormalMode, enterVisualLineMode, enterVisualMode, setModeCursorStyle } from '../modes';
+import { enterInsertMode, enterNormalMode, enterVisualLineMode, enterVisualMode } from '../modes';
 import { Mode } from '../modesTypes';
 import { buildMotions } from '../motionSystem/motions';
 import { buildTextObjects } from '../textObjectSystem/textObjects';
@@ -23,8 +23,7 @@ export function buildActions(): Action[] {
             keys: ['i'],
             modes: [Mode.Normal],
             execute: (context, vimState) => {
-                enterInsertMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterInsertMode(vimState, context.editor);
                 removeTypeSubscription(vimState);
             },
         }),
@@ -33,8 +32,7 @@ export function buildActions(): Action[] {
             keys: ['a'],
             modes: [Mode.Normal],
             execute: (context, vimState) => {
-                enterInsertMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterInsertMode(vimState, context.editor);
                 removeTypeSubscription(vimState);
             },
         }),
@@ -49,8 +47,7 @@ export function buildActions(): Action[] {
                     return new vscode.Selection(newPosition, newPosition);
                 });
 
-                enterInsertMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterInsertMode(vimState, context.editor);
                 removeTypeSubscription(vimState);
             },
         }),
@@ -65,8 +62,7 @@ export function buildActions(): Action[] {
                     return new vscode.Selection(newPosition, newPosition);
                 });
 
-                enterInsertMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterInsertMode(vimState, context.editor);
                 removeTypeSubscription(vimState);
             },
         }),
@@ -76,8 +72,7 @@ export function buildActions(): Action[] {
             modes: [Mode.Normal],
             execute: (context, vimState) => {
                 vscode.commands.executeCommand('editor.action.insertLineAfter');
-                enterInsertMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterInsertMode(vimState, context.editor);
                 removeTypeSubscription(vimState);
             },
         }),
@@ -87,8 +82,7 @@ export function buildActions(): Action[] {
             modes: [Mode.Normal],
             execute: (context, vimState) => {
                 vscode.commands.executeCommand('editor.action.insertLineBefore');
-                enterInsertMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterInsertMode(vimState, context.editor);
                 removeTypeSubscription(vimState);
             },
         }),
@@ -107,8 +101,7 @@ export function buildActions(): Action[] {
                     });
                 }
 
-                enterVisualMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterVisualMode(vimState, context.editor);
             },
         }),
 
@@ -126,8 +119,7 @@ export function buildActions(): Action[] {
                     );
                 });
 
-                enterVisualLineMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterVisualLineMode(vimState, context.editor);
             },
         }),
 
@@ -135,8 +127,7 @@ export function buildActions(): Action[] {
             keys: ['Escape'],
             modes: [Mode.Visual, Mode.VisualLine],
             execute: (context, vimState) => {
-                enterNormalMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterNormalMode(vimState, context.editor);
             },
         }),
     );
@@ -237,8 +228,7 @@ export function buildActions(): Action[] {
                         }
                     })
                     .then(() => {
-                        enterInsertMode(vimState);
-                        setModeCursorStyle(vimState.mode, context.editor);
+                        enterInsertMode(vimState, context.editor);
                         removeTypeSubscription(vimState);
                     });
             },
@@ -262,8 +252,7 @@ export function buildActions(): Action[] {
                         }
                     })
                     .then(() => {
-                        enterNormalMode(vimState);
-                        setModeCursorStyle(vimState.mode, context.editor);
+                        enterNormalMode(vimState, context.editor);
                     });
             },
         }),
@@ -280,8 +269,7 @@ export function buildActions(): Action[] {
                     vimState.registers.linewise = vimState.mode === Mode.VisualLine;
                 }
 
-                enterNormalMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
+                enterNormalMode(vimState, context.editor);
             },
         }),
 
@@ -300,8 +288,7 @@ export function buildActions(): Action[] {
                         }
                     })
                     .then(() => {
-                        enterInsertMode(vimState);
-                        setModeCursorStyle(vimState.mode, context.editor);
+                        enterInsertMode(vimState, context.editor);
                         removeTypeSubscription(vimState);
                     });
             },
