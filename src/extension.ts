@@ -75,9 +75,8 @@ function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEdit
 }
 
 function onDidChangeConfiguration(vimState: VimState, e: vscode.ConfigurationChangeEvent): void {
-    if (e.affectsConfiguration('simple-vim')) {
-        vimState.actions = buildActions();
-    }
+    if (!e.affectsConfiguration('simple-vim')) return;
+    vimState.actions = buildActions();
 }
 
 export function activate(context: vscode.ExtensionContext): void {
