@@ -3,6 +3,7 @@ import { buildActions } from './actionSystem/actions';
 import { escapeHandler } from './escape_handler';
 import { enterMode } from './modes';
 import type { VimState } from './vimStateTypes';
+import { expandSelectionsToFullLines } from './visualLineUtils';
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
@@ -11,52 +12,11 @@ function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChan
         enterMode(vimState, e.textEditor, 'normal');
     } else if (vimState.mode === 'visualLine') {
         // Visual Line モードでは、選択範囲を行全体に拡張する
-        expandSelectionsToFullLines(e);
+        expandSelectionsToFullLines(e.textEditor);
     } else if (!allEmpty) {
         // それ以外のモードで選択状態になった場合は Visual モードへ移行する
         enterMode(vimState, e.textEditor, 'visual');
     }
-}
-
-function expandSelectionsToFullLines(e: vscode.TextEditorSelectionChangeEvent) {
-    e.textEditor.selections = e.textEditor.selections.map((selection) => {
-        const doc = e.textEditor.document;
-        if (
-            (selection.anchor.character === 0 && selection.active.character === 0) ||
-            (selection.anchor.character === doc.lineAt(selection.anchor).text.length &&
-                selection.active.character === doc.lineAt(selection.active).text.length)
-        ) {
-            // すでに行全体が選択されている場合は、そのまま返す
-            return selection;
-        }
-
-        const anchorLine = selection.anchor.line;
-        let activeLine = selection.active.line;
-        let anchorCharacter = selection.anchor.character;
-        let activeCharacter = selection.active.character;
-        if (anchorLine <= activeLine) {
-            anchorCharacter = 0;
-            if (activeLine + 1 <= doc.lineCount) {
-                activeLine++;
-                activeCharacter = 0;
-            } else {
-                activeCharacter = doc.lineAt(activeLine).text.length;
-            }
-        } else {
-            anchorCharacter = doc.lineAt(anchorLine).text.length;
-            if (activeLine - 1 >= 0) {
-                activeLine--;
-                activeCharacter = doc.lineAt(activeLine).text.length;
-            } else {
-                activeCharacter = 0;
-            }
-        }
-
-        return new vscode.Selection(
-            new vscode.Position(anchorLine, anchorCharacter),
-            new vscode.Position(activeLine, activeCharacter),
-        );
-    });
 }
 
 function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEditor | undefined) {

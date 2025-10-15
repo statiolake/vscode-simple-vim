@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { enterMode } from '../modes';
 import { buildMotions } from '../motionSystem/motions';
 import { buildTextObjects } from '../textObjectSystem/textObjects';
+import { expandSelectionsToFullLines } from '../visualLineUtils';
 import { motionToAction, newAction, newOperatorAction } from './actionBuilder';
 import type { Action } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用
@@ -80,19 +81,11 @@ export function buildActions(): Action[] {
         }),
     );
 
-    // Visual mode actions
     actions.push(
         newAction({
             keys: ['v'],
             modes: ['normal', 'visualLine'],
             execute: (context, vimState) => {
-                if (vimState.mode === 'normal') {
-                    // Normal modeからVisual modeに入る：現在位置をanchorとして設定
-                    context.editor.selections = context.editor.selections.map((selection) => {
-                        return new vscode.Selection(selection.active, selection.active);
-                    });
-                }
-
                 enterMode(vimState, context.editor, 'visual');
             },
         }),
@@ -101,17 +94,8 @@ export function buildActions(): Action[] {
             keys: ['V'],
             modes: ['normal', 'visual'],
             execute: (context, vimState) => {
-                // Visual Line mode: 行全体を選択
-                context.editor.selections = context.editor.selections.map((selection) => {
-                    const line = selection.active.line;
-                    const lineText = context.document.lineAt(line).text;
-                    return new vscode.Selection(
-                        new vscode.Position(line, 0),
-                        new vscode.Position(line, lineText.length),
-                    );
-                });
-
                 enterMode(vimState, context.editor, 'visualLine');
+                expandSelectionsToFullLines(context.editor);
             },
         }),
 
