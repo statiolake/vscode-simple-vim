@@ -4,6 +4,7 @@ import { typeHandler } from './actionSystem/typeHandler';
 import { escapeHandler } from './escape_handler';
 import { enterNormalMode, enterVisualMode, setModeCursorStyle } from './modes';
 import { Mode } from './modesTypes';
+import { addTypeSubscription, removeTypeSubscription } from './type_subscription';
 import type { VimState } from './vimStateTypes';
 
 let statusBarItem: vscode.StatusBarItem;
@@ -80,6 +81,18 @@ function onDidChangeConfiguration(vimState: VimState, e: vscode.ConfigurationCha
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+    // Create status bar item
+    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
+
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(vimState, editor)),
+        vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(vimState, e)),
+        vscode.workspace.onDidChangeConfiguration((e) => onDidChangeConfiguration(vimState, e)),
+        vscode.commands.registerCommand('simple-vim.escapeKey', () => escapeHandler(vimState)),
+    );
+
     const vimState: VimState = {
         typeSubscription: undefined,
         mode: Mode.Insert,
@@ -96,23 +109,8 @@ export function activate(context: vscode.ExtensionContext): void {
         },
     };
 
-    // Create status bar item
-    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    statusBarItem.show();
-    context.subscriptions.push(statusBarItem);
-
-    // Register type command subscription
-    vimState.typeSubscription = vscode.commands.registerCommand('type', (e) => {
-        typeHandler(vimState, e.text);
-    });
-
-    context.subscriptions.push(
-        vimState.typeSubscription,
-        vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(vimState, editor)),
-        vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(vimState, e)),
-        vscode.workspace.onDidChangeConfiguration((e) => onDidChangeConfiguration(vimState, e)),
-        vscode.commands.registerCommand('simple-vim.escapeKey', () => escapeHandler(vimState)),
-    );
+    addTypeSubscription(vimState, typeHandler);
+    context.subscriptions.push({ dispose: () => removeTypeSubscription(vimState) });
 
     enterNormalMode(vimState);
     updateStatusBar(vimState.mode);
