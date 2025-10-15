@@ -2,23 +2,14 @@ import * as vscode from 'vscode';
 import { enterMode } from '../modes';
 import * as positionUtils from '../position_utils';
 import type { VimState } from '../vimStateTypes';
-import {
-    adjustInsertPositions,
-    getInsertRangesFromBeginning,
-    getInsertRangesFromEnd,
-    getRegisterContentsList,
-} from './common';
+import { adjustInsertPositions, getInsertRangesFromBeginning, getRegisterContentsList } from './common';
 
 export function putAfter(vimState: VimState, editor: vscode.TextEditor) {
     const registerContentsList = getRegisterContentsList(vimState, editor);
     if (registerContentsList === undefined) return;
 
     if (vimState.mode === 'normal') {
-        if (vimState.registers.linewise) {
-            normalModeLinewise(vimState, editor, registerContentsList);
-        } else {
-            normalModeCharacterwise(vimState, editor, registerContentsList);
-        }
+        normalModeCharacterwise(editor, registerContentsList);
     } else if (vimState.mode === 'visual') {
         visualMode(vimState, editor, registerContentsList);
     } else {
@@ -26,48 +17,7 @@ export function putAfter(vimState: VimState, editor: vscode.TextEditor) {
     }
 }
 
-function normalModeLinewise(
-    vimState: VimState,
-    editor: vscode.TextEditor,
-    registerContentsList: (string | undefined)[],
-) {
-    const insertContentsList = registerContentsList.map((contents) => {
-        if (contents === undefined) return undefined;
-        else return `\n${contents}`;
-    });
-
-    const insertPositions = editor.selections.map((selection) => {
-        const lineLength = editor.document.lineAt(selection.active.line).text.length;
-        return new vscode.Position(selection.active.line, lineLength);
-    });
-
-    const adjustedInsertPositions = adjustInsertPositions(insertPositions, insertContentsList);
-    const rangeBeginnings = adjustedInsertPositions.map((position) => new vscode.Position(position.line + 1, 0));
-
-    editor
-        .edit((editBuilder) => {
-            insertPositions.forEach((position, i) => {
-                const contents = insertContentsList[i];
-                if (contents === undefined) return;
-
-                editBuilder.insert(position, contents);
-            });
-        })
-        .then(() => {
-            editor.selections = rangeBeginnings.map((position) => new vscode.Selection(position, position));
-        });
-
-    vimState.lastPutRanges = {
-        ranges: getInsertRangesFromBeginning(rangeBeginnings, registerContentsList),
-        linewise: true,
-    };
-}
-
-function normalModeCharacterwise(
-    vimState: VimState,
-    editor: vscode.TextEditor,
-    registerContentsList: (string | undefined)[],
-) {
+function normalModeCharacterwise(editor: vscode.TextEditor, registerContentsList: (string | undefined)[]) {
     const insertPositions = editor.selections.map((selection) => {
         return positionUtils.right(editor.document, selection.active);
     });
@@ -93,21 +43,9 @@ function normalModeCharacterwise(
                 return new vscode.Selection(position, position);
             });
         });
-
-    vimState.lastPutRanges = {
-        ranges: insertRanges,
-        linewise: false,
-    };
 }
 
-function visualMode(vimState: VimState, editor: vscode.TextEditor, registerContentsList: (string | undefined)[]) {
-    const insertContentsList = vimState.registers.linewise
-        ? registerContentsList.map((contents) => {
-              if (!contents) return undefined;
-              else return `\n${contents}\n`;
-          })
-        : registerContentsList;
-
+function visualMode(vimState: VimState, editor: vscode.TextEditor, insertContentsList: (string | undefined)[]) {
     editor
         .edit((editBuilder) => {
             editor.selections.forEach((selection, i) => {
@@ -119,15 +57,6 @@ function visualMode(vimState: VimState, editor: vscode.TextEditor, registerConte
             });
         })
         .then(() => {
-            vimState.lastPutRanges = {
-                ranges: getInsertRangesFromEnd(
-                    editor.document,
-                    editor.selections.map((selection) => selection.active),
-                    insertContentsList,
-                ),
-                linewise: vimState.registers.linewise,
-            };
-
             editor.selections = editor.selections.map((selection) => {
                 const newPosition = positionUtils.left(selection.active);
                 return new vscode.Selection(newPosition, newPosition);
@@ -148,11 +77,6 @@ function visualLineMode(vimState: VimState, editor: vscode.TextEditor, registerC
             });
         })
         .then(() => {
-            vimState.lastPutRanges = {
-                ranges: editor.selections.map((selection) => new vscode.Range(selection.start, selection.end)),
-                linewise: vimState.registers.linewise,
-            };
-
             editor.selections = editor.selections.map((selection) => {
                 return new vscode.Selection(selection.start, selection.start);
             });

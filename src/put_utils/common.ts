@@ -3,13 +3,13 @@ import * as vscode from 'vscode';
 import type { VimState } from '../vimStateTypes';
 
 export function getRegisterContentsList(vimState: VimState, editor: vscode.TextEditor) {
-    if (vimState.registers.contentsList.length === 0) return undefined;
+    if (vimState.register.contents.length === 0) return undefined;
 
-    let registerContentsList = vimState.registers.contentsList;
+    let registerContentsList = vimState.register.contents;
 
     // Handle putting with a different number of cursors than when you yanked
-    if (vimState.registers.contentsList.length !== editor.selections.length) {
-        const combinedContents = vimState.registers.contentsList.join('\n');
+    if (vimState.register.contents.length !== editor.selections.length) {
+        const combinedContents = vimState.register.contents.join('\n');
         registerContentsList = editor.selections.map((_selection) => combinedContents);
     }
 

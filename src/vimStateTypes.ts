@@ -12,13 +12,8 @@ export type VimState = {
     mode: Mode;
     keysPressed: string[];
     actions: Action[];
-    registers: {
-        contentsList: (string | undefined)[];
-        linewise: boolean;
-    };
-    lastPutRanges: {
-        ranges: (vscode.Range | undefined)[];
-        linewise: boolean;
+    register: {
+        contents: (string | undefined)[];
     };
     lastFtChar: string; // f/F/t/T で検索した文字を保持
 };

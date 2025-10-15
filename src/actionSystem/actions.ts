@@ -103,8 +103,9 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['u'],
             modes: ['normal', 'visual', 'visualLine'],
-            execute: (_context, _vimState) => {
+            execute: (context, vimState) => {
                 vscode.commands.executeCommand('undo');
+                enterMode(vimState, context.editor, 'normal');
             },
         }),
 
@@ -112,6 +113,14 @@ export function buildActions(): Action[] {
             keys: ['x'],
             modes: ['normal'],
             execute: (_context, _vimState) => {
+                const editor = vscode.window.activeTextEditor;
+                if (!editor) return;
+
+                const nextChars = editor.selections.map((selection) =>
+                    editor.document.getText(new vscode.Range(selection.active, selection.active.translate(0, 1))),
+                );
+                _vimState.register.contents = nextChars;
+
                 vscode.commands.executeCommand('deleteRight');
             },
         }),
@@ -176,8 +185,7 @@ export function buildActions(): Action[] {
                 if (ranges.length > 0) {
                     const text = context.document.getText(ranges[0]);
                     vscode.env.clipboard.writeText(text);
-                    vimState.registers.contentsList = [text];
-                    vimState.registers.linewise = false;
+                    vimState.register.contents = [text];
                 }
             },
         }),
@@ -230,8 +238,7 @@ export function buildActions(): Action[] {
                     const selection = context.editor.selections[0];
                     const text = context.document.getText(selection);
                     vscode.env.clipboard.writeText(text);
-                    vimState.registers.contentsList = [text];
-                    vimState.registers.linewise = vimState.mode === 'visualLine';
+                    vimState.register.contents = [text];
                 }
 
                 enterMode(vimState, context.editor, 'normal');

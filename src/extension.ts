@@ -57,15 +57,10 @@ export function activate(context: vscode.ExtensionContext): void {
         mode: 'insert',
         keysPressed: [],
         actions: buildActions(),
-        registers: {
-            contentsList: [],
-            linewise: true,
+        register: {
+            contents: [],
         },
         lastFtChar: '',
-        lastPutRanges: {
-            ranges: [],
-            linewise: true,
-        },
     };
 
     enterMode(vimState, vscode.window.activeTextEditor, 'normal');
