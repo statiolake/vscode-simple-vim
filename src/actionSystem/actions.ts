@@ -134,6 +134,54 @@ export function buildActions(): Action[] {
         }),
     );
 
+    // Viewport 制御
+    actions.push(
+        newAction({
+            keys: ['z', 'z'],
+            modes: ['normal', 'visual', 'visualLine'],
+            execute: (context, _vimState) => {
+                const editor = context.editor;
+                if (!editor) return;
+
+                const selection = editor.selection;
+                vscode.commands.executeCommand('revealLine', {
+                    lineNumber: selection.active.line,
+                    at: 'center',
+                });
+            },
+        }),
+
+        newAction({
+            keys: ['z', 't'],
+            modes: ['normal', 'visual', 'visualLine'],
+            execute: (context, _vimState) => {
+                const editor = context.editor;
+                if (!editor) return;
+
+                const selection = editor.selection;
+                vscode.commands.executeCommand('revealLine', {
+                    lineNumber: selection.active.line,
+                    at: 'top',
+                });
+            },
+        }),
+
+        newAction({
+            keys: ['z', 'b'],
+            modes: ['normal', 'visual', 'visualLine'],
+            execute: (context, _vimState) => {
+                const editor = context.editor;
+                if (!editor) return;
+
+                const selection = editor.selection;
+                vscode.commands.executeCommand('revealLine', {
+                    lineNumber: selection.active.line,
+                    at: 'bottom',
+                });
+            },
+        }),
+    );
+
     // Operator actions: d, y, c
     // TextObjects (Motionsから変換されたものも含む)をターゲットとして使用
     const textObjects = buildTextObjects(motions);
