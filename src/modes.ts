@@ -5,26 +5,25 @@ import type { VimState } from './vimStateTypes';
 
 export function enterMode(vimState: VimState, editor: vscode.TextEditor | undefined, mode: Mode): void {
     vimState.mode = mode;
-    setModeContext(mode);
-    setModeCursorStyle(editor, mode);
+    updateModeContext(mode);
+    updateCursorStyle(editor, mode);
     updateStatusBar(vimState, mode);
     updateTypeHandler(vimState, mode);
 }
 
-function setModeContext(mode: Mode) {
+function updateModeContext(mode: Mode) {
     vscode.commands.executeCommand('setContext', 'simple-vim.mode', mode);
 }
 
-function setModeCursorStyle(editor: vscode.TextEditor | undefined, mode: Mode): void {
+function updateCursorStyle(editor: vscode.TextEditor | undefined, mode: Mode): void {
     if (!editor) return;
 
     if (mode === 'insert') {
         editor.options.cursorStyle = vscode.TextEditorCursorStyle.Line;
     } else if (mode === 'normal') {
-        // VS Codeネイティブ：常にLineカーソルを使用
-        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Underline;
+        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Block;
     } else if (mode === 'visual' || mode === 'visualLine') {
-        editor.options.cursorStyle = vscode.TextEditorCursorStyle.LineThin;
+        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Underline;
     }
 }
 
