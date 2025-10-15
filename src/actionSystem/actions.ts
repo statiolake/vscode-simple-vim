@@ -96,14 +96,6 @@ export function buildActions(): Action[] {
                 enterMode(vimState, context.editor, 'visualLine');
             },
         }),
-
-        newAction({
-            keys: ['Escape'],
-            modes: ['visual', 'visualLine'],
-            execute: (context, vimState) => {
-                enterMode(vimState, context.editor, 'normal');
-            },
-        }),
     );
 
     // Other actions
