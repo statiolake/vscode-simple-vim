@@ -31,7 +31,8 @@ export function updateStatusBar(mode: Mode): void {
 }
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
-    if (e.selections.every((selection) => selection.isEmpty) && e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
+    const allEmpty = e.selections.every((selection) => selection.isEmpty);
+    if (allEmpty && e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
         // マウスをクリックしたことにより選択範囲が無になった場合は、ノーマルモードに戻る
         enterNormalMode(vimState);
         setModeCursorStyle(vimState.mode, e.textEditor);
@@ -48,7 +49,7 @@ function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChan
                 new vscode.Position(selection.active.line, activeCharacter),
             );
         });
-    } else {
+    } else if (!allEmpty) {
         // それ以外のモードで選択状態になった場合は Visual モードへ移行する
         enterVisualMode(vimState);
         setModeCursorStyle(vimState.mode, e.textEditor);

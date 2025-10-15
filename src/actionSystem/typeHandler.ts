@@ -1,13 +1,11 @@
 import * as vscode from 'vscode';
-import type { VimState } from '../vimStateTypes';
-import { Mode } from '../modesTypes';
 import type { Context } from '../context';
+import { Mode } from '../modesTypes';
+import type { VimState } from '../vimStateTypes';
 
 export function typeHandler(vimState: VimState, char: string): void {
     const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        return;
-    }
+    if (!editor) return;
 
     // In insert mode, just pass through the character
     if (vimState.mode === Mode.Insert) {

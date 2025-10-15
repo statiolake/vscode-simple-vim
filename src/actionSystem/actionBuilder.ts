@@ -70,7 +70,8 @@ export function newRegexAction(config: {
  * MotionをActionに変換
  * Motion自体がキーパースを行うため、単純に委譲する
  */
-export function motionToAction(motion: Motion, modes: Mode[]): Action {
+export function motionToAction(motion: Motion): Action {
+    const modes = [Mode.Normal, Mode.Visual, Mode.VisualLine];
     return (context: Context, keys: string[], vimState: VimState): ActionResult => {
         // モードチェック
         if (!modes.includes(vimState.mode)) {
@@ -207,7 +208,7 @@ export function newOperatorAction(config: {
                 return 'needsMoreKey';
             }
 
-            console.log(`TextObject matched with result:`, firstResult.result);
+            console.log('TextObject matched with result:', firstResult.result);
 
             // Matchした - rangeを取得 (TextObjectは常にrangeを返す)
             const ranges = results.map((result, index) => {

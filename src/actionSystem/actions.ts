@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import type { Action } from './actionTypes';
-import { newAction, motionToAction, newOperatorAction } from './actionBuilder';
+import { enterInsertMode, enterNormalMode, enterVisualLineMode, enterVisualMode, setModeCursorStyle } from '../modes';
 import { Mode } from '../modesTypes';
 import { buildMotions } from '../motionSystem/motions';
 import { buildTextObjects } from '../textObjectSystem/textObjects';
-import { enterInsertMode, enterVisualMode, enterVisualLineMode, enterNormalMode, setModeCursorStyle } from '../modes';
 import { removeTypeSubscription } from '../type_subscription';
+import { motionToAction, newAction, newOperatorAction } from './actionBuilder';
+import type { Action } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用
 
 export function buildActions(): Action[] {
@@ -13,18 +13,24 @@ export function buildActions(): Action[] {
 
     // Motion actions - すべてのmotionをNormal, Visual, VisualLineで使用可能にする
     const motions = buildMotions();
-    const motionModes = [Mode.Normal, Mode.Visual, Mode.VisualLine];
-
     console.log(`Building ${motions.length} motion actions`);
-
-    for (const motion of motions) {
-        actions.push(motionToAction(motion, motionModes));
-    }
+    actions.push(...motions.map(motionToAction));
 
     // Insert mode actions
     actions.push(
+        // VS Code のネイティブなカーソル位置を前提とすると i と a は同じ動作になる
         newAction({
             keys: ['i'],
+            modes: [Mode.Normal],
+            execute: (context, vimState) => {
+                enterInsertMode(vimState);
+                setModeCursorStyle(vimState.mode, context.editor);
+                removeTypeSubscription(vimState);
+            },
+        }),
+
+        newAction({
+            keys: ['a'],
             modes: [Mode.Normal],
             execute: (context, vimState) => {
                 enterInsertMode(vimState);
@@ -43,17 +49,6 @@ export function buildActions(): Action[] {
                     return new vscode.Selection(newPosition, newPosition);
                 });
 
-                enterInsertMode(vimState);
-                setModeCursorStyle(vimState.mode, context.editor);
-                removeTypeSubscription(vimState);
-            },
-        }),
-
-        newAction({
-            keys: ['a'],
-            modes: [Mode.Normal],
-            execute: (context, vimState) => {
-                // VS Codeネイティブ：カーソルは既に正しい位置（文字と文字の間）にある
                 enterInsertMode(vimState);
                 setModeCursorStyle(vimState.mode, context.editor);
                 removeTypeSubscription(vimState);
