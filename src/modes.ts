@@ -25,11 +25,11 @@ function updateCursorStyle(editor: vscode.TextEditor | undefined, mode: Mode): v
     if (!editor) return;
 
     if (mode === 'insert') {
-        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Line;
+        editor.options.cursorStyle = vscode.TextEditorCursorStyle.LineThin;
     } else if (mode === 'normal') {
-        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Block;
+        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Line;
     } else if (mode === 'visual' || mode === 'visualLine') {
-        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Underline;
+        editor.options.cursorStyle = vscode.TextEditorCursorStyle.LineThin;
     }
 }
 
