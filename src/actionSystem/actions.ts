@@ -126,14 +126,6 @@ export function buildActions(): Action[] {
         }),
 
         newAction({
-            keys: ['%'],
-            modes: ['normal'],
-            execute: (_context, _vimState) => {
-                vscode.commands.executeCommand('editor.action.jumpToBracket');
-            },
-        }),
-
-        newAction({
             keys: ['J'],
             modes: ['normal', 'visual', 'visualLine'],
             execute: (_context, _vimState) => {

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import type { Motion } from './motionTypes';
-import { newMotion, newRegexMotion } from './motionBuilder';
 import * as positionUtils from '../position_utils';
-import { wordRanges, whitespaceWordRanges } from '../word_utils';
+import { whitespaceWordRanges, wordRanges } from '../word_utils';
+import { newMotion, newRegexMotion } from './motionBuilder';
+import type { Motion } from './motionTypes';
 
 /**
  * すべてのMotionを返す
@@ -324,6 +324,62 @@ export function buildMotions(): Motion[] {
             compute: (context, position) => {
                 const firstNonWhitespace = context.document.lineAt(position.line).firstNonWhitespaceCharacterIndex;
                 return position.with({ character: firstNonWhitespace });
+            },
+        }),
+    );
+
+    motions.push(
+        newMotion({
+            keys: ['%'],
+            compute: (context, position) => {
+                const pairs = ['()', '{}', '[]'];
+
+                let offset = context.document.offsetAt(position);
+                // 重すぎてもつらいので、とりあえず前後 1000 文字を探索する
+                const minOffset = Math.max(0, offset - 1000);
+                const maxOffset = Math.min(context.document.getText().length, offset + 1000);
+
+                let dir: number = 1;
+                let target: string | undefined;
+                while (offset < maxOffset) {
+                    const position = context.document.positionAt(offset);
+                    const char = context.document.lineAt(position.line).text[position.character];
+
+                    for (const pair of pairs) {
+                        if (char === pair[0]) {
+                            dir = 1;
+                            target = pair[1];
+                            break;
+                        }
+
+                        if (char === pair[1]) {
+                            dir = -1;
+                            target = pair[0];
+                            break;
+                        }
+                    }
+
+                    if (target) break;
+
+                    offset++;
+                }
+
+                if (!target) {
+                    return position;
+                }
+
+                while (minOffset < offset && offset < maxOffset) {
+                    const position = context.document.positionAt(offset);
+                    const char = context.document.lineAt(position.line).text[position.character];
+
+                    if (char === target) {
+                        return context.document.positionAt(Math.max(0, offset));
+                    }
+
+                    offset += dir;
+                }
+
+                return position;
             },
         }),
     );
