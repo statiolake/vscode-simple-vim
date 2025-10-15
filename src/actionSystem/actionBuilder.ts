@@ -130,6 +130,7 @@ export function motionToAction(motion: Motion): Action {
 export function newOperatorAction(config: {
     operatorKeys: string[];
     modes: Mode[];
+    wholeLineTextObject: TextObject;
     textObjects: TextObject[];
     execute: (context: Context, vimState: VimState, ranges: vscode.Range[]) => void;
 }): Action {
@@ -171,7 +172,7 @@ export function newOperatorAction(config: {
         }
 
         // 各TextObjectを試す
-        for (const textObject of config.textObjects) {
+        for (const textObject of [config.wholeLineTextObject, ...config.textObjects]) {
             // 各カーソル位置でTextObjectを実行
             const results = context.editor.selections.map((selection) => {
                 return textObject(context, remainingKeys, selection.active);

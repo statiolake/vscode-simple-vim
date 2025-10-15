@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { enterMode } from '../modes';
 import { buildMotions } from '../motionSystem/motions';
+import { newWholeLineTextObject } from '../textObjectSystem/textObjectBuilder';
 import { buildTextObjects } from '../textObjectSystem/textObjects';
 import { motionToAction, newAction, newOperatorAction } from './actionBuilder';
 import type { Action } from './actionTypes';
@@ -98,7 +99,7 @@ export function buildActions(): Action[] {
         }),
     );
 
-    // Other actions
+    // そのほかの基本操作
     actions.push(
         newAction({
             keys: ['u'],
@@ -112,16 +113,72 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['x'],
             modes: ['normal'],
-            execute: (_context, _vimState) => {
+            execute: (_context, vimState) => {
                 const editor = vscode.window.activeTextEditor;
                 if (!editor) return;
 
                 const nextChars = editor.selections.map((selection) =>
                     editor.document.getText(new vscode.Range(selection.active, selection.active.translate(0, 1))),
                 );
-                _vimState.register.contents = nextChars;
+                vimState.register.contents = nextChars;
 
                 vscode.commands.executeCommand('deleteRight');
+            },
+        }),
+
+        newAction({
+            keys: ['p'],
+            modes: ['normal', 'visual', 'visualLine'],
+            execute: async (context, vimState) => {
+                const editor = context.editor;
+                if (!editor) return;
+
+                const contents = vimState.register.contents;
+                if (vimState.mode !== 'normal') {
+                    // 現在の内容を保存しておく
+                    vimState.register.contents = editor.selections.map((selection) =>
+                        context.document.getText(selection),
+                    );
+                }
+
+                await context.editor.edit((editBuilder) => {
+                    for (let i = 0; i < editor.selections.length; i++) {
+                        const selection = editor.selections[i];
+                        const content =
+                            contents.length === editor.selections.length ? (contents[i] ?? '') : contents.join('\n');
+                        editBuilder.replace(selection, content);
+                    }
+                });
+
+                enterMode(vimState, context.editor, 'normal');
+            },
+        }),
+
+        newAction({
+            keys: ['P'],
+            modes: ['normal', 'visual', 'visualLine'],
+            execute: async (context, vimState) => {
+                const editor = context.editor;
+                if (!editor) return;
+
+                const contents = vimState.register.contents;
+                if (vimState.mode !== 'normal') {
+                    // 現在の内容を保存しておく
+                    vimState.register.contents = editor.selections.map((selection) =>
+                        context.document.getText(selection),
+                    );
+                }
+
+                await context.editor.edit((editBuilder) => {
+                    for (let i = 0; i < editor.selections.length; i++) {
+                        const selection = editor.selections[i];
+                        const content =
+                            contents.length === editor.selections.length ? (contents[i] ?? '') : contents.join('\n');
+                        editBuilder.replace(selection, content);
+                    }
+                });
+
+                enterMode(vimState, context.editor, 'normal');
             },
         }),
 
@@ -182,91 +239,127 @@ export function buildActions(): Action[] {
         }),
     );
 
-    // Operator actions: d, y, c
+    // オペレータ: d, y, c
     // TextObjects (Motionsから変換されたものも含む)をターゲットとして使用
     const textObjects = buildTextObjects(motions);
 
     console.log(`Building operator actions with ${textObjects.length} text objects`);
 
-    // Normal mode operators (with text objects)
+    // Normal モード
     actions.push(
         newOperatorAction({
             operatorKeys: ['d'],
             modes: ['normal'],
+            wholeLineTextObject: newWholeLineTextObject({ keys: ['d'], includeLineBreak: true }),
             textObjects,
-            execute: (context, _vimState, ranges) => {
-                console.log('Delete operator executing with ranges:', ranges);
-                for (const range of ranges) {
-                    console.log('Range details:', {
-                        start: range.start,
-                        end: range.end,
-                        isEmpty: range.isEmpty,
-                        text: context.document.getText(range),
-                    });
-                }
-                context.editor
-                    .edit((editBuilder) => {
-                        for (const range of ranges) {
-                            console.log('Deleting range:', range);
-                            editBuilder.delete(range);
-                        }
-                    })
-                    .then((success) => {
-                        console.log('Edit operation completed:', success);
-                    });
+            execute: async (context, vimState, ranges) => {
+                vimState.register.contents = ranges.map((range) => context.document.getText(range));
+                await context.editor.edit((editBuilder) => {
+                    for (const range of ranges) {
+                        editBuilder.delete(range);
+                    }
+                });
+            },
+        }),
+        newAction({
+            keys: ['D'],
+            modes: ['normal'],
+            execute: async (context, vimState) => {
+                const editor = context.editor;
+                if (!editor) return;
+
+                const ranges = editor.selections.map((selection) => {
+                    const line = context.document.lineAt(selection.active.line);
+                    return new vscode.Range(selection.active, line.range.end);
+                });
+
+                vimState.register.contents = ranges.map((range) => context.document.getText(range));
+                await editor.edit((editBuilder) => {
+                    for (const range of ranges) {
+                        editBuilder.delete(range);
+                    }
+                });
             },
         }),
 
         newOperatorAction({
             operatorKeys: ['y'],
+            wholeLineTextObject: newWholeLineTextObject({ keys: ['y'], includeLineBreak: true }),
             modes: ['normal'],
             textObjects,
             execute: (context, vimState, ranges) => {
-                if (ranges.length > 0) {
-                    const text = context.document.getText(ranges[0]);
-                    vscode.env.clipboard.writeText(text);
-                    vimState.register.contents = [text];
-                }
+                vimState.register.contents = ranges.map((range) => context.document.getText(range));
+            },
+        }),
+        newAction({
+            keys: ['Y'],
+            modes: ['normal'],
+            execute: (context, vimState) => {
+                const editor = context.editor;
+                if (!editor) return;
+
+                const ranges = editor.selections.map((selection) => {
+                    const line = context.document.lineAt(selection.active.line);
+                    return line.rangeIncludingLineBreak;
+                });
+
+                vimState.register.contents = ranges.map((range) => context.document.getText(range));
             },
         }),
 
         newOperatorAction({
             operatorKeys: ['c'],
             modes: ['normal'],
+            wholeLineTextObject: newWholeLineTextObject({ keys: ['c'], includeLineBreak: false }),
             textObjects,
-            execute: (context, vimState, ranges) => {
-                context.editor
-                    .edit((editBuilder) => {
-                        for (const range of ranges) {
-                            editBuilder.delete(range);
-                        }
-                    })
-                    .then(() => {
-                        enterMode(vimState, context.editor, 'insert');
-                    });
+            execute: async (context, vimState, ranges) => {
+                vimState.register.contents = ranges.map((range) => context.document.getText(range));
+                await context.editor.edit((editBuilder) => {
+                    for (const range of ranges) {
+                        editBuilder.delete(range);
+                    }
+                });
+                enterMode(vimState, context.editor, 'insert');
+            },
+        }),
+        newAction({
+            keys: ['C'],
+            modes: ['normal'],
+            execute: async (context, vimState) => {
+                const editor = context.editor;
+                if (!editor) return;
+
+                const ranges = editor.selections.map((selection) => {
+                    const line = context.document.lineAt(selection.active.line);
+                    return new vscode.Range(selection.active, line.range.end);
+                });
+
+                vimState.register.contents = ranges.map((range) => context.document.getText(range));
+                await editor.edit((editBuilder) => {
+                    for (const range of ranges) {
+                        editBuilder.delete(range);
+                    }
+                });
+                enterMode(vimState, context.editor, 'insert');
             },
         }),
     );
 
-    // Visual mode operators (using current selection)
+    // Visual モード
     actions.push(
         newAction({
             keys: ['d'],
             modes: ['visual', 'visualLine'],
-            execute: (context, vimState) => {
-                const ranges = context.editor.selections.map(
-                    (selection) => new vscode.Range(selection.start, selection.end),
+            execute: async (context, vimState) => {
+                vimState.register.contents = context.editor.selections.map((selection) =>
+                    context.document.getText(selection),
                 );
-
-                context.editor
-                    .edit((editBuilder) => {
-                        for (const range of ranges) {
-                            editBuilder.delete(range);
-                        }
-                    })
-                    .then(() => {
-                        enterMode(vimState, context.editor, 'normal');
-                    });
+                await context.editor.edit((editBuilder) => {
+                    for (const selection of context.editor.selections) {
+                        editBuilder.delete(selection);
+                    }
+                });
+                enterMode(vimState, context.editor, 'normal');
             },
         }),
 
@@ -274,13 +367,9 @@ export function buildActions(): Action[] {
             keys: ['y'],
             modes: ['visual', 'visualLine'],
             execute: (context, vimState) => {
-                if (context.editor.selections.length > 0) {
-                    const selection = context.editor.selections[0];
-                    const text = context.document.getText(selection);
-                    vscode.env.clipboard.writeText(text);
-                    vimState.register.contents = [text];
-                }
-
+                vimState.register.contents = context.editor.selections.map((selection) =>
+                    context.document.getText(selection),
+                );
                 enterMode(vimState, context.editor, 'normal');
             },
         }),
@@ -288,20 +377,17 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['c'],
             modes: ['visual', 'visualLine'],
-            execute: (context, vimState) => {
-                const ranges = context.editor.selections.map(
-                    (selection) => new vscode.Range(selection.start, selection.end),
+            execute: async (context, vimState) => {
+                vimState.register.contents = context.editor.selections.map((selection) =>
+                    context.document.getText(selection),
                 );
 
-                context.editor
-                    .edit((editBuilder) => {
-                        for (const range of ranges) {
-                            editBuilder.delete(range);
-                        }
-                    })
-                    .then(() => {
-                        enterMode(vimState, context.editor, 'insert');
-                    });
+                await context.editor.edit((editBuilder) => {
+                    for (const selection of context.editor.selections) {
+                        editBuilder.delete(selection);
+                    }
+                });
+                enterMode(vimState, context.editor, 'insert');
             },
         }),
     );

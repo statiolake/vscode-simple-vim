@@ -53,3 +53,13 @@ export function newRegexTextObject(config: {
         return { result: 'match', range };
     };
 }
+
+export function newWholeLineTextObject(config: { keys: string[]; includeLineBreak: boolean }): TextObject {
+    return newTextObject({
+        keys: config.keys,
+        compute: (context: Context, position: vscode.Position) => {
+            const line = context.editor.document.lineAt(position.line);
+            return config.includeLineBreak ? line.rangeIncludingLineBreak : line.range;
+        },
+    });
+}
