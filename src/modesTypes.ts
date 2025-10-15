@@ -1,6 +1,1 @@
-export enum Mode {
-    Insert,
-    Normal,
-    Visual,
-    VisualLine,
-}
+export type Mode = 'insert' | 'normal' | 'visual' | 'visualLine';

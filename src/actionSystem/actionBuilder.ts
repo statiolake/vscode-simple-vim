@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import type { Context } from '../context';
 import { keysParserPrefix, keysParserRegex } from '../keysParser/keysParser';
 import type { KeysParser } from '../keysParser/keysParserTypes';
-import { Mode } from '../modesTypes';
+import type { Mode } from '../modesTypes';
 import type { Motion } from '../motionSystem/motionTypes';
 import type { TextObject } from '../textObjectSystem/textObjectTypes';
 import type { VimState } from '../vimStateTypes';
@@ -71,7 +71,7 @@ export function newRegexAction(config: {
  * Motion自体がキーパースを行うため、単純に委譲する
  */
 export function motionToAction(motion: Motion): Action {
-    const modes = [Mode.Normal, Mode.Visual, Mode.VisualLine];
+    const modes = ['normal', 'visual', 'visualLine'];
     return (context: Context, keys: string[], vimState: VimState): ActionResult => {
         // モードチェック
         if (!modes.includes(vimState.mode)) {
@@ -96,46 +96,25 @@ export function motionToAction(motion: Motion): Action {
 
         // すべてのカーソルを新しい位置に移動
         const newSelections = results.map((result, index) => {
-            if (result.result === 'match') {
-                const currentSelection = context.editor.selections[index];
-
-                // Visual mode: expand selection by keeping anchor and moving active
-                if (vimState.mode === Mode.Visual) {
-                    return new vscode.Selection(currentSelection.anchor, result.position);
-                } else if (vimState.mode === Mode.VisualLine) {
-                    // Visual Line mode: select entire lines from anchor to active
-                    const anchorLine = currentSelection.anchor.line;
-                    const activeLine = result.position.line;
-
-                    if (anchorLine <= activeLine) {
-                        // Forward selection
-                        const activeLineText = context.document.lineAt(activeLine).text;
-                        return new vscode.Selection(
-                            new vscode.Position(anchorLine, 0),
-                            new vscode.Position(activeLine, activeLineText.length),
-                        );
-                    } else {
-                        // Backward selection
-                        const anchorLineText = context.document.lineAt(anchorLine).text;
-                        return new vscode.Selection(
-                            new vscode.Position(anchorLine, anchorLineText.length),
-                            new vscode.Position(activeLine, 0),
-                        );
-                    }
-                } else {
-                    // Normal mode: move cursor to new position
-                    return new vscode.Selection(result.position, result.position);
-                }
-            }
-            // This shouldn't happen if all cursors have the same result
             const currentSelection = context.editor.selections[index];
-            return new vscode.Selection(currentSelection.active, currentSelection.active);
+
+            if (result.result !== 'match') {
+                return currentSelection;
+            }
+
+            if (vimState.mode === 'visual' || vimState.mode === 'visualLine') {
+                // Visual モードでは選択範囲を拡張する
+                return new vscode.Selection(currentSelection.anchor, result.position);
+            } else {
+                // Normal モードではカーソルが動く
+                return new vscode.Selection(result.position, result.position);
+            }
         });
 
         context.editor.selections = newSelections;
         context.editor.revealRange(
             new vscode.Range(newSelections[0].active, newSelections[0].active),
-            vscode.TextEditorRevealType.InCenterIfOutsideViewport,
+            vscode.TextEditorRevealType.Default,
         );
 
         return 'executed';

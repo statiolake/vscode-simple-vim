@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import type { Context } from '../context';
-import { Mode } from '../modesTypes';
 import type { VimState } from '../vimStateTypes';
 
 export function typeHandler(vimState: VimState, char: string): void {
@@ -8,7 +7,7 @@ export function typeHandler(vimState: VimState, char: string): void {
     if (!editor) return;
 
     // In insert mode, just pass through the character
-    if (vimState.mode === Mode.Insert) {
+    if (vimState.mode === 'insert') {
         vscode.commands.executeCommand('default:type', { text: char });
         return;
     }

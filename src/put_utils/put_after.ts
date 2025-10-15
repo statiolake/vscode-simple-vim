@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import { enterNormalMode } from '../modes';
-import { Mode } from '../modesTypes';
+import { enterMode } from '../modes';
 import * as positionUtils from '../position_utils';
 import type { VimState } from '../vimStateTypes';
 import {
@@ -14,13 +13,13 @@ export function putAfter(vimState: VimState, editor: vscode.TextEditor) {
     const registerContentsList = getRegisterContentsList(vimState, editor);
     if (registerContentsList === undefined) return;
 
-    if (vimState.mode === Mode.Normal) {
+    if (vimState.mode === 'normal') {
         if (vimState.registers.linewise) {
             normalModeLinewise(vimState, editor, registerContentsList);
         } else {
             normalModeCharacterwise(vimState, editor, registerContentsList);
         }
-    } else if (vimState.mode === Mode.Visual) {
+    } else if (vimState.mode === 'visual') {
         visualMode(vimState, editor, registerContentsList);
     } else {
         visualLineMode(vimState, editor, registerContentsList);
@@ -135,7 +134,7 @@ function visualMode(vimState: VimState, editor: vscode.TextEditor, registerConte
             });
         });
 
-    enterNormalMode(vimState, editor);
+    enterMode(vimState, editor, 'normal');
 }
 
 function visualLineMode(vimState: VimState, editor: vscode.TextEditor, registerContentsList: (string | undefined)[]) {
@@ -158,6 +157,6 @@ function visualLineMode(vimState: VimState, editor: vscode.TextEditor, registerC
                 return new vscode.Selection(selection.start, selection.start);
             });
 
-            enterNormalMode(vimState, editor);
+            enterMode(vimState, editor, 'normal');
         });
 }

@@ -1,8 +1,5 @@
 import * as vscode from 'vscode';
-import { typeHandler } from './actionSystem/typeHandler';
-import { enterNormalMode } from './modes';
-import { Mode } from './modesTypes';
-import { addTypeSubscription } from './type_subscription';
+import { enterMode } from './modes';
 import type { VimState } from './vimStateTypes';
 // VS Codeネイティブカーソル動作を常に使用
 
@@ -11,30 +8,28 @@ export function escapeHandler(vimState: VimState): void {
 
     if (!editor) return;
 
-    if (vimState.mode === Mode.Insert) {
+    if (vimState.mode === 'insert') {
         // VS Codeネイティブ：Insert mode終了時はカーソル位置を保持
-        enterNormalMode(vimState, editor);
-        addTypeSubscription(vimState, typeHandler);
-    } else if (vimState.mode === Mode.Normal) {
+        enterMode(vimState, editor, 'normal');
+    } else if (vimState.mode === 'normal') {
         // Clear multiple cursors
         if (editor.selections.length > 1) {
             editor.selections = [editor.selections[0]];
         }
-    } else if (vimState.mode === Mode.Visual) {
+    } else if (vimState.mode === 'visual') {
         // VS Codeネイティブ：Visual mode終了時はカーソル位置を保持
         editor.selections = editor.selections.map((selection) => {
             return new vscode.Selection(selection.active, selection.active);
         });
 
-        enterNormalMode(vimState, editor);
-    } else if (vimState.mode === Mode.VisualLine) {
+        enterMode(vimState, editor, 'normal');
+    } else if (vimState.mode === 'visualLine')
         // VS Codeネイティブ：VisualLine mode終了時はカーソル位置を保持
         editor.selections = editor.selections.map((selection) => {
             return new vscode.Selection(selection.active, selection.active);
         });
 
-        enterNormalMode(vimState, editor);
-    }
+    enterMode(vimState, editor, 'normal');
 
     vimState.keysPressed = [];
 }

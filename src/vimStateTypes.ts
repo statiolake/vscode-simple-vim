@@ -1,13 +1,15 @@
 import type * as vscode from 'vscode';
-import type { Mode } from './modesTypes';
 import type { Action } from './actionSystem/actionTypes';
+import type { Mode } from './modesTypes';
 
 /**
  * Vimの状態 (mutableに変更される)
  */
 export type VimState = {
-    mode: Mode;
     typeSubscription: vscode.Disposable | undefined;
+    statusBarItem: vscode.StatusBarItem;
+
+    mode: Mode;
     keysPressed: string[];
     actions: Action[];
     registers: {

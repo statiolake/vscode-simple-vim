@@ -1,42 +1,15 @@
 import * as vscode from 'vscode';
 import { buildActions } from './actionSystem/actions';
-import { typeHandler } from './actionSystem/typeHandler';
 import { escapeHandler } from './escape_handler';
-import { enterNormalMode, enterVisualMode } from './modes';
-import { Mode } from './modesTypes';
-import { addTypeSubscription, removeTypeSubscription } from './type_subscription';
+import { enterMode } from './modes';
 import type { VimState } from './vimStateTypes';
-
-let statusBarItem: vscode.StatusBarItem;
-
-export function updateStatusBar(mode: Mode): void {
-    if (!statusBarItem) return;
-
-    switch (mode) {
-        case Mode.Normal:
-            statusBarItem.text = '-- NORMAL --';
-            break;
-        case Mode.Insert:
-            statusBarItem.text = '-- INSERT --';
-            break;
-        case Mode.Visual:
-            statusBarItem.text = '-- VISUAL --';
-            break;
-        case Mode.VisualLine:
-            statusBarItem.text = '-- VISUAL LINE --';
-            break;
-    }
-
-    statusBarItem.show();
-}
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
     if (allEmpty && e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
         // マウスをクリックしたことにより選択範囲が無になった場合は、ノーマルモードに戻る
-        enterNormalMode(vimState, e.textEditor);
-        updateStatusBar(vimState.mode);
-    } else if (vimState.mode === Mode.VisualLine) {
+        enterMode(vimState, e.textEditor, 'normal');
+    } else if (vimState.mode === 'visualLine')
         // Visual Line モードでは、常に選択範囲を行全体に拡張する
         e.textEditor.selections = e.textEditor.selections.map((selection) => {
             const anchorLine = selection.anchor.line;
@@ -48,10 +21,9 @@ function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChan
                 new vscode.Position(selection.active.line, activeCharacter),
             );
         });
-    } else if (!allEmpty) {
+    else if (!allEmpty) {
         // それ以外のモードで選択状態になった場合は Visual モードへ移行する
-        enterVisualMode(vimState, e.textEditor);
-        updateStatusBar(vimState.mode);
+        enterMode(vimState, e.textEditor, 'visual');
     }
 }
 
@@ -59,16 +31,12 @@ function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEdit
     if (!editor) return;
 
     if (editor.selections.every((selection) => selection.isEmpty)) {
-        if (vimState.mode === Mode.Visual || vimState.mode === Mode.VisualLine) {
-            enterNormalMode(vimState, editor);
-        }
+        if (vimState.mode === 'visual' || vimState.mode === 'visualLine') enterMode(vimState, editor, 'normal');
     } else {
-        if (vimState.mode === Mode.Normal) {
-            enterVisualMode(vimState, editor);
+        if (vimState.mode === 'normal') {
+            enterMode(vimState, editor, 'visual');
         }
     }
-
-    updateStatusBar(vimState.mode);
 
     vimState.keysPressed = [];
 }
@@ -80,7 +48,7 @@ function onDidChangeConfiguration(vimState: VimState, e: vscode.ConfigurationCha
 
 export function activate(context: vscode.ExtensionContext): void {
     // Create status bar item
-    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
 
@@ -93,7 +61,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const vimState: VimState = {
         typeSubscription: undefined,
-        mode: Mode.Insert,
+        statusBarItem,
+        mode: 'insert',
         keysPressed: [],
         actions: buildActions(),
         registers: {
@@ -107,11 +76,7 @@ export function activate(context: vscode.ExtensionContext): void {
         },
     };
 
-    addTypeSubscription(vimState, typeHandler);
-    context.subscriptions.push({ dispose: () => removeTypeSubscription(vimState) });
-
-    enterNormalMode(vimState, vscode.window.activeTextEditor);
-    updateStatusBar(vimState.mode);
+    enterMode(vimState, vscode.window.activeTextEditor, 'normal');
 
     if (vscode.window.activeTextEditor) {
         onDidChangeActiveTextEditor(vimState, vscode.window.activeTextEditor);

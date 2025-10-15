@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
-import { enterInsertMode, enterNormalMode, enterVisualLineMode, enterVisualMode } from '../modes';
-import { Mode } from '../modesTypes';
+import { enterMode } from '../modes';
 import { buildMotions } from '../motionSystem/motions';
 import { buildTextObjects } from '../textObjectSystem/textObjects';
-import { removeTypeSubscription } from '../type_subscription';
 import { motionToAction, newAction, newOperatorAction } from './actionBuilder';
 import type { Action } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用
@@ -14,32 +12,30 @@ export function buildActions(): Action[] {
     // Motion actions - すべてのmotionをNormal, Visual, VisualLineで使用可能にする
     const motions = buildMotions();
     console.log(`Building ${motions.length} motion actions`);
-    actions.push(...motions.map(motionToAction));
+    actions.push(...motions.map((action) => motionToAction(action)));
 
     // Insert mode actions
     actions.push(
         // VS Code のネイティブなカーソル位置を前提とすると i と a は同じ動作になる
         newAction({
             keys: ['i'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             execute: (context, vimState) => {
-                enterInsertMode(vimState, context.editor);
-                removeTypeSubscription(vimState);
+                enterMode(vimState, context.editor, 'insert');
             },
         }),
 
         newAction({
             keys: ['a'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             execute: (context, vimState) => {
-                enterInsertMode(vimState, context.editor);
-                removeTypeSubscription(vimState);
+                enterMode(vimState, context.editor, 'insert');
             },
         }),
 
         newAction({
             keys: ['I'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             execute: (context, vimState) => {
                 context.editor.selections = context.editor.selections.map((selection) => {
                     const character = context.document.lineAt(selection.active.line).firstNonWhitespaceCharacterIndex;
@@ -47,14 +43,13 @@ export function buildActions(): Action[] {
                     return new vscode.Selection(newPosition, newPosition);
                 });
 
-                enterInsertMode(vimState, context.editor);
-                removeTypeSubscription(vimState);
+                enterMode(vimState, context.editor, 'insert');
             },
         }),
 
         newAction({
             keys: ['A'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             execute: (context, vimState) => {
                 context.editor.selections = context.editor.selections.map((selection) => {
                     const lineLength = context.document.lineAt(selection.active.line).text.length;
@@ -62,28 +57,25 @@ export function buildActions(): Action[] {
                     return new vscode.Selection(newPosition, newPosition);
                 });
 
-                enterInsertMode(vimState, context.editor);
-                removeTypeSubscription(vimState);
+                enterMode(vimState, context.editor, 'insert');
             },
         }),
 
         newAction({
             keys: ['o'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             execute: (context, vimState) => {
                 vscode.commands.executeCommand('editor.action.insertLineAfter');
-                enterInsertMode(vimState, context.editor);
-                removeTypeSubscription(vimState);
+                enterMode(vimState, context.editor, 'insert');
             },
         }),
 
         newAction({
             keys: ['O'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             execute: (context, vimState) => {
                 vscode.commands.executeCommand('editor.action.insertLineBefore');
-                enterInsertMode(vimState, context.editor);
-                removeTypeSubscription(vimState);
+                enterMode(vimState, context.editor, 'insert');
             },
         }),
     );
@@ -92,22 +84,22 @@ export function buildActions(): Action[] {
     actions.push(
         newAction({
             keys: ['v'],
-            modes: [Mode.Normal, Mode.VisualLine],
+            modes: ['normal', 'visualLine'],
             execute: (context, vimState) => {
-                if (vimState.mode === Mode.Normal) {
+                if (vimState.mode === 'normal') {
                     // Normal modeからVisual modeに入る：現在位置をanchorとして設定
                     context.editor.selections = context.editor.selections.map((selection) => {
                         return new vscode.Selection(selection.active, selection.active);
                     });
                 }
 
-                enterVisualMode(vimState, context.editor);
+                enterMode(vimState, context.editor, 'visual');
             },
         }),
 
         newAction({
             keys: ['V'],
-            modes: [Mode.Normal, Mode.Visual],
+            modes: ['normal', 'visual'],
             execute: (context, vimState) => {
                 // Visual Line mode: 行全体を選択
                 context.editor.selections = context.editor.selections.map((selection) => {
@@ -119,15 +111,15 @@ export function buildActions(): Action[] {
                     );
                 });
 
-                enterVisualLineMode(vimState, context.editor);
+                enterMode(vimState, context.editor, 'visualLine');
             },
         }),
 
         newAction({
             keys: ['Escape'],
-            modes: [Mode.Visual, Mode.VisualLine],
+            modes: ['visual', 'visualLine'],
             execute: (context, vimState) => {
-                enterNormalMode(vimState, context.editor);
+                enterMode(vimState, context.editor, 'normal');
             },
         }),
     );
@@ -136,7 +128,7 @@ export function buildActions(): Action[] {
     actions.push(
         newAction({
             keys: ['u'],
-            modes: [Mode.Normal, Mode.Visual, Mode.VisualLine],
+            modes: ['normal', 'visual', 'visualLine'],
             execute: (_context, _vimState) => {
                 vscode.commands.executeCommand('undo');
             },
@@ -144,7 +136,7 @@ export function buildActions(): Action[] {
 
         newAction({
             keys: ['x'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             execute: (_context, _vimState) => {
                 vscode.commands.executeCommand('deleteRight');
             },
@@ -152,7 +144,7 @@ export function buildActions(): Action[] {
 
         newAction({
             keys: ['%'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             execute: (_context, _vimState) => {
                 vscode.commands.executeCommand('editor.action.jumpToBracket');
             },
@@ -160,7 +152,7 @@ export function buildActions(): Action[] {
 
         newAction({
             keys: ['J'],
-            modes: [Mode.Normal, Mode.Visual, Mode.VisualLine],
+            modes: ['normal', 'visual', 'visualLine'],
             execute: (_context, _vimState) => {
                 vscode.commands.executeCommand('editor.action.joinLines');
             },
@@ -177,7 +169,7 @@ export function buildActions(): Action[] {
     actions.push(
         newOperatorAction({
             operatorKeys: ['d'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             textObjects,
             execute: (context, _vimState, ranges) => {
                 console.log('Delete operator executing with ranges:', ranges);
@@ -204,7 +196,7 @@ export function buildActions(): Action[] {
 
         newOperatorAction({
             operatorKeys: ['y'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             textObjects,
             execute: (context, vimState, ranges) => {
                 if (ranges.length > 0) {
@@ -218,7 +210,7 @@ export function buildActions(): Action[] {
 
         newOperatorAction({
             operatorKeys: ['c'],
-            modes: [Mode.Normal],
+            modes: ['normal'],
             textObjects,
             execute: (context, vimState, ranges) => {
                 context.editor
@@ -228,8 +220,7 @@ export function buildActions(): Action[] {
                         }
                     })
                     .then(() => {
-                        enterInsertMode(vimState, context.editor);
-                        removeTypeSubscription(vimState);
+                        enterMode(vimState, context.editor, 'insert');
                     });
             },
         }),
@@ -239,7 +230,7 @@ export function buildActions(): Action[] {
     actions.push(
         newAction({
             keys: ['d'],
-            modes: [Mode.Visual, Mode.VisualLine],
+            modes: ['visual', 'visualLine'],
             execute: (context, vimState) => {
                 const ranges = context.editor.selections.map(
                     (selection) => new vscode.Range(selection.start, selection.end),
@@ -252,30 +243,30 @@ export function buildActions(): Action[] {
                         }
                     })
                     .then(() => {
-                        enterNormalMode(vimState, context.editor);
+                        enterMode(vimState, context.editor, 'normal');
                     });
             },
         }),
 
         newAction({
             keys: ['y'],
-            modes: [Mode.Visual, Mode.VisualLine],
+            modes: ['visual', 'visualLine'],
             execute: (context, vimState) => {
                 if (context.editor.selections.length > 0) {
                     const selection = context.editor.selections[0];
                     const text = context.document.getText(selection);
                     vscode.env.clipboard.writeText(text);
                     vimState.registers.contentsList = [text];
-                    vimState.registers.linewise = vimState.mode === Mode.VisualLine;
+                    vimState.registers.linewise = vimState.mode === 'visualLine';
                 }
 
-                enterNormalMode(vimState, context.editor);
+                enterMode(vimState, context.editor, 'normal');
             },
         }),
 
         newAction({
             keys: ['c'],
-            modes: [Mode.Visual, Mode.VisualLine],
+            modes: ['visual', 'visualLine'],
             execute: (context, vimState) => {
                 const ranges = context.editor.selections.map(
                     (selection) => new vscode.Range(selection.start, selection.end),
@@ -288,8 +279,7 @@ export function buildActions(): Action[] {
                         }
                     })
                     .then(() => {
-                        enterInsertMode(vimState, context.editor);
-                        removeTypeSubscription(vimState);
+                        enterMode(vimState, context.editor, 'insert');
                     });
             },
         }),
