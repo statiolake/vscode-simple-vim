@@ -349,6 +349,17 @@ export function buildActions(): Action[] {
             modes: ['normal'],
             execute: async (context) => delegateAction(actions, context, ['c', '$']),
         }),
+
+        newAction({
+            keys: ['s'],
+            modes: ['normal'],
+            execute: async (context) => delegateAction(actions, context, ['c', 'l']),
+        }),
+        newAction({
+            keys: ['S'],
+            modes: ['normal'],
+            execute: async (context) => delegateAction(actions, context, ['c', 'c']),
+        }),
     );
 
     // Visual モード
@@ -426,6 +437,11 @@ export function buildActions(): Action[] {
                 });
                 enterMode(context.vimState, context.editor, 'insert');
             },
+        }),
+        newAction({
+            keys: ['s'],
+            modes: ['visual', 'visualLine'],
+            execute: async (context) => delegateAction(actions, context, ['c']),
         }),
     );
 
