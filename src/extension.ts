@@ -8,10 +8,16 @@ import { expandSelectionsToFullLines } from './visualLineUtils';
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
-    if (allEmpty) {
-        // 選択範囲が無になった場合は、ノーマルモードに戻る
-        // この条件だと Visual モードにいて移動したあと逆方向に動かして選択範
-        // 囲が無になったときもノーマルモードに戻るが、まあ良しとする
+    if (allEmpty && vimState.mode !== 'insert') {
+        // 選択範囲が無になった場合は、ノーマルモードに戻る。この条件だと
+        // Visualモードにいて移動したあと逆方向に動かして選択範囲が無になった
+        // ときもノーマルモードに戻るが、まあ良しとするというのは、VS Code が
+        // undoなどの組み込みコマンドが一時的に非空の選択範囲を作成することが
+        // あり、最終的には空になるものの、そこでノーマルモードに戻れるように
+        // しなければならないから。しかし、それらもあくまでも「コマンドによる
+        // 選択範囲変更」であり、このハンドラ内ではvlh のケースと区別がつかな
+        // い。 vlh などは比較的登場頻度が低いことを考えると、これでいいんじゃ
+        // ないか。
         enterMode(vimState, e.textEditor, 'normal');
     } else if (vimState.mode === 'visualLine') {
         // Visual Line モードでは、選択範囲を行全体に拡張する
