@@ -4,7 +4,7 @@ import { keysParserPrefix, keysParserRegex } from '../keysParser/keysParser';
 import type { KeysParser } from '../keysParser/keysParserTypes';
 import type { Mode } from '../modesTypes';
 import type { Motion } from '../motionSystem/motionTypes';
-import type { TextObject } from '../textObjectSystem/textObjectTypes';
+import type { TextObject, TextObjectMatch } from '../textObjectSystem/textObjectTypes';
 import type { Action, ActionResult } from './actionTypes';
 
 /**
@@ -144,12 +144,12 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
             // 通常のモーションであれば、片方は今のカーソル位置と一致している
             // はず。そちらを anchor とする。iw など両方が変化してしまう場合
             // は、anchor == start, active == end とみなす。
-            const resultAnchor = currentSelection.active.isEqual(result.range.end)
-                ? result.range.end
-                : result.range.start;
-            const resultActive = currentSelection.active.isEqual(result.range.end)
-                ? result.range.start
-                : result.range.end;
+            const resultAnchor = currentSelection.active.isEqual(result.data.range.end)
+                ? result.data.range.end
+                : result.data.range.start;
+            const resultActive = currentSelection.active.isEqual(result.data.range.end)
+                ? result.data.range.start
+                : result.data.range.end;
 
             if (currentSelection.isEmpty) {
                 return new vscode.Selection(resultAnchor, resultActive);
@@ -181,9 +181,8 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
 export function newOperatorAction(config: {
     operatorKeys: string[];
     modes: Mode[];
-    wholeLineTextObject: TextObject;
     textObjects: TextObject[];
-    execute: (context: Context, ranges: vscode.Range[]) => void;
+    execute: (context: Context, matches: TextObjectMatch[]) => void;
 }): Action {
     const operatorParser = keysParserPrefix(config.operatorKeys);
 
@@ -223,7 +222,7 @@ export function newOperatorAction(config: {
         }
 
         // 各TextObjectを試す
-        for (const textObject of [config.wholeLineTextObject, ...config.textObjects]) {
+        for (const textObject of config.textObjects) {
             // 各カーソル位置でTextObjectを実行
             const results = context.editor.selections.map((selection) => {
                 return textObject(context, remainingKeys, selection.active);
@@ -241,18 +240,16 @@ export function newOperatorAction(config: {
 
             console.log('TextObject matched with result:', firstResult.result);
 
-            // Matchした - rangeを取得 (TextObjectは常にrangeを返す)
-            const ranges = results.map((result, index) => {
+            // Matchした - TextObjectMatch[] を取得
+            const matches = results.map((result, index) => {
                 if (result.result === 'match') {
-                    console.log(`TextObject result for cursor ${index}:`, result.range);
-                    return result.range;
+                    console.log(`TextObject result for cursor ${index}:`, result.data.range);
+                    return result.data;
                 }
-                // This shouldn't happen
-                const currentSelection = context.editor.selections[index];
-                return new vscode.Range(currentSelection.active, currentSelection.active);
+                return { range: context.editor.selections[index] };
             });
 
-            config.execute(context, ranges);
+            config.execute(context, matches);
             return 'executed';
         }
 

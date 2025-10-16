@@ -5,11 +5,11 @@ import type { VimState } from '../vimStateTypes';
 export function getRegisterContentsList(vimState: VimState, editor: vscode.TextEditor) {
     if (vimState.register.contents.length === 0) return undefined;
 
-    let registerContentsList = vimState.register.contents;
+    let registerContentsList = vimState.register.contents.map((c) => c?.text ?? '');
 
     // Handle putting with a different number of cursors than when you yanked
     if (vimState.register.contents.length !== editor.selections.length) {
-        const combinedContents = vimState.register.contents.join('\n');
+        const combinedContents = registerContentsList.join('\n');
         registerContentsList = editor.selections.map((_selection) => combinedContents);
     }
 

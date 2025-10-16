@@ -5,11 +5,20 @@ import type { VimState } from './vimStateTypes';
 import { expandSelectionsToFullLines } from './visualLineUtils';
 
 export function enterMode(vimState: VimState, editor: vscode.TextEditor | undefined, mode: Mode): void {
+    if (vimState.mode === mode) return;
+
     vimState.mode = mode;
     updateModeContext(mode);
     updateCursorStyle(editor, mode);
     updateStatusBar(vimState, mode);
     updateTypeHandler(vimState, mode);
+
+    if (mode === 'normal' && editor) {
+        // ノーマルモードに入ったら、選択範囲を解除する
+        editor.selections = editor.selections.map(
+            (selection) => new vscode.Selection(selection.active, selection.active),
+        );
+    }
 
     if (mode === 'visualLine' && editor) {
         // Visual Line モードに入ったら、選択範囲を行全体に拡張する

@@ -8,8 +8,10 @@ import { expandSelectionsToFullLines } from './visualLineUtils';
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
-    if (allEmpty && e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
-        // マウスをクリックしたことにより選択範囲が無になった場合は、ノーマルモードに戻る
+    if (allEmpty) {
+        // 選択範囲が無になった場合は、ノーマルモードに戻る
+        // この条件だと Visual モードにいて移動したあと逆方向に動かして選択範
+        // 囲が無になったときもノーマルモードに戻るが、まあ良しとする
         enterMode(vimState, e.textEditor, 'normal');
     } else if (vimState.mode === 'visualLine') {
         // Visual Line モードでは、選択範囲を行全体に拡張する

@@ -31,7 +31,7 @@ export function motionToTextObject(motion: Motion): TextObject {
             range = new vscode.Range(position, targetPosition);
         }
 
-        return { result: 'match', range };
+        return { result: 'match', data: { range } };
     };
 }
 

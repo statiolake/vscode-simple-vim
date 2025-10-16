@@ -44,11 +44,13 @@ export function typeHandler(vimState: VimState, char: string): void {
         console.log('Action needs more keys:', vimState.keysPressed);
     }
 
-    // If an action was executed, clear the keys
     if (executed) {
+        // If an action was executed, clear the keys
         vimState.keysPressed = [];
+        console.log('cleared due to execution');
     } else if (!needsMore) {
         // No action matched and no action needs more input, clear the keys
         vimState.keysPressed = [];
+        console.log('cleared due to no match');
     }
 }

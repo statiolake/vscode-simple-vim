@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
+import type { Context } from '../context';
 import { enterMode } from '../modes';
 import { buildMotions } from '../motionSystem/motions';
 import { newWholeLineTextObject } from '../textObjectSystem/textObjectBuilder';
 import { buildTextObjects } from '../textObjectSystem/textObjects';
 import { motionToAction, newAction, newOperatorAction, textObjectToVisualAction } from './actionBuilder';
-import type { Action } from './actionTypes';
+import type { Action, ActionResult } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用
 
 export function buildActions(): Action[] {
@@ -117,10 +118,10 @@ export function buildActions(): Action[] {
                 const editor = vscode.window.activeTextEditor;
                 if (!editor) return;
 
-                const nextChars = editor.selections.map((selection) =>
-                    editor.document.getText(new vscode.Range(selection.active, selection.active.translate(0, 1))),
-                );
-                context.vimState.register.contents = nextChars;
+                context.vimState.register.contents = editor.selections.map((selection) => ({
+                    text: editor.document.getText(new vscode.Range(selection.active, selection.active.translate(0, 1))),
+                    isLinewise: false,
+                }));
 
                 vscode.commands.executeCommand('deleteRight');
             },
@@ -136,17 +137,36 @@ export function buildActions(): Action[] {
                 const contents = context.vimState.register.contents;
                 if (context.vimState.mode !== 'normal') {
                     // 現在の内容を保存しておく
-                    context.vimState.register.contents = editor.selections.map((selection) =>
-                        context.document.getText(selection),
-                    );
+                    context.vimState.register.contents = editor.selections.map((selection) => {
+                        const text = context.document.getText(selection);
+                        if (!text) return undefined;
+                        return { text, isLinewise: false };
+                    });
                 }
 
-                await context.editor.edit((editBuilder) => {
+                await editor.edit((editBuilder) => {
                     for (let i = 0; i < editor.selections.length; i++) {
                         const selection = editor.selections[i];
+                        // マルチカーソル対応: 要素数が一致しない場合はすべて結合してフォールバック
                         const content =
-                            contents.length === editor.selections.length ? (contents[i] ?? '') : contents.join('\n');
-                        editBuilder.replace(selection, content);
+                            contents.length === editor.selections.length
+                                ? (contents[i] ?? { text: '', isLinewise: false })
+                                : {
+                                      text: contents.map((c) => c?.text ?? '').join('\n'),
+                                      isLinewise: contents.reduce((acc, c) => acc || (c?.isLinewise ?? false), false),
+                                  };
+
+                        if (selection.isEmpty && content.isLinewise) {
+                            // linewise: 次の行に挿入
+                            const line = context.document.lineAt(selection.active.line);
+                            const insertPos = line.range.end;
+                            // 通常 register 側に改行が含まれているが、今回改行を追加するのにかえってじゃまになるので削っておく
+                            const insertText = content.text.endsWith('\n') ? content.text.slice(0, -1) : content.text;
+                            editBuilder.insert(insertPos, `\n${insertText}`);
+                        } else {
+                            // 通常: カーソル位置に挿入
+                            editBuilder.replace(selection, content.text);
+                        }
                     }
                 });
 
@@ -164,19 +184,39 @@ export function buildActions(): Action[] {
                 const contents = context.vimState.register.contents;
                 if (context.vimState.mode !== 'normal') {
                     // 現在の内容を保存しておく
-                    context.vimState.register.contents = editor.selections.map((selection) =>
-                        context.document.getText(selection),
-                    );
+                    context.vimState.register.contents = editor.selections.map((selection) => ({
+                        text: context.document.getText(selection),
+                        isLinewise: false,
+                    }));
                 }
 
-                await context.editor.edit((editBuilder) => {
+                const originalSelections = editor.selections;
+                await editor.edit((editBuilder) => {
                     for (let i = 0; i < editor.selections.length; i++) {
                         const selection = editor.selections[i];
+                        // マルチカーソル対応: 要素数が一致しない場合はすべて結合してフォールバック
                         const content =
-                            contents.length === editor.selections.length ? (contents[i] ?? '') : contents.join('\n');
-                        editBuilder.replace(selection, content);
+                            contents.length === editor.selections.length
+                                ? (contents[i] ?? { text: '', isLinewise: false })
+                                : {
+                                      text: contents.map((c) => c?.text ?? '').join('\n'),
+                                      isLinewise: contents.reduce((acc, c) => acc || (c?.isLinewise ?? false), false),
+                                  };
+
+                        if (selection.isEmpty && content.isLinewise) {
+                            // linewise: 前の行に挿入
+                            const line = context.document.lineAt(selection.active.line);
+                            const insertPos = line.range.start;
+                            // 通常 register 側に改行が含まれているが、今回改行を追加するのにかえってじゃまになるので削っておく
+                            const insertText = content.text.endsWith('\n') ? content.text.slice(0, -1) : content.text;
+                            editBuilder.insert(insertPos, `${insertText}\n`);
+                        } else {
+                            // 通常: カーソル位置に挿入
+                            editBuilder.replace(selection, content.text);
+                        }
                     }
                 });
+                editor.selections = originalSelections;
 
                 enterMode(context.vimState, context.editor, 'normal');
             },
@@ -238,14 +278,12 @@ export function buildActions(): Action[] {
             },
         }),
     );
-
-    // オペレータ: d, y, c
-    // TextObjects (Motionsから変換されたものも含む)をターゲットとして使用
     const textObjects = buildTextObjects(motions);
 
     // ビジュアルモードで選択範囲をテキストオブジェクトで指定するためのやつ
     actions.push(...textObjects.map((obj) => textObjectToVisualAction(obj)));
 
+    // オペレータ: d, y, c
     console.log(`Building operator actions with ${textObjects.length} text objects`);
 
     // Normal モード
@@ -253,13 +291,15 @@ export function buildActions(): Action[] {
         newOperatorAction({
             operatorKeys: ['d'],
             modes: ['normal'],
-            wholeLineTextObject: newWholeLineTextObject({ keys: ['d'], includeLineBreak: true }),
-            textObjects,
-            execute: async (context, ranges) => {
-                context.vimState.register.contents = ranges.map((range) => context.document.getText(range));
+            textObjects: [newWholeLineTextObject({ keys: ['d'], includeLineBreak: true }), ...textObjects],
+            execute: async (context, matches) => {
+                context.vimState.register.contents = matches.map((match) => ({
+                    text: context.document.getText(match.range),
+                    isLinewise: match.isLinewise ?? false,
+                }));
                 await context.editor.edit((editBuilder) => {
-                    for (const range of ranges) {
-                        editBuilder.delete(range);
+                    for (const match of matches) {
+                        editBuilder.delete(match.range);
                     }
                 });
             },
@@ -267,59 +307,38 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['D'],
             modes: ['normal'],
-            execute: async (context) => {
-                const editor = context.editor;
-                if (!editor) return;
-
-                const ranges = editor.selections.map((selection) => {
-                    const line = context.document.lineAt(selection.active.line);
-                    return new vscode.Range(selection.active, line.range.end);
-                });
-
-                context.vimState.register.contents = ranges.map((range) => context.document.getText(range));
-                await editor.edit((editBuilder) => {
-                    for (const range of ranges) {
-                        editBuilder.delete(range);
-                    }
-                });
-            },
+            execute: async (context) => delegateAction(actions, context, ['d', '$']),
         }),
 
         newOperatorAction({
             operatorKeys: ['y'],
-            wholeLineTextObject: newWholeLineTextObject({ keys: ['y'], includeLineBreak: true }),
             modes: ['normal'],
-            textObjects,
-            execute: (context, ranges) => {
-                context.vimState.register.contents = ranges.map((range) => context.document.getText(range));
+            textObjects: [newWholeLineTextObject({ keys: ['y'], includeLineBreak: true }), ...textObjects],
+            execute: (context, matches) => {
+                context.vimState.register.contents = matches.map((match) => ({
+                    text: context.document.getText(match.range),
+                    isLinewise: match.isLinewise ?? false,
+                }));
             },
         }),
         newAction({
             keys: ['Y'],
             modes: ['normal'],
-            execute: (context) => {
-                const editor = context.editor;
-                if (!editor) return;
-
-                const ranges = editor.selections.map((selection) => {
-                    const line = context.document.lineAt(selection.active.line);
-                    return line.rangeIncludingLineBreak;
-                });
-
-                context.vimState.register.contents = ranges.map((range) => context.document.getText(range));
-            },
+            execute: (context) => delegateAction(actions, context, ['y', 'y']),
         }),
 
         newOperatorAction({
             operatorKeys: ['c'],
             modes: ['normal'],
-            wholeLineTextObject: newWholeLineTextObject({ keys: ['c'], includeLineBreak: false }),
-            textObjects,
-            execute: async (context, ranges) => {
-                context.vimState.register.contents = ranges.map((range) => context.document.getText(range));
+            textObjects: [newWholeLineTextObject({ keys: ['c'], includeLineBreak: false }), ...textObjects],
+            execute: async (context, matches) => {
+                context.vimState.register.contents = matches.map((match) => ({
+                    text: context.document.getText(match.range),
+                    isLinewise: match.isLinewise ?? false,
+                }));
                 await context.editor.edit((editBuilder) => {
-                    for (const range of ranges) {
-                        editBuilder.delete(range);
+                    for (const match of matches) {
+                        editBuilder.delete(match.range);
                     }
                 });
                 enterMode(context.vimState, context.editor, 'insert');
@@ -328,23 +347,7 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['C'],
             modes: ['normal'],
-            execute: async (context) => {
-                const editor = context.editor;
-                if (!editor) return;
-
-                const ranges = editor.selections.map((selection) => {
-                    const line = context.document.lineAt(selection.active.line);
-                    return new vscode.Range(selection.active, line.range.end);
-                });
-
-                context.vimState.register.contents = ranges.map((range) => context.document.getText(range));
-                await editor.edit((editBuilder) => {
-                    for (const range of ranges) {
-                        editBuilder.delete(range);
-                    }
-                });
-                enterMode(context.vimState, context.editor, 'insert');
-            },
+            execute: async (context) => delegateAction(actions, context, ['c', '$']),
         }),
     );
 
@@ -354,9 +357,20 @@ export function buildActions(): Action[] {
             keys: ['d'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                context.vimState.register.contents = context.editor.selections.map((selection) =>
-                    context.document.getText(selection),
-                );
+                context.vimState.register.contents = context.editor.selections.map((selection) => {
+                    let adjustedSelection = selection;
+                    if (context.vimState.mode === 'visualLine' && selection.end.character !== 0) {
+                        // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
+                        adjustedSelection = new vscode.Selection(
+                            selection.start,
+                            selection.end.translate(1, 0).with({ character: 0 }),
+                        );
+                    }
+                    const text = context.document.getText(adjustedSelection);
+                    const isLinewise = context.vimState.mode === 'visualLine';
+                    return { text, isLinewise };
+                });
+
                 await context.editor.edit((editBuilder) => {
                     for (const selection of context.editor.selections) {
                         editBuilder.delete(selection);
@@ -370,9 +384,19 @@ export function buildActions(): Action[] {
             keys: ['y'],
             modes: ['visual', 'visualLine'],
             execute: (context) => {
-                context.vimState.register.contents = context.editor.selections.map((selection) =>
-                    context.document.getText(selection),
-                );
+                context.vimState.register.contents = context.editor.selections.map((selection) => {
+                    let adjustedSelection = selection;
+                    if (context.vimState.mode === 'visualLine' && selection.end.character !== 0) {
+                        // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
+                        adjustedSelection = new vscode.Selection(
+                            selection.start,
+                            selection.end.translate(1, 0).with({ character: 0 }),
+                        );
+                    }
+                    const text = context.document.getText(adjustedSelection);
+                    const isLinewise = context.vimState.mode === 'visualLine';
+                    return { text, isLinewise };
+                });
                 enterMode(context.vimState, context.editor, 'normal');
             },
         }),
@@ -381,9 +405,19 @@ export function buildActions(): Action[] {
             keys: ['c'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                context.vimState.register.contents = context.editor.selections.map((selection) =>
-                    context.document.getText(selection),
-                );
+                context.vimState.register.contents = context.editor.selections.map((selection) => {
+                    let adjustedSelection = selection;
+                    if (context.vimState.mode === 'visualLine' && selection.end.character !== 0) {
+                        // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
+                        adjustedSelection = new vscode.Selection(
+                            selection.start,
+                            selection.end.translate(1, 0).with({ character: 0 }),
+                        );
+                    }
+                    const text = context.document.getText(adjustedSelection);
+                    const isLinewise = context.vimState.mode === 'visualLine';
+                    return { text, isLinewise };
+                });
 
                 await context.editor.edit((editBuilder) => {
                     for (const selection of context.editor.selections) {
@@ -397,4 +431,18 @@ export function buildActions(): Action[] {
 
     console.log(`Built ${actions.length} total actions`);
     return actions;
+}
+
+export function delegateAction(actions: Action[], context: Context, keys: string[]): ActionResult {
+    let finalResult: 'noMatch' | 'needsMoreKey' = 'noMatch';
+    for (const action of actions) {
+        const result = action(context, keys);
+        if (result === 'executed') {
+            return 'executed';
+        } else if (result === 'needsMoreKey') {
+            finalResult = 'needsMoreKey';
+        }
+    }
+
+    return finalResult;
 }

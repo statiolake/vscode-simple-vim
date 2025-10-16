@@ -24,7 +24,7 @@ export function newTextObject(config: {
         }
 
         const range = config.compute(context, position);
-        return { result: 'match', range };
+        return { result: 'match', data: { range } };
     };
 }
 
@@ -50,16 +50,25 @@ export function newRegexTextObject(config: {
         }
 
         const range = config.compute(context, position, parseResult.variables);
-        return { result: 'match', range };
+        return { result: 'match', data: { range } };
     };
 }
 
 export function newWholeLineTextObject(config: { keys: string[]; includeLineBreak: boolean }): TextObject {
-    return newTextObject({
+    const baseTextObject = newTextObject({
         keys: config.keys,
         compute: (context: Context, position: vscode.Position) => {
             const line = context.editor.document.lineAt(position.line);
             return config.includeLineBreak ? line.rangeIncludingLineBreak : line.range;
         },
     });
+
+    // newWholeLineTextObject の結果に isLinewise: true を付与
+    return (context: Context, keys: string[], position: vscode.Position) => {
+        const result = baseTextObject(context, keys, position);
+        if (result.result === 'match') {
+            return { result: 'match', data: { range: result.data.range, isLinewise: true } };
+        }
+        return result;
+    };
 }

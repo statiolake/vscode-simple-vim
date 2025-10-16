@@ -13,9 +13,14 @@ export type VimState = {
     keysPressed: string[];
     actions: Action[];
     register: {
-        contents: (string | undefined)[];
+        contents: Array<RegisterContent | undefined>;
     };
     // f/F/t/T の繰り返し用
     lastFtChar: string; // 最後に検索した文字
     lastFtCommand: 'f' | 'F' | 't' | 'T' | undefined; // 最後に使ったコマンド
+};
+
+export type RegisterContent = {
+    text: string;
+    isLinewise: boolean;
 };
