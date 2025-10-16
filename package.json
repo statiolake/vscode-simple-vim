@@ -36,12 +36,18 @@
       },
       {
         "key": "ctrl+d",
-        "command": "cursorPageDown",
+        "command": "simple-vim.send",
+        "args": {
+          "keys": "<C-d>"
+        },
         "when": "editorTextFocus && simple-vim.mode != 'insert'"
       },
       {
         "key": "ctrl+u",
-        "command": "cursorPageUp",
+        "command": "simple-vim.send",
+        "args": {
+          "keys": "<C-u>"
+        },
         "when": "editorTextFocus && simple-vim.mode != 'insert'"
       },
       {

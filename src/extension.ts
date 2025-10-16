@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { buildActions } from './actionSystem/actions';
+import { typeHandler } from './actionSystem/typeHandler';
 import { escapeHandler } from './escape_handler';
 import { enterMode } from './modes';
 import type { VimState } from './vimStateTypes';
@@ -51,6 +52,13 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand('simple-vim.escapeKey', () => escapeHandler(vimState)),
         vscode.commands.registerCommand('simple-vim.noop', () => {
             // Do nothing - used to ignore keys in certain modes
+        }),
+        vscode.commands.registerCommand('simple-vim.send', (args: { keys: string }) => {
+            if (!args || !args.keys) {
+                console.error('simple-vim.send: keys argument is required');
+                return;
+            }
+            typeHandler(vimState, args.keys);
         }),
     );
 

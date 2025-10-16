@@ -593,5 +593,49 @@ export function buildMotions(): Motion[] {
         }),
     );
 
+    // <C-d> - 半ページ下へ移動
+    motions.push(
+        newMotion({
+            keys: ['<C-d>'],
+            compute: (context, position) => {
+                const editor = context.editor;
+                const visibleRanges = editor.visibleRanges;
+                if (visibleRanges.length === 0) {
+                    return position;
+                }
+
+                // 表示されている行数を計算
+                const visibleLines = visibleRanges[0].end.line - visibleRanges[0].start.line;
+                const halfPage = Math.floor(visibleLines / 2);
+
+                // 新しい行位置を計算
+                const newLine = Math.min(position.line + halfPage, context.document.lineCount - 1);
+                return new vscode.Position(newLine, position.character);
+            },
+        }),
+    );
+
+    // <C-u> - 半ページ上へ移動
+    motions.push(
+        newMotion({
+            keys: ['<C-u>'],
+            compute: (context, position) => {
+                const editor = context.editor;
+                const visibleRanges = editor.visibleRanges;
+                if (visibleRanges.length === 0) {
+                    return position;
+                }
+
+                // 表示されている行数を計算
+                const visibleLines = visibleRanges[0].end.line - visibleRanges[0].start.line;
+                const halfPage = Math.floor(visibleLines / 2);
+
+                // 新しい行位置を計算
+                const newLine = Math.max(position.line - halfPage, 0);
+                return new vscode.Position(newLine, position.character);
+            },
+        }),
+    );
+
     return motions;
 }
