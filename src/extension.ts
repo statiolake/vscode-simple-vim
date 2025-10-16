@@ -49,6 +49,9 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(vimState, e)),
         vscode.workspace.onDidChangeConfiguration((e) => onDidChangeConfiguration(vimState, e)),
         vscode.commands.registerCommand('simple-vim.escapeKey', () => escapeHandler(vimState)),
+        vscode.commands.registerCommand('simple-vim.noop', () => {
+            // Do nothing - used to ignore keys in certain modes
+        }),
     );
 
     const vimState: VimState = {

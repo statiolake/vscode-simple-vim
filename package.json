@@ -63,6 +63,26 @@
         "key": "ctrl+w",
         "command": "deleteWordLeft",
         "when": "textInputFocus && !editorReadonly && simple-vim.mode == 'insert'"
+      },
+      {
+        "key": "backspace",
+        "command": "simple-vim.noop",
+        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+      },
+      {
+        "key": "delete",
+        "command": "simple-vim.noop",
+        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+      },
+      {
+        "key": "enter",
+        "command": "simple-vim.noop",
+        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+      },
+      {
+        "key": "tab",
+        "command": "simple-vim.noop",
+        "when": "editorTextFocus && simple-vim.mode != 'insert'"
       }
     ],
     "configuration": {
