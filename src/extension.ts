@@ -3,8 +3,8 @@ import { buildActions } from './action/actions';
 import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
 import { typeHandler } from './typeHandler';
+import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimStateTypes';
-import { expandSelectionsToFullLines } from './visualLineUtils';
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
