@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import type { Context } from '../context';
 import { enterMode } from '../modes';
-import { buildMotions } from '../motionSystem/motions';
-import { newWholeLineTextObject } from '../textObjectSystem/textObjectBuilder';
-import { buildTextObjects } from '../textObjectSystem/textObjects';
+import { buildMotions } from '../motion/motions';
+import { newWholeLineTextObject } from '../textObject/textObjectBuilder';
+import { buildTextObjects } from '../textObject/textObjects';
 import { motionToAction, newAction, newOperatorAction, textObjectToVisualAction } from './actionBuilder';
 import type { Action, ActionResult } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用

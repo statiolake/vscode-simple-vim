@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { buildActions } from './actionSystem/actions';
+import { buildActions } from './action/actions';
 import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
 import { typeHandler } from './typeHandler';

@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode';
-import type { Action } from './actionSystem/actionTypes';
+import type { Action } from './action/actionTypes';
 import type { Mode } from './modesTypes';
 
 /**

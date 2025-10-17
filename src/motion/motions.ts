@@ -1,8 +1,77 @@
 import * as vscode from 'vscode';
-import * as positionUtils from '../position_utils';
-import { whitespaceWordRanges, wordRanges } from '../word_utils';
 import { newMotion, newRegexMotion } from './motionBuilder';
 import type { Motion } from './motionTypes';
+
+/**
+ * 単語の境界を検出するための正規表現
+ * 単語は、英数字とアンダースコアで構成される連続した文字列
+ */
+const wordBoundaryRegex = /\w+/g;
+
+/**
+ * 単語範囲を取得（英数字とアンダースコアで構成される連続文字）
+ */
+function getWordRanges(text: string): Array<{ start: number; end: number }> {
+    const ranges: Array<{ start: number; end: number }> = [];
+    const regex = new RegExp(wordBoundaryRegex);
+    let match: RegExpExecArray | null;
+    // biome-ignore lint/suspicious/noAssignInExpressions: regex.exec requires assignment
+    while ((match = regex.exec(text)) !== null) {
+        ranges.push({ start: match.index, end: match.index + match[0].length });
+    }
+    return ranges;
+}
+
+/**
+ * ホワイトスペース区切りの単語範囲を取得
+ */
+function getWhitespaceWordRanges(text: string): Array<{ start: number; end: number }> {
+    const ranges: Array<{ start: number; end: number }> = [];
+    let inWord = false;
+    let start = 0;
+
+    for (let i = 0; i < text.length; i++) {
+        const isWhitespace = /\s/.test(text[i]);
+
+        if (!isWhitespace && !inWord) {
+            // 単語の開始
+            start = i;
+            inWord = true;
+        } else if (isWhitespace && inWord) {
+            // 単語の終了
+            ranges.push({ start, end: i });
+            inWord = false;
+        }
+    }
+
+    // 最後の単語を処理
+    if (inWord) {
+        ranges.push({ start, end: text.length });
+    }
+
+    return ranges;
+}
+
+/**
+ * ポジションを左に移動
+ */
+function positionLeft(position: vscode.Position): vscode.Position {
+    if (position.character > 0) {
+        return position.with({ character: position.character - 1 });
+    }
+    return position;
+}
+
+/**
+ * ノーマルモード用の右移動（行末を超えない）
+ */
+function positionRightNormal(document: vscode.TextDocument, position: vscode.Position): vscode.Position {
+    const lineLength = document.lineAt(position.line).text.length;
+    if (position.character < lineLength) {
+        return position.with({ character: position.character + 1 });
+    }
+    return position;
+}
 
 /**
  * すべてのMotionを返す
@@ -16,7 +85,7 @@ export function buildMotions(): Motion[] {
         newMotion({
             keys: ['h'],
             compute: (_context, position) => {
-                return positionUtils.left(position);
+                return positionLeft(position);
             },
         }),
     );
@@ -25,7 +94,7 @@ export function buildMotions(): Motion[] {
         newMotion({
             keys: ['l'],
             compute: (context, position) => {
-                return positionUtils.rightNormal(context.document, position);
+                return positionRightNormal(context.document, position);
             },
         }),
     );
@@ -60,8 +129,8 @@ export function buildMotions(): Motion[] {
             keys: ['w'],
             compute: (context, position) => {
                 const lineText = context.document.lineAt(position.line).text;
-                const ranges = wordRanges(lineText);
-                const result = ranges.find((x) => x.start > position.character);
+                const ranges = getWordRanges(lineText);
+                const result = ranges.find((x: { start: number; end: number }) => x.start > position.character);
 
                 if (result) {
                     return position.with({ character: result.start });
@@ -69,7 +138,7 @@ export function buildMotions(): Motion[] {
 
                 if (position.line + 1 < context.document.lineCount) {
                     const nextLineText = context.document.lineAt(position.line + 1).text;
-                    const nextRanges = wordRanges(nextLineText);
+                    const nextRanges = getWordRanges(nextLineText);
                     if (nextRanges.length > 0) {
                         return new vscode.Position(position.line + 1, nextRanges[0].start);
                     }
@@ -85,7 +154,7 @@ export function buildMotions(): Motion[] {
             keys: ['W'],
             compute: (context, position) => {
                 const lineText = context.document.lineAt(position.line).text;
-                const ranges = whitespaceWordRanges(lineText);
+                const ranges = getWhitespaceWordRanges(lineText);
                 const result = ranges.find((x) => x.start > position.character);
 
                 if (result) {
@@ -94,7 +163,7 @@ export function buildMotions(): Motion[] {
 
                 if (position.line + 1 < context.document.lineCount) {
                     const nextLineText = context.document.lineAt(position.line + 1).text;
-                    const nextRanges = whitespaceWordRanges(nextLineText);
+                    const nextRanges = getWhitespaceWordRanges(nextLineText);
                     if (nextRanges.length > 0) {
                         return new vscode.Position(position.line + 1, nextRanges[0].start);
                     }
@@ -110,8 +179,10 @@ export function buildMotions(): Motion[] {
             keys: ['b'],
             compute: (context, position) => {
                 const lineText = context.document.lineAt(position.line).text;
-                const ranges = wordRanges(lineText);
-                const result = ranges.reverse().find((x) => x.start < position.character);
+                const ranges = getWordRanges(lineText);
+                const result = ranges
+                    .reverse()
+                    .find((x: { start: number; end: number }) => x.start < position.character);
 
                 if (result) {
                     return position.with({ character: result.start });
@@ -119,7 +190,7 @@ export function buildMotions(): Motion[] {
 
                 if (position.line > 0) {
                     const prevLineText = context.document.lineAt(position.line - 1).text;
-                    const prevRanges = wordRanges(prevLineText);
+                    const prevRanges = getWordRanges(prevLineText);
                     if (prevRanges.length > 0) {
                         return new vscode.Position(position.line - 1, prevRanges[prevRanges.length - 1].start);
                     }
@@ -135,8 +206,10 @@ export function buildMotions(): Motion[] {
             keys: ['B'],
             compute: (context, position) => {
                 const lineText = context.document.lineAt(position.line).text;
-                const ranges = whitespaceWordRanges(lineText);
-                const result = ranges.reverse().find((x) => x.start < position.character);
+                const ranges = getWhitespaceWordRanges(lineText);
+                const result = ranges
+                    .reverse()
+                    .find((x: { start: number; end: number }) => x.start < position.character);
 
                 if (result) {
                     return position.with({ character: result.start });
@@ -144,7 +217,7 @@ export function buildMotions(): Motion[] {
 
                 if (position.line > 0) {
                     const prevLineText = context.document.lineAt(position.line - 1).text;
-                    const prevRanges = whitespaceWordRanges(prevLineText);
+                    const prevRanges = getWhitespaceWordRanges(prevLineText);
                     if (prevRanges.length > 0) {
                         return new vscode.Position(position.line - 1, prevRanges[prevRanges.length - 1].start);
                     }
@@ -160,8 +233,8 @@ export function buildMotions(): Motion[] {
             keys: ['e'],
             compute: (context, position) => {
                 const lineText = context.document.lineAt(position.line).text;
-                const ranges = wordRanges(lineText);
-                const result = ranges.find((x) => x.end > position.character);
+                const ranges = getWordRanges(lineText);
+                const result = ranges.find((x: { start: number; end: number }) => x.end > position.character);
 
                 if (result) {
                     // VS Codeネイティブ：単語の終端（最後の文字の直後）に移動
@@ -179,10 +252,10 @@ export function buildMotions(): Motion[] {
             keys: ['g', 'e'],
             compute: (context, position) => {
                 const lineText = context.document.lineAt(position.line).text;
-                const ranges = wordRanges(lineText);
+                const ranges = getWordRanges(lineText);
 
                 // Find the word range that ends before current position
-                const result = ranges.reverse().find((x) => x.end < position.character);
+                const result = ranges.reverse().find((x: { start: number; end: number }) => x.end < position.character);
 
                 if (result) {
                     // VS Codeネイティブ：単語の終端（最後の文字の直後）に移動
@@ -192,7 +265,7 @@ export function buildMotions(): Motion[] {
                 // If no word found on current line, try previous line
                 if (position.line > 0) {
                     const prevLineText = context.document.lineAt(position.line - 1).text;
-                    const prevRanges = wordRanges(prevLineText);
+                    const prevRanges = getWordRanges(prevLineText);
                     if (prevRanges.length > 0) {
                         // Move to end of last word on previous line
                         const lastRange = prevRanges[prevRanges.length - 1];
@@ -211,10 +284,10 @@ export function buildMotions(): Motion[] {
             keys: ['g', 'E'],
             compute: (context, position) => {
                 const lineText = context.document.lineAt(position.line).text;
-                const ranges = whitespaceWordRanges(lineText);
+                const ranges = getWhitespaceWordRanges(lineText);
 
                 // Find the WORD range that ends before current position
-                const result = ranges.reverse().find((x) => x.end < position.character);
+                const result = ranges.reverse().find((x: { start: number; end: number }) => x.end < position.character);
 
                 if (result) {
                     // VS Codeネイティブ：WORD の終端（最後の文字の直後）に移動
@@ -224,7 +297,7 @@ export function buildMotions(): Motion[] {
                 // If no WORD found on current line, try previous line
                 if (position.line > 0) {
                     const prevLineText = context.document.lineAt(position.line - 1).text;
-                    const prevRanges = whitespaceWordRanges(prevLineText);
+                    const prevRanges = getWhitespaceWordRanges(prevLineText);
                     if (prevRanges.length > 0) {
                         // Move to end of last WORD on previous line
                         const lastRange = prevRanges[prevRanges.length - 1];
