@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import type { Context } from '../context';
-import { keysParserPrefix, keysParserRegex } from '../keysParser/keysParser';
-import type { KeysParser } from '../keysParser/keysParserTypes';
 import type { Mode } from '../modesTypes';
 import type { Motion } from '../motion/motionTypes';
 import type { TextObject, TextObjectMatch } from '../textObject/textObjectTypes';
+import { keysParserPrefix, keysParserRegex } from '../utils/keysParser/keysParser';
+import type { KeysParser } from '../utils/keysParser/keysParserTypes';
 import type { Action, ActionResult } from './actionTypes';
 
 /**

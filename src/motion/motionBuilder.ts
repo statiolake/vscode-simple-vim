@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode';
 import type { Context } from '../context';
-import { keysParserPrefix, keysParserRegex } from '../keysParser/keysParser';
+import { keysParserPrefix, keysParserRegex } from '../utils/keysParser/keysParser';
 import type { Motion, MotionResult } from './motionTypes';
 
 /**
