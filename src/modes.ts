@@ -65,12 +65,24 @@ function updateStatusBar(vimState: VimState, mode: Mode): void {
 }
 
 function updateTypeHandler(vimState: VimState, mode: Mode): void {
-    if (mode === 'insert' && vimState.typeSubscription) {
-        vimState.typeSubscription.dispose();
-        vimState.typeSubscription = undefined;
-    } else if (!vimState.typeSubscription) {
-        vimState.typeSubscription = vscode.commands.registerCommand('type', (e) => {
-            typeHandler(vimState, e.text);
-        });
+    if (mode === 'insert' && vimState.typeSubscriptions.length > 0) {
+        for (const sub of vimState.typeSubscriptions) sub.dispose();
+        vimState.typeSubscriptions = [];
+    } else if (vimState.typeSubscriptions.length === 0) {
+        vimState.typeSubscriptions = [];
+        vimState.typeSubscriptions.push(
+            vscode.commands.registerCommand('type', (e) => {
+                typeHandler(vimState, e.text);
+            }),
+            vscode.commands.registerCommand('compositionStart', (_) => {
+                // composition 関連のイベントはすべて無視する
+            }),
+            vscode.commands.registerCommand('compositionEnd', (_) => {
+                // composition 関連のイベントはすべて無視する
+            }),
+            vscode.commands.registerCommand('replacePreviousChar', (_) => {
+                // composition 関連のイベントはすべて無視する
+            }),
+        );
     }
 }

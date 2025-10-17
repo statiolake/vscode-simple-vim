@@ -6,7 +6,7 @@ import type { Mode } from './modesTypes';
  * Vimの状態 (mutableに変更される)
  */
 export type VimState = {
-    typeSubscription: vscode.Disposable | undefined;
+    typeSubscriptions: vscode.Disposable[];
     statusBarItem: vscode.StatusBarItem;
 
     mode: Mode;
