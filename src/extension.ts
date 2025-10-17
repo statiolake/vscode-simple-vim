@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { buildActions } from './actionSystem/actions';
-import { escapeHandler } from './escape_handler';
+import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
 import { typeHandler } from './typeHandler';
 import type { VimState } from './vimStateTypes';
