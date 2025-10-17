@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { typeHandler } from './actionSystem/typeHandler';
 import type { Mode } from './modesTypes';
+import { typeHandler } from './typeHandler';
 import type { VimState } from './vimStateTypes';
 import { expandSelectionsToFullLines } from './visualLineUtils';
 

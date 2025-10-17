@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import type { Context } from '../context';
-import type { VimState } from '../vimStateTypes';
+import type { Context } from './context';
+import type { VimState } from './vimStateTypes';
 
 export function typeHandler(vimState: VimState, char: string): void {
     const editor = vscode.window.activeTextEditor;

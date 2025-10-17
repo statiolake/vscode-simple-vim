@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { buildActions } from './actionSystem/actions';
-import { typeHandler } from './actionSystem/typeHandler';
 import { escapeHandler } from './escape_handler';
 import { enterMode } from './modes';
+import { typeHandler } from './typeHandler';
 import type { VimState } from './vimStateTypes';
 import { expandSelectionsToFullLines } from './visualLineUtils';
 
