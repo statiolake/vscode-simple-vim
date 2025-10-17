@@ -6,12 +6,6 @@ export function typeHandler(vimState: VimState, char: string): void {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
-    // In insert mode, just pass through the character
-    if (vimState.mode === 'insert') {
-        vscode.commands.executeCommand('default:type', { text: char });
-        return;
-    }
-
     // In other modes, add to pressed keys and try to execute actions
     vimState.keysPressed.push(char);
 
