@@ -1,51 +1,9 @@
 import * as vscode from 'vscode';
 import type { Motion } from '../motion/motionTypes';
+import { findWordBoundary } from '../utils/positionFinder';
+import { isCharacterTypeBoundary, isWhitespaceBoundary } from '../utils/unicode';
 import { newTextObject } from './textObjectBuilder';
 import type { TextObject } from './textObjectTypes';
-
-/**
- * 単語範囲を取得（英数字とアンダースコアで構成される連続文字）
- */
-function getWordRanges(text: string): Array<{ start: number; end: number }> {
-    const ranges: Array<{ start: number; end: number }> = [];
-    const regex = /\w+/g;
-    let match: RegExpExecArray | null;
-    // biome-ignore lint/suspicious/noAssignInExpressions: regex.exec requires assignment
-    while ((match = regex.exec(text)) !== null) {
-        ranges.push({ start: match.index, end: match.index + match[0].length });
-    }
-    return ranges;
-}
-
-/**
- * ホワイトスペース区切りの単語範囲を取得
- */
-function getWhitespaceWordRanges(text: string): Array<{ start: number; end: number }> {
-    const ranges: Array<{ start: number; end: number }> = [];
-    let inWord = false;
-    let start = 0;
-
-    for (let i = 0; i < text.length; i++) {
-        const isWhitespace = /\s/.test(text[i]);
-
-        if (!isWhitespace && !inWord) {
-            // 単語の開始
-            start = i;
-            inWord = true;
-        } else if (isWhitespace && inWord) {
-            // 単語の終了
-            ranges.push({ start, end: i });
-            inWord = false;
-        }
-    }
-
-    // 最後の単語を処理
-    if (inWord) {
-        ranges.push({ start, end: text.length });
-    }
-
-    return ranges;
-}
 
 /**
  * MotionをTextObjectに変換
@@ -95,14 +53,12 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
         newTextObject({
             keys: ['i', 'w'],
             compute: (context, position) => {
-                const lineText = context.document.lineAt(position.line).text;
-                const ranges = getWordRanges(lineText);
+                const { document } = context;
+                const start = findWordBoundary(document, 'further', 'before', position, isCharacterTypeBoundary);
+                const end = findWordBoundary(document, 'further', 'after', position, isCharacterTypeBoundary);
 
-                for (const range of ranges) {
-                    if (position.character >= range.start && position.character <= range.end) {
-                        const result = new vscode.Range(position.line, range.start, position.line, range.end);
-                        return result;
-                    }
+                if (start && end) {
+                    return new vscode.Range(start, end);
                 }
 
                 return new vscode.Range(position, position);
@@ -112,13 +68,12 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
         newTextObject({
             keys: ['a', 'w'],
             compute: (context, position) => {
-                const lineText = context.document.lineAt(position.line).text;
-                const ranges = getWordRanges(lineText);
+                const { document } = context;
+                const start = findWordBoundary(document, 'further', 'before', position, isCharacterTypeBoundary);
+                const end = findWordBoundary(document, 'further', 'after', position, isCharacterTypeBoundary);
 
-                for (const range of ranges) {
-                    if (position.character >= range.start && position.character < range.end) {
-                        return new vscode.Range(position.line, range.start, position.line, range.end);
-                    }
+                if (start && end) {
+                    return new vscode.Range(start, end);
                 }
 
                 return new vscode.Range(position, position);
@@ -128,13 +83,12 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
         newTextObject({
             keys: ['i', 'W'],
             compute: (context, position) => {
-                const lineText = context.document.lineAt(position.line).text;
-                const ranges = getWhitespaceWordRanges(lineText);
+                const { document } = context;
+                const start = findWordBoundary(document, 'further', 'before', position, isWhitespaceBoundary);
+                const end = findWordBoundary(document, 'further', 'after', position, isWhitespaceBoundary);
 
-                for (const range of ranges) {
-                    if (position.character >= range.start && position.character < range.end) {
-                        return new vscode.Range(position.line, range.start, position.line, range.end);
-                    }
+                if (start && end) {
+                    return new vscode.Range(start, end);
                 }
 
                 return new vscode.Range(position, position);
@@ -144,13 +98,12 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
         newTextObject({
             keys: ['a', 'W'],
             compute: (context, position) => {
-                const lineText = context.document.lineAt(position.line).text;
-                const ranges = getWhitespaceWordRanges(lineText);
+                const { document } = context;
+                const start = findWordBoundary(document, 'further', 'before', position, isWhitespaceBoundary);
+                const end = findWordBoundary(document, 'further', 'after', position, isWhitespaceBoundary);
 
-                for (const range of ranges) {
-                    if (position.character >= range.start && position.character < range.end) {
-                        return new vscode.Range(position.line, range.start, position.line, range.end);
-                    }
+                if (start && end) {
+                    return new vscode.Range(start, end);
                 }
 
                 return new vscode.Range(position, position);

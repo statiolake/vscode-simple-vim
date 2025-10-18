@@ -5,7 +5,7 @@ import { enterMode } from '../modes';
 import { buildMotions } from '../motion/motions';
 import { newWholeLineTextObject } from '../textObject/textObjectBuilder';
 import { buildTextObjects } from '../textObject/textObjects';
-import { findLineEnd, findLineStartAfterIndent, findNextChar } from '../utils/positionFinder';
+import { findAdjacentPosition, findLineEnd, findLineStartAfterIndent } from '../utils/positionFinder';
 import { saveCurrentSelectionsToRegister } from '../vimState';
 import { motionToAction, newAction, newOperatorAction, textObjectToVisualAction } from './actionBuilder';
 import type { Action, ActionResult } from './actionTypes';
@@ -116,7 +116,7 @@ export function buildActions(): Action[] {
             modes: ['normal'],
             execute: (context) => {
                 context.editor.selections = context.editor.selections.map((selection) => {
-                    const newPosition = findNextChar(context.document, selection.active);
+                    const newPosition = findAdjacentPosition(context.document, 'after', selection.active);
                     return new vscode.Selection(selection.active, newPosition);
                 });
                 saveCurrentSelectionsToRegister(context.vimState, context.editor, { isLinewise: false });
