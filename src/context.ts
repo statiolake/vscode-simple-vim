@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode';
-import type { VimState } from './vimStateTypes';
+import type { VimState } from './vimState';
 
 /**
  * すべての操作で共通のコンテキスト

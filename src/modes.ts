@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import type { Mode } from './modesTypes';
 import { typeHandler } from './typeHandler';
 import { expandSelectionsToFullLines } from './utils/visualLine';
-import type { VimState } from './vimStateTypes';
+import type { VimState } from './vimState';
 
 export function enterMode(vimState: VimState, editor: vscode.TextEditor | undefined, mode: Mode): void {
     if (vimState.mode === mode) return;

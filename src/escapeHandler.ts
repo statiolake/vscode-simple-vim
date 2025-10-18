@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { enterMode } from './modes';
-import type { VimState } from './vimStateTypes';
+import type { VimState } from './vimState';
 
 export function escapeHandler(vimState: VimState): void {
     const editor = vscode.window.activeTextEditor;

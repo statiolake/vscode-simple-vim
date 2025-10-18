@@ -4,7 +4,7 @@ import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
 import { typeHandler } from './typeHandler';
 import { expandSelectionsToFullLines } from './utils/visualLine';
-import type { VimState } from './vimStateTypes';
+import type { VimState } from './vimState';
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
