@@ -40,6 +40,16 @@ export function findLineEnd(document: TextDocument, position: Position): Positio
     return line.range.end;
 }
 
+export function findDocumentStart(_document: TextDocument): Position {
+    return new Position(0, 0);
+}
+
+export function findDocumentEnd(document: TextDocument): Position {
+    const lastLineIndex = document.lineCount - 1;
+    const lastLine = document.lineAt(lastLineIndex);
+    return lastLine.range.end;
+}
+
 /**
  * 単語境界を探す
  * @param document ドキュメント

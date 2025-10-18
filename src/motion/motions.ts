@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { findAdjacentPosition, findWordBoundary } from '../utils/positionFinder';
+import { findAdjacentPosition, findDocumentEnd, findDocumentStart, findWordBoundary } from '../utils/positionFinder';
 import { isCharacterTypeBoundary, isWhitespaceBoundary } from '../utils/unicode';
 import { newMotion, newRegexMotion } from './motionBuilder';
 import type { Motion } from './motionTypes';
@@ -177,18 +177,14 @@ export function buildMotions(): Motion[] {
     motions.push(
         newMotion({
             keys: ['g', 'g'],
-            compute: (_context, _position) => {
-                return new vscode.Position(0, 0);
-            },
+            compute: (_context, _position) => findDocumentStart(_context.document),
         }),
     );
 
     motions.push(
         newMotion({
             keys: ['G'],
-            compute: (context, _position) => {
-                return context.document.lineAt(context.document.lineCount - 1).range.end;
-            },
+            compute: (context, _position) => findDocumentEnd(context.document),
         }),
     );
 
