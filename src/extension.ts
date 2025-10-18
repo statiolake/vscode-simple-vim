@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-
+import { Range } from 'vscode';
 import { buildActions } from './action/actions';
 import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
@@ -31,6 +31,9 @@ function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChan
         // それ以外のモードで選択状態になった場合は Visual モードへ移行する
         enterMode(vimState, e.textEditor, 'visual');
     }
+
+    // 選択範囲の先頭が表示されるようにスクロールする
+    e.textEditor.revealRange(new Range(e.selections[0].active, e.selections[0].active));
 }
 
 function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEditor | undefined) {

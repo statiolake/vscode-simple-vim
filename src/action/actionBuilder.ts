@@ -1,4 +1,4 @@
-import { Range, Selection, TextEditorRevealType } from 'vscode';
+import { Selection } from 'vscode';
 import type { Context } from '../context';
 import type { Mode } from '../modesTypes';
 import type { Motion } from '../motion/motionTypes';
@@ -96,10 +96,6 @@ export function motionToAction(motion: Motion): Action {
         });
 
         context.editor.selections = newSelections;
-        context.editor.revealRange(
-            new Range(newSelections[0].active, newSelections[0].active),
-            TextEditorRevealType.Default,
-        );
 
         return 'executed';
     };
@@ -153,10 +149,6 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
         });
 
         context.editor.selections = newSelections;
-        context.editor.revealRange(
-            new Range(newSelections[0].active, newSelections[0].active),
-            TextEditorRevealType.Default,
-        );
 
         return 'executed';
     };
