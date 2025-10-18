@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { Range } from 'vscode';
 import type { Context } from '../context';
 import { enterMode } from '../modes';
 import { buildMotions } from '../motion/motions';
@@ -244,8 +245,67 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['J'],
             modes: ['normal', 'visual', 'visualLine'],
-            execute: () => {
-                vscode.commands.executeCommand('editor.action.joinLines');
+            execute: async (context) => {
+                const editor = context.editor;
+                const document = context.document;
+
+                // コメント文字を取得
+                const lineComment = context.commentConfigProvider.getLineComment(document.languageId);
+
+                // ASCII文字かどうかを判定
+                const isAscii = (char: string): boolean => char.charCodeAt(0) < 128;
+
+                // スペースが必要かどうかを判定
+                // 非ASCII同士（日本語同士など）の場合のみスペースを入れない
+                const needsSpace = (prevChar: string, nextChar: string): boolean => {
+                    return isAscii(prevChar) || isAscii(nextChar);
+                };
+
+                // 行を結合する関数
+                const joinLines = (text: string): string => {
+                    const lines = text.split('\n');
+                    if (lines.length <= 1) return text;
+
+                    let result = lines[0].trimEnd();
+
+                    for (let i = 1; i < lines.length; i++) {
+                        // 次の行の先頭の空白を除去し、コメント文字も削除
+                        let nextLine = lines[i].trimStart();
+                        if (lineComment && nextLine.startsWith(lineComment)) {
+                            nextLine = nextLine.slice(lineComment.length).trimStart();
+                        }
+                        if (nextLine.length === 0) continue;
+
+                        // スペースの必要性を判定
+                        const lastChar = result[result.length - 1] || '';
+                        const firstChar = nextLine[0] || '';
+                        console.log(
+                            `Joining lines: lastChar='${lastChar}', firstChar='${firstChar}', needsSpace=${needsSpace(lastChar, firstChar)}`,
+                        );
+                        const separator = needsSpace(lastChar, firstChar) ? ' ' : '';
+
+                        result += separator + nextLine;
+                    }
+
+                    return result;
+                };
+
+                let ranges: Range[];
+                if (context.vimState.mode !== 'normal') {
+                    ranges = editor.selections.slice();
+                } else {
+                    const activeLine = document.lineAt(editor.selection.active.line);
+                    const nextLine = document.lineAt(editor.selection.active.line + 1);
+                    ranges = [new Range(activeLine.range.start, nextLine.range.end)];
+                }
+
+                await editor.edit((editBuilder) => {
+                    for (const range of ranges) {
+                        // visual mode の場合は選択範囲内の行を結合
+                        const text = document.getText(range);
+                        editBuilder.replace(range, joinLines(text));
+                    }
+                });
             },
         }),
     );

@@ -1,10 +1,15 @@
 import * as vscode from 'vscode';
+
 import { buildActions } from './action/actions';
 import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
 import { typeHandler } from './typeHandler';
+import { CommentConfigProvider } from './utils/comment';
 import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
+
+// グローバルな CommentConfigProvider（起動時に一度だけ初期化）
+export let globalCommentConfigProvider: CommentConfigProvider;
 
 function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
@@ -48,10 +53,26 @@ function onDidChangeConfiguration(vimState: VimState, e: vscode.ConfigurationCha
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+    // Create comment config provider
+    globalCommentConfigProvider = new CommentConfigProvider();
+
     // Create status bar item
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
+
+    const vimState: VimState = {
+        typeSubscriptions: [],
+        statusBarItem,
+        mode: 'insert',
+        keysPressed: [],
+        actions: buildActions(),
+        register: {
+            contents: [],
+        },
+        lastFtChar: '',
+        lastFtCommand: undefined,
+    };
 
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(vimState, editor)),
@@ -69,19 +90,6 @@ export function activate(context: vscode.ExtensionContext): void {
             typeHandler(vimState, args.keys);
         }),
     );
-
-    const vimState: VimState = {
-        typeSubscriptions: [],
-        statusBarItem,
-        mode: 'insert',
-        keysPressed: [],
-        actions: buildActions(),
-        register: {
-            contents: [],
-        },
-        lastFtChar: '',
-        lastFtCommand: undefined,
-    };
 
     enterMode(vimState, vscode.window.activeTextEditor, 'normal');
 

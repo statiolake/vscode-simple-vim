@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
+
 import type { Context } from './context';
+import { globalCommentConfigProvider } from './extension';
 import type { VimState } from './vimState';
 
 export function typeHandler(vimState: VimState, char: string): void {
@@ -13,6 +15,7 @@ export function typeHandler(vimState: VimState, char: string): void {
         editor,
         document: editor.document,
         vimState,
+        commentConfigProvider: globalCommentConfigProvider,
     };
 
     // Try to execute an action
