@@ -23,6 +23,36 @@ export function findAdjacentPosition(
     return document.validatePosition(document.positionAt(offset));
 }
 
+export function findNearerPosition(
+    document: TextDocument,
+    predicate: (character: string) => boolean,
+    direction: 'before' | 'after',
+    position: Position,
+    opts: {
+        withinLine: boolean;
+        maxOffsetWidth?: number;
+    },
+): Position | undefined {
+    // 指定なければ無制限で探索する
+    const maxOffsetWidth = opts.maxOffsetWidth ?? Infinity;
+
+    let offset = document.offsetAt(position);
+    const line = document.lineAt(position.line);
+    const minOffset = opts.withinLine ? document.offsetAt(line.range.start) : Math.max(0, offset - maxOffsetWidth);
+    const maxOffset = opts.withinLine
+        ? document.offsetAt(line.range.end)
+        : Math.min(document.offsetAt(document.lineAt(document.lineCount - 1).range.end), offset + maxOffsetWidth);
+    const delta = direction === 'before' ? -1 : 1;
+
+    while (minOffset <= offset && offset < maxOffset) {
+        const char = getTextOfOffsetRange(document, offset, offset + delta);
+        if (predicate(char)) return document.positionAt(offset);
+        offset += delta;
+    }
+
+    return undefined;
+}
+
 export function findLineStart(_document: TextDocument, position: Position): Position {
     return new Position(position.line, 0);
 }
@@ -98,6 +128,14 @@ export function findWordBoundary(
     return document.positionAt(offset);
 }
 
+/**
+ * 段落境界を探す
+ *
+ * @param document ドキュメント
+ * @param direction 探索方向（'before' は現在位置より前、'after' は現在位置より後）
+ * @param position 開始位置
+ * @returns 見つかった位置
+ */
 export function findParagraphBoundary(
     document: TextDocument,
     direction: 'before' | 'after',
@@ -112,4 +150,48 @@ export function findParagraphBoundary(
     }
 
     return new Position(line, 0);
+}
+
+export function findInsideBalancedPairs(
+    document: TextDocument,
+    position: Position,
+    open: string,
+    close: string,
+): Range | undefined {
+    // まず、左右に開き括弧と閉じ括弧を探す。ただし、position から左、position から右のそれぞれの範囲で、きちんと括弧の
+    // バランスがとれていることが必要。
+    const computeDegree = (text: string): number => {
+        let degree = 0;
+        for (const char of text) {
+            if (char === open) degree++;
+            if (char === close) degree--;
+        }
+        return degree;
+    };
+
+    const findBalancedNearerPosition = (direction: 'before' | 'after') => {
+        const findTarget = direction === 'before' ? open : close;
+        let nextPosition = position;
+        let foundAt: Position | undefined;
+        while (true) {
+            foundAt = findNearerPosition(document, (char) => char === findTarget, direction, nextPosition, {
+                withinLine: false,
+                maxOffsetWidth: 10000,
+            });
+            if (!foundAt) return undefined;
+
+            if (computeDegree(document.getText(new Range(position, foundAt))) === 0) {
+                return foundAt;
+            }
+
+            // 同じ場所をヒットさせないように一歩進む
+            nextPosition = findAdjacentPosition(document, direction, foundAt);
+        }
+    };
+
+    const foundAtBefore = findBalancedNearerPosition('before');
+    const foundAtAfter = findBalancedNearerPosition('after');
+    if (!foundAtBefore || !foundAtAfter) return undefined;
+
+    return new Range(foundAtBefore, foundAtAfter);
 }

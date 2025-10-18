@@ -1,8 +1,10 @@
+import type { Position, Range } from 'vscode';
 import * as vscode from 'vscode';
 import {
     findAdjacentPosition,
     findDocumentEnd,
     findDocumentStart,
+    findInsideBalancedPairs,
     findLineEnd,
     findLineStart,
     findLineStartAfterIndent,
@@ -237,54 +239,31 @@ export function buildMotions(): Motion[] {
         newMotion({
             keys: ['%'],
             compute: (context, position) => {
-                const pairs = ['()', '{}', '[]'];
+                const pairs: [string, string][] = [
+                    ['(', ')'],
+                    ['[', ']'],
+                    ['{', '}'],
+                ];
 
-                let offset = context.document.offsetAt(position);
-                // 重すぎてもつらいので、とりあえず前後 1000 文字を探索する
-                const minOffset = Math.max(0, offset - 1000);
-                const maxOffset = Math.min(context.document.getText().length, offset + 1000);
+                const distance = (target: Position): number =>
+                    Math.abs(context.document.offsetAt(target) - context.document.offsetAt(position));
 
-                let dir: number = 1;
-                let target: string | undefined;
-                while (offset < maxOffset) {
-                    const position = context.document.positionAt(offset);
-                    const char = context.document.lineAt(position.line).text[position.character];
+                const minDistance = (target: Range): number => Math.min(distance(target.start), distance(target.end));
 
-                    for (const pair of pairs) {
-                        if (char === pair[0]) {
-                            dir = 1;
-                            target = pair[1];
-                            break;
-                        }
+                // 各ペアで探索して、一番近いものを採用する
+                let bestRange: vscode.Range | undefined;
+                for (const [open, close] of pairs) {
+                    const range = findInsideBalancedPairs(context.document, position, open, close);
+                    if (!range) continue;
 
-                        if (char === pair[1]) {
-                            dir = -1;
-                            target = pair[0];
-                            break;
-                        }
+                    if (!bestRange || minDistance(range) < minDistance(bestRange)) {
+                        bestRange = range;
                     }
-
-                    if (target) break;
-
-                    offset++;
                 }
+                if (!bestRange) return position;
 
-                if (!target) {
-                    return position;
-                }
-
-                while (minOffset < offset && offset < maxOffset) {
-                    const position = context.document.positionAt(offset);
-                    const char = context.document.lineAt(position.line).text[position.character];
-
-                    if (char === target) {
-                        return context.document.positionAt(Math.max(0, offset));
-                    }
-
-                    offset += dir;
-                }
-
-                return position;
+                // 遠い方の位置に移動する
+                return distance(bestRange.start) > distance(bestRange.end) ? bestRange.start : bestRange.end;
             },
         }),
     );
