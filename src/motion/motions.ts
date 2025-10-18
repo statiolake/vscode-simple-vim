@@ -142,7 +142,6 @@ export function buildMotions(): Motion[] {
         newMotion({
             keys: ['E'],
             compute: (context, position) => {
-                // 現在位置の次の文字から検索を開始
                 const nextPos = findAdjacentPosition(context.document, 'after', position);
                 const result = findWordBoundary(context.document, 'further', 'after', nextPos, isWhitespaceBoundary);
                 return result ?? position;
@@ -188,8 +187,7 @@ export function buildMotions(): Motion[] {
         newMotion({
             keys: ['G'],
             compute: (context, _position) => {
-                const lastLine = context.document.lineCount - 1;
-                return new vscode.Position(lastLine, 0);
+                return context.document.lineAt(context.document.lineCount - 1).range.end;
             },
         }),
     );
