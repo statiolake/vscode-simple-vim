@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import { Range, Selection, TextEditorRevealType } from 'vscode';
 import type { Context } from '../context';
 import type { Mode } from '../modesTypes';
 import type { Motion } from '../motion/motionTypes';
@@ -67,49 +67,38 @@ export function newRegexAction(config: {
  */
 export function motionToAction(motion: Motion): Action {
     const modes = ['normal'];
+
     return (context: Context, keys: string[]): ActionResult => {
         // モードチェック
-        if (!modes.includes(context.vimState.mode)) {
-            return 'noMatch';
+        if (!modes.includes(context.vimState.mode)) return 'noMatch';
+
+        // Motion を各カーソル位置で実行
+        // 一つでも match 以外があれば、すぐ返す (パフォーマンスのため)
+        const results = [];
+        for (const selection of context.editor.selections) {
+            const result = motion(context, keys, selection.active);
+            if (result.result !== 'match') return result.result;
+            results.push(result);
         }
 
-        // Motionを各カーソル位置で実行
-        const results = context.editor.selections.map((selection) => {
-            return motion(context, keys, selection.active);
-        });
-
-        // すべてのカーソルで同じ結果になるはず
+        // マッチ・非マッチはすべてのカーソルで同じ結果になるはず
         const firstResult = results[0];
-
-        if (firstResult.result === 'noMatch') {
-            return 'noMatch';
-        }
-
-        if (firstResult.result === 'needsMoreKey') {
-            return 'needsMoreKey';
-        }
+        if (firstResult.result !== 'match') return firstResult.result;
 
         // すべてのカーソルを新しい位置に移動
         const newSelections = results.map((result, index) => {
             const currentSelection = context.editor.selections[index];
 
-            if (result.result !== 'match') {
-                return currentSelection;
-            }
+            if (result.result !== 'match') return currentSelection;
 
-            if (context.vimState.mode === 'visual' || context.vimState.mode === 'visualLine') {
-                // Visual モードでは選択範囲を拡張する
-                return new vscode.Selection(currentSelection.anchor, result.position);
-            } else {
-                // Normal モードではカーソルが動く
-                return new vscode.Selection(result.position, result.position);
-            }
+            // Normal モードなので、Motion の位置にカーソルを移動するだけ
+            return new Selection(result.position, result.position);
         });
 
         context.editor.selections = newSelections;
         context.editor.revealRange(
-            new vscode.Range(newSelections[0].active, newSelections[0].active),
-            vscode.TextEditorRevealType.Default,
+            new Range(newSelections[0].active, newSelections[0].active),
+            TextEditorRevealType.Default,
         );
 
         return 'executed';
@@ -120,30 +109,25 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
     const modes = ['visual', 'visualLine'];
     return (context: Context, keys: string[]): ActionResult => {
         // モードチェック
-        if (!modes.includes(context.vimState.mode)) {
-            return 'noMatch';
-        }
+        if (!modes.includes(context.vimState.mode)) return 'noMatch';
 
         // 各カーソル位置で TextObject を実行
-        // 一つでも match 以外があれば、すぐ返す
+        // 一つでも match 以外があれば、すぐ返す (パフォーマンスのため)
         const results = [];
         for (const selection of context.editor.selections) {
             const result = textObject(context, keys, selection.active);
-            if (result.result !== 'match') {
-                return result.result;
-            }
+            if (result.result !== 'match') return result.result;
             results.push(result);
         }
 
-        // 基本的には、anchor は動かさず active をセットする。ただし、anchor
-        // が遡るような range が帰ってきた場合は、anchor も調整する。
-        context.editor.selections = results.map((result, index) => {
+        // 基本的には、anchor は動かさず active をセットする。ただし、anchorが遡るような range が帰ってきた場合
+        // は、anchor も調整する。
+        const newSelections = results.map((result, index) => {
             const currentSelection = context.editor.selections[index];
 
-            // どちらが anchor になるのかは少し考える必要がある。 w, b などの
-            // 通常のモーションであれば、片方は今のカーソル位置と一致している
-            // はず。そちらを anchor とする。iw など両方が変化してしまう場合
-            // は、anchor == start, active == end とみなす。
+            // どちらが anchor になるのかは少し考える必要がある。 w, b などの通常のモーションであれば、片方は今のカーソ
+            // ル位置と一致しているはず。そちらを anchor とする。iw など両方が変化してしまう場合は、anchor == start,
+            // active == end とみなす。
             const resultAnchor = currentSelection.active.isEqual(result.data.range.end)
                 ? result.data.range.end
                 : result.data.range.start;
@@ -152,21 +136,27 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
                 : result.data.range.end;
 
             if (currentSelection.isEmpty) {
-                return new vscode.Selection(resultAnchor, resultActive);
+                return new Selection(resultAnchor, resultActive);
             }
 
             if (!currentSelection.isReversed) {
-                return new vscode.Selection(
+                return new Selection(
                     currentSelection.anchor.isAfterOrEqual(resultAnchor) ? resultAnchor : currentSelection.anchor,
                     resultActive,
                 );
             }
 
-            return new vscode.Selection(
+            return new Selection(
                 currentSelection.anchor.isBeforeOrEqual(resultAnchor) ? resultAnchor : currentSelection.anchor,
                 resultActive,
             );
         });
+
+        context.editor.selections = newSelections;
+        context.editor.revealRange(
+            new Range(newSelections[0].active, newSelections[0].active),
+            TextEditorRevealType.Default,
+        );
 
         return 'executed';
     };
