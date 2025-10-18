@@ -93,3 +93,19 @@ export function findWordBoundary(
 
     return document.positionAt(offset);
 }
+
+export function findParagraphBoundary(
+    document: TextDocument,
+    direction: 'before' | 'after',
+    position: Position,
+): Position {
+    let line = position.line;
+    const delta = direction === 'before' ? -1 : 1;
+    while (0 <= line + delta && line + delta < document.lineCount) {
+        line += delta;
+        const lineText = document.lineAt(line).text;
+        if (lineText.trim() === '') break;
+    }
+
+    return new Position(line, 0);
+}

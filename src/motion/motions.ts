@@ -1,5 +1,11 @@
 import * as vscode from 'vscode';
-import { findAdjacentPosition, findDocumentEnd, findDocumentStart, findWordBoundary } from '../utils/positionFinder';
+import {
+    findAdjacentPosition,
+    findDocumentEnd,
+    findDocumentStart,
+    findParagraphBoundary,
+    findWordBoundary,
+} from '../utils/positionFinder';
 import { isCharacterTypeBoundary, isWhitespaceBoundary } from '../utils/unicode';
 import { newMotion, newRegexMotion } from './motionBuilder';
 import type { Motion } from './motionTypes';
@@ -191,30 +197,14 @@ export function buildMotions(): Motion[] {
     motions.push(
         newMotion({
             keys: ['{'],
-            compute: (context, position) => {
-                for (let line = position.line - 1; line >= 0; line--) {
-                    const lineText = context.document.lineAt(line).text;
-                    if (lineText.trim() === '') {
-                        return new vscode.Position(line, 0);
-                    }
-                }
-                return new vscode.Position(0, 0);
-            },
+            compute: (context, position) => findParagraphBoundary(context.document, 'before', position),
         }),
     );
 
     motions.push(
         newMotion({
             keys: ['}'],
-            compute: (context, position) => {
-                for (let line = position.line + 1; line < context.document.lineCount; line++) {
-                    const lineText = context.document.lineAt(line).text;
-                    if (lineText.trim() === '') {
-                        return new vscode.Position(line, 0);
-                    }
-                }
-                return new vscode.Position(context.document.lineCount - 1, 0);
-            },
+            compute: (context, position) => findParagraphBoundary(context.document, 'after', position),
         }),
     );
 
