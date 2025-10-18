@@ -16,9 +16,14 @@ export type VimState = {
     register: {
         contents: Array<RegisterContent>;
     };
-    // f/F/t/T の繰り返し用
-    lastFtChar: string; // 最後に検索した文字
-    lastFtCommand: 'f' | 'F' | 't' | 'T' | undefined; // 最後に使ったコマンド
+
+    lastFt:
+        | {
+              character: string;
+              distance: 'nearer' | 'further';
+              direction: 'before' | 'after';
+          }
+        | undefined;
 };
 
 export type RegisterContent = {

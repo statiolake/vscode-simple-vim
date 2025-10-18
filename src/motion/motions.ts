@@ -1,5 +1,6 @@
 import type { Position, Range } from 'vscode';
 import * as vscode from 'vscode';
+import type { Context } from '../context';
 import {
     findAdjacentPosition,
     findDocumentEnd,
@@ -8,6 +9,7 @@ import {
     findLineEnd,
     findLineStart,
     findLineStartAfterIndent,
+    findNearerPosition,
     findParagraphBoundary,
     findWordBoundary,
 } from '../utils/positionFinder';
@@ -268,134 +270,77 @@ export function buildMotions(): Motion[] {
         }),
     );
 
-    // Find motions - VS Codeネイティブカーソル動作
+    const computeFtMotion = (
+        context: Context,
+        distance: 'nearer' | 'further',
+        character: string,
+        direction: 'after' | 'before',
+        position: Position,
+    ) => {
+        const newPosition = findNearerPosition(context.document, (c) => c === character, direction, position, {
+            withinLine: true,
+        });
+        if (!newPosition) return position;
 
-    // f: 現在位置から右方向に文字を検索し、文字の直後に移動
-    const findForward = (lineText: string, startChar: number, char: string): number | undefined => {
-        // startChar から検索を開始（現在位置から）
-        // 繰り返し時は文字の直後にいるので、そこから次の同じ文字を探す
-        for (let i = startChar; i < lineText.length; i++) {
-            if (lineText[i] === char) {
-                return i + 1; // VS Codeネイティブ：文字の直後の位置
-            }
-        }
-        return undefined;
-    };
-
-    // F: 現在位置から左方向に文字を検索し、文字の位置に移動
-    const findBackward = (lineText: string, startChar: number, char: string): number | undefined => {
-        // startChar - 1 から検索を開始（現在位置の前から）
-        // 繰り返し時は文字の位置にいるので、その前から次の同じ文字を探す
-        for (let i = startChar - 1; i >= 0; i--) {
-            if (lineText[i] === char) {
-                return i; // VS Codeネイティブ：文字の位置
-            }
-        }
-        return undefined;
-    };
-
-    // t: 現在位置から右方向に文字を検索し、文字の直前に移動
-    const tillForward = (lineText: string, startChar: number, char: string): number | undefined => {
-        // startChar + 1 から検索を開始（現在位置の次の文字から）
-        for (let i = startChar + 1; i < lineText.length; i++) {
-            if (lineText[i] === char) {
-                return i; // VS Codeネイティブ：文字の直前の位置
-            }
-        }
-        return undefined;
-    };
-
-    // T: 現在位置から左方向に文字を検索し、文字の直後に移動
-    const tillBackward = (lineText: string, startChar: number, char: string): number | undefined => {
-        // startChar - 2 から検索を開始（現在位置の前の文字から）
-        for (let i = startChar - 2; i >= 0; i--) {
-            if (lineText[i] === char) {
-                return i + 1; // VS Codeネイティブ：文字の直後の位置
-            }
-        }
-        return undefined;
+        return distance === 'further' ? findAdjacentPosition(context.document, direction, newPosition) : newPosition;
     };
 
     motions.push(
         newRegexMotion({
-            pattern: /^f(?<char>.)$/,
+            pattern: /^f(?<character>.)$/,
             partial: /^f$/,
             compute: (context, position, variables) => {
-                const char = variables.char;
-                const lineText = context.document.lineAt(position.line).text;
-                const newChar = findForward(lineText, position.character, char);
-
-                // VimState に保存
-                context.vimState.lastFtChar = char;
-                context.vimState.lastFtCommand = 'f';
-
-                if (newChar !== undefined) {
-                    return position.with({ character: newChar });
-                }
-                return position;
+                context.vimState.lastFt = {
+                    character: variables.character,
+                    distance: 'further',
+                    direction: 'after',
+                };
+                return computeFtMotion(context, 'further', variables.character, 'after', position);
             },
         }),
     );
 
     motions.push(
         newRegexMotion({
-            pattern: /^F(?<char>.)$/,
+            pattern: /^F(?<character>.)$/,
             partial: /^F$/,
             compute: (context, position, variables) => {
-                const char = variables.char;
-                const lineText = context.document.lineAt(position.line).text;
-                const newChar = findBackward(lineText, position.character, char);
-
-                // VimState に保存
-                context.vimState.lastFtChar = char;
-                context.vimState.lastFtCommand = 'F';
-
-                if (newChar !== undefined) {
-                    return position.with({ character: newChar });
-                }
-                return position;
+                context.vimState.lastFt = {
+                    character: variables.character,
+                    distance: 'further',
+                    direction: 'before',
+                };
+                return computeFtMotion(context, 'further', variables.character, 'before', position);
             },
         }),
     );
 
     motions.push(
         newRegexMotion({
-            pattern: /^t(?<char>.)$/,
+            pattern: /^t(?<character>.)$/,
             partial: /^t$/,
             compute: (context, position, variables) => {
-                const char = variables.char;
-                const lineText = context.document.lineAt(position.line).text;
-                const newChar = tillForward(lineText, position.character, char);
-
-                // VimState に保存
-                context.vimState.lastFtChar = char;
-                context.vimState.lastFtCommand = 't';
-
-                if (newChar !== undefined) {
-                    return position.with({ character: newChar });
-                }
-                return position;
+                context.vimState.lastFt = {
+                    character: variables.character,
+                    distance: 'nearer',
+                    direction: 'after',
+                };
+                return computeFtMotion(context, 'nearer', variables.character, 'after', position);
             },
         }),
     );
 
     motions.push(
         newRegexMotion({
-            pattern: /^T(?<char>.)$/,
+            pattern: /^T(?<character>.)$/,
             partial: /^T$/,
             compute: (context, position, variables) => {
-                const char = variables.char;
-                const lineText = context.document.lineAt(position.line).text;
-                const newChar = tillBackward(lineText, position.character, char);
-
-                // VimState に保存
-                context.vimState.lastFtChar = char;
-                context.vimState.lastFtCommand = 'T';
-
-                if (newChar !== undefined) {
-                    return position.with({ character: newChar });
-                }
-                return position;
+                context.vimState.lastFt = {
+                    character: variables.character,
+                    distance: 'nearer',
+                    direction: 'before',
+                };
+                return computeFtMotion(context, 'nearer', variables.character, 'before', position);
             },
         }),
     );
@@ -405,35 +350,10 @@ export function buildMotions(): Motion[] {
         newMotion({
             keys: [';'],
             compute: (context, position) => {
-                const lastCommand = context.vimState.lastFtCommand;
-                const lastChar = context.vimState.lastFtChar;
+                const { lastFt } = context.vimState;
+                if (!lastFt) return position;
 
-                if (!lastCommand || !lastChar) {
-                    return position;
-                }
-
-                const lineText = context.document.lineAt(position.line).text;
-                let newChar: number | undefined;
-
-                switch (lastCommand) {
-                    case 'f':
-                        newChar = findForward(lineText, position.character, lastChar);
-                        break;
-                    case 'F':
-                        newChar = findBackward(lineText, position.character, lastChar);
-                        break;
-                    case 't':
-                        newChar = tillForward(lineText, position.character, lastChar);
-                        break;
-                    case 'T':
-                        newChar = tillBackward(lineText, position.character, lastChar);
-                        break;
-                }
-
-                if (newChar !== undefined) {
-                    return position.with({ character: newChar });
-                }
-                return position;
+                return computeFtMotion(context, lastFt.distance, lastFt.character, lastFt.direction, position);
             },
         }),
     );
@@ -443,36 +363,11 @@ export function buildMotions(): Motion[] {
         newMotion({
             keys: [','],
             compute: (context, position) => {
-                const lastCommand = context.vimState.lastFtCommand;
-                const lastChar = context.vimState.lastFtChar;
+                const { lastFt } = context.vimState;
+                if (!lastFt) return position;
 
-                if (!lastCommand || !lastChar) {
-                    return position;
-                }
-
-                const lineText = context.document.lineAt(position.line).text;
-                let newChar: number | undefined;
-
-                // 逆方向に実行
-                switch (lastCommand) {
-                    case 'f':
-                        newChar = findBackward(lineText, position.character, lastChar);
-                        break;
-                    case 'F':
-                        newChar = findForward(lineText, position.character, lastChar);
-                        break;
-                    case 't':
-                        newChar = tillBackward(lineText, position.character, lastChar);
-                        break;
-                    case 'T':
-                        newChar = tillForward(lineText, position.character, lastChar);
-                        break;
-                }
-
-                if (newChar !== undefined) {
-                    return position.with({ character: newChar });
-                }
-                return position;
+                const reverseDirection = lastFt.direction === 'after' ? 'before' : 'after';
+                return computeFtMotion(context, lastFt.distance, lastFt.character, reverseDirection, position);
             },
         }),
     );

@@ -70,8 +70,7 @@ export function activate(context: vscode.ExtensionContext): void {
         register: {
             contents: [],
         },
-        lastFtChar: '',
-        lastFtCommand: undefined,
+        lastFt: undefined,
     };
 
     context.subscriptions.push(
