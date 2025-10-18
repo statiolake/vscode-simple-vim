@@ -23,6 +23,10 @@ export function findAdjacentPosition(
     return document.validatePosition(document.positionAt(offset));
 }
 
+export function findLineStart(_document: TextDocument, position: Position): Position {
+    return new Position(position.line, 0);
+}
+
 /**
  * 行のインデント後の開始位置を探す
  */

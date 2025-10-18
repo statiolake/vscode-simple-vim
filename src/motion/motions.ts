@@ -3,6 +3,9 @@ import {
     findAdjacentPosition,
     findDocumentEnd,
     findDocumentStart,
+    findLineEnd,
+    findLineStart,
+    findLineStartAfterIndent,
     findParagraphBoundary,
     findWordBoundary,
 } from '../utils/positionFinder';
@@ -212,40 +215,21 @@ export function buildMotions(): Motion[] {
     motions.push(
         newMotion({
             keys: ['$'],
-            compute: (context, position) => {
-                const lineLength = context.document.lineAt(position.line).text.length;
-                // VS Codeネイティブ：行末（最後の文字の直後）に移動
-                return position.with({ character: lineLength });
-            },
+            compute: (context, position) => findLineEnd(context.document, position),
         }),
     );
 
     motions.push(
         newMotion({
             keys: ['0'],
-            compute: (_context, position) => {
-                return position.with({ character: 0 });
-            },
+            compute: (_context, position) => findLineStart(_context.document, position),
         }),
     );
 
     motions.push(
         newMotion({
             keys: ['^'],
-            compute: (context, position) => {
-                const firstNonWhitespace = context.document.lineAt(position.line).firstNonWhitespaceCharacterIndex;
-                return position.with({ character: firstNonWhitespace });
-            },
-        }),
-    );
-
-    motions.push(
-        newMotion({
-            keys: ['_'],
-            compute: (context, position) => {
-                const firstNonWhitespace = context.document.lineAt(position.line).firstNonWhitespaceCharacterIndex;
-                return position.with({ character: firstNonWhitespace });
-            },
+            compute: (context, position) => findLineStartAfterIndent(context.document, position),
         }),
     );
 
