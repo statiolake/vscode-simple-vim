@@ -11,7 +11,7 @@ import type { VimState } from './vimState';
 // グローバルな CommentConfigProvider（起動時に一度だけ初期化）
 export let globalCommentConfigProvider: CommentConfigProvider;
 
-function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): void {
+async function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): Promise<void> {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
     if (allEmpty && vimState.mode !== 'insert') {
         // 選択範囲が無になった場合は、ノーマルモードに戻る。この条件だと
@@ -23,27 +23,27 @@ function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChan
         // 選択範囲変更」であり、このハンドラ内ではvlh のケースと区別がつかな
         // い。 vlh などは比較的登場頻度が低いことを考えると、これでいいんじゃ
         // ないか。
-        enterMode(vimState, e.textEditor, 'normal');
+        await enterMode(vimState, e.textEditor, 'normal');
     } else if (vimState.mode === 'visualLine') {
         // Visual Line モードでは、選択範囲を行全体に拡張する
         expandSelectionsToFullLines(e.textEditor);
     } else if (!allEmpty) {
         // それ以外のモードで選択状態になった場合は Visual モードへ移行する
-        enterMode(vimState, e.textEditor, 'visual');
+        await enterMode(vimState, e.textEditor, 'visual');
     }
 
     // 選択範囲の先頭が表示されるようにスクロールする
     e.textEditor.revealRange(new Range(e.selections[0].active, e.selections[0].active));
 }
 
-function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEditor | undefined) {
+async function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEditor | undefined): Promise<void> {
     if (!editor) return;
 
     if (editor.selections.every((selection) => selection.isEmpty)) {
-        if (vimState.mode === 'visual' || vimState.mode === 'visualLine') enterMode(vimState, editor, 'normal');
+        if (vimState.mode === 'visual' || vimState.mode === 'visualLine') await enterMode(vimState, editor, 'normal');
     } else {
         if (vimState.mode === 'normal') {
-            enterMode(vimState, editor, 'visual');
+            await enterMode(vimState, editor, 'visual');
         }
     }
 
@@ -55,7 +55,7 @@ function onDidChangeConfiguration(vimState: VimState, e: vscode.ConfigurationCha
     vimState.actions = buildActions();
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // Create comment config provider
     globalCommentConfigProvider = new CommentConfigProvider();
 
@@ -80,22 +80,22 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(vimState, editor)),
         vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(vimState, e)),
         vscode.workspace.onDidChangeConfiguration((e) => onDidChangeConfiguration(vimState, e)),
-        vscode.commands.registerCommand('simple-vim.escapeKey', () => escapeHandler(vimState)),
+        vscode.commands.registerCommand('simple-vim.escapeKey', async () => escapeHandler(vimState)),
         vscode.commands.registerCommand('simple-vim.noop', () => {
             // Do nothing - used to ignore keys in certain modes
         }),
-        vscode.commands.registerCommand('simple-vim.send', (args: { keys: string }) => {
+        vscode.commands.registerCommand('simple-vim.send', async (args: { keys: string }) => {
             if (!args || !args.keys) {
                 console.error('simple-vim.send: keys argument is required');
                 return;
             }
-            typeHandler(vimState, args.keys);
+            await typeHandler(vimState, args.keys);
         }),
     );
 
-    enterMode(vimState, vscode.window.activeTextEditor, 'normal');
+    await enterMode(vimState, vscode.window.activeTextEditor, 'normal');
 
     if (vscode.window.activeTextEditor) {
-        onDidChangeActiveTextEditor(vimState, vscode.window.activeTextEditor);
+        await onDidChangeActiveTextEditor(vimState, vscode.window.activeTextEditor);
     }
 }

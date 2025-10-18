@@ -3,6 +3,7 @@ import type { Context } from '../context';
 import type { Mode } from '../modesTypes';
 import type { Motion } from '../motion/motionTypes';
 import type { TextObject, TextObjectMatch } from '../textObject/textObjectTypes';
+import { updateSelections } from '../utils/cursor';
 import { keysParserPrefix, keysParserRegex } from '../utils/keysParser/keysParser';
 import type { KeysParser } from '../utils/keysParser/keysParserTypes';
 import type { Action, ActionResult } from './actionTypes';
@@ -13,9 +14,9 @@ import type { Action, ActionResult } from './actionTypes';
 function createAction(
     keysParser: KeysParser,
     modes: Mode[],
-    execute: (context: Context, variables: Record<string, string>) => void,
+    execute: (context: Context, variables: Record<string, string>) => Promise<void>,
 ): Action {
-    return (context: Context, keys: string[]): ActionResult => {
+    return async (context: Context, keys: string[]): Promise<ActionResult> => {
         // モードチェック
         if (!modes.includes(context.vimState.mode)) {
             return 'noMatch';
@@ -32,8 +33,8 @@ function createAction(
             return 'needsMoreKey';
         }
 
-        // 実行 (variablesを渡す)
-        execute(context, parseResult.variables);
+        // 実行
+        await execute(context, parseResult.variables);
         return 'executed';
     };
 }
@@ -41,10 +42,14 @@ function createAction(
 /**
  * 通常のActionを作成
  */
-export function newAction(config: { keys: string[]; modes: Mode[]; execute: (context: Context) => void }): Action {
+export function newAction(config: {
+    keys: string[];
+    modes: Mode[];
+    execute: (context: Context) => Promise<void>;
+}): Action {
     const keysParser = keysParserPrefix(config.keys);
     return createAction(keysParser, config.modes, (context, _variables) => {
-        config.execute(context);
+        return config.execute(context);
     });
 }
 
@@ -55,7 +60,7 @@ export function newRegexAction(config: {
     pattern: RegExp;
     partial: RegExp;
     modes: Mode[];
-    execute: (context: Context, variables: Record<string, string>) => void;
+    execute: (context: Context, variables: Record<string, string>) => Promise<void>;
 }): Action {
     const keysParser = keysParserRegex(config.pattern, config.partial);
     return createAction(keysParser, config.modes, config.execute);
@@ -68,7 +73,7 @@ export function newRegexAction(config: {
 export function motionToAction(motion: Motion): Action {
     const modes = ['normal'];
 
-    return (context: Context, keys: string[]): ActionResult => {
+    return async (context: Context, keys: string[]): Promise<ActionResult> => {
         // モードチェック
         if (!modes.includes(context.vimState.mode)) return 'noMatch';
 
@@ -95,7 +100,8 @@ export function motionToAction(motion: Motion): Action {
             return new Selection(result.position, result.position);
         });
 
-        context.editor.selections = newSelections;
+        // updateSelections を await
+        await updateSelections(context.editor, newSelections);
 
         return 'executed';
     };
@@ -103,7 +109,7 @@ export function motionToAction(motion: Motion): Action {
 
 export function textObjectToVisualAction(textObject: TextObject): Action {
     const modes = ['visual', 'visualLine'];
-    return (context: Context, keys: string[]): ActionResult => {
+    return async (context: Context, keys: string[]): Promise<ActionResult> => {
         // モードチェック
         if (!modes.includes(context.vimState.mode)) return 'noMatch';
 
@@ -148,7 +154,8 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
             );
         });
 
-        context.editor.selections = newSelections;
+        // updateSelections を await
+        await updateSelections(context.editor, newSelections);
 
         return 'executed';
     };
@@ -164,11 +171,11 @@ export function newOperatorAction(config: {
     operatorKeys: string[];
     modes: Mode[];
     textObjects: TextObject[];
-    execute: (context: Context, matches: TextObjectMatch[]) => void;
+    execute: (context: Context, matches: TextObjectMatch[]) => Promise<void>;
 }): Action {
     const operatorParser = keysParserPrefix(config.operatorKeys);
 
-    return (context: Context, keys: string[]): ActionResult => {
+    return async (context: Context, keys: string[]): Promise<ActionResult> => {
         // モードチェック
         if (!config.modes.includes(context.vimState.mode)) {
             return 'noMatch';
@@ -231,7 +238,8 @@ export function newOperatorAction(config: {
                 return { range: context.editor.selections[index] };
             });
 
-            config.execute(context, matches);
+            // await で実行
+            await config.execute(context, matches);
             return 'executed';
         }
 

@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import type { Mode } from './modesTypes';
 import { typeHandler } from './typeHandler';
+import { updateSelections } from './utils/cursor';
 import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
 
-export function enterMode(vimState: VimState, editor: vscode.TextEditor | undefined, mode: Mode): void {
+export async function enterMode(vimState: VimState, editor: vscode.TextEditor | undefined, mode: Mode): Promise<void> {
     if (vimState.mode === mode) return;
 
     vimState.mode = mode;
@@ -15,9 +16,10 @@ export function enterMode(vimState: VimState, editor: vscode.TextEditor | undefi
 
     if (mode === 'normal' && editor) {
         // ノーマルモードに入ったら、選択範囲を解除する
-        editor.selections = editor.selections.map(
+        const newSelections = editor.selections.map(
             (selection) => new vscode.Selection(selection.active, selection.active),
         );
+        await updateSelections(editor, newSelections);
     }
 
     if (mode === 'visualLine' && editor) {

@@ -4,7 +4,7 @@ import type { Context } from './context';
 import { globalCommentConfigProvider } from './extension';
 import type { VimState } from './vimState';
 
-export function typeHandler(vimState: VimState, char: string): void {
+export async function typeHandler(vimState: VimState, char: string): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
@@ -23,7 +23,7 @@ export function typeHandler(vimState: VimState, char: string): void {
     let needsMore = false;
 
     for (const action of vimState.actions) {
-        const result = action(context, vimState.keysPressed);
+        const result = await action(context, vimState.keysPressed);
 
         if (result === 'executed') {
             executed = true;

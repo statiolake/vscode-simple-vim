@@ -5,6 +5,7 @@ import { enterMode } from '../modes';
 import { buildMotions } from '../motion/motions';
 import { newWholeLineTextObject } from '../textObject/textObjectBuilder';
 import { buildTextObjects } from '../textObject/textObjects';
+import { updateSelections } from '../utils/cursor';
 import { findAdjacentPosition, findLineEnd, findLineStartAfterIndent } from '../utils/positionFinder';
 import { saveCurrentSelectionsToRegister } from '../vimState';
 import { motionToAction, newAction, newOperatorAction, textObjectToVisualAction } from './actionBuilder';
@@ -25,7 +26,7 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['i'],
             modes: ['normal'],
-            execute: (context) => {
+            execute: async (context) => {
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),
@@ -33,7 +34,7 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['a'],
             modes: ['normal'],
-            execute: (context) => {
+            execute: async (context) => {
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),
@@ -41,11 +42,12 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['I'],
             modes: ['normal'],
-            execute: (context) => {
-                context.editor.selections = context.editor.selections.map((selection) => {
+            execute: async (context) => {
+                const newSelections = context.editor.selections.map((selection) => {
                     const newPosition = findLineStartAfterIndent(context.document, selection.active);
                     return new vscode.Selection(newPosition, newPosition);
                 });
+                await updateSelections(context.editor, newSelections);
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),
@@ -53,11 +55,12 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['A'],
             modes: ['normal'],
-            execute: (context) => {
-                context.editor.selections = context.editor.selections.map((selection) => {
+            execute: async (context) => {
+                const newSelections = context.editor.selections.map((selection) => {
                     const newPosition = findLineEnd(context.document, selection.active);
                     return new vscode.Selection(newPosition, newPosition);
                 });
+                await updateSelections(context.editor, newSelections);
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),
@@ -83,7 +86,7 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['v'],
             modes: ['normal', 'visualLine'],
-            execute: (context) => {
+            execute: async (context) => {
                 enterMode(context.vimState, context.editor, 'visual');
             },
         }),
@@ -91,7 +94,7 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['V'],
             modes: ['normal', 'visual'],
-            execute: (context) => {
+            execute: async (context) => {
                 enterMode(context.vimState, context.editor, 'visualLine');
             },
         }),
@@ -114,13 +117,14 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['x'],
             modes: ['normal'],
-            execute: (context) => {
-                context.editor.selections = context.editor.selections.map((selection) => {
+            execute: async (context) => {
+                const newSelections = context.editor.selections.map((selection) => {
                     const newPosition = findAdjacentPosition(context.document, 'after', selection.active);
                     return new vscode.Selection(selection.active, newPosition);
                 });
+                await updateSelections(context.editor, newSelections);
                 saveCurrentSelectionsToRegister(context.vimState, context.editor, { isLinewise: false });
-                vscode.commands.executeCommand('deleteRight');
+                await vscode.commands.executeCommand('deleteRight');
             },
         }),
 
@@ -223,7 +227,7 @@ export function buildActions(): Action[] {
                 });
 
                 // 元のカーソル位置に、挿入による影響を加味して戻す
-                editor.selections = originalOffsets.map((offset, i) => {
+                const newSelections = originalOffsets.map((offset, i) => {
                     let adjustedOffset = offset;
 
                     // 自分より前の挿入による影響を計算
@@ -237,6 +241,7 @@ export function buildActions(): Action[] {
                     const adjustedPos = context.document.positionAt(adjustedOffset);
                     return new vscode.Selection(adjustedPos, adjustedPos);
                 });
+                await updateSelections(editor, newSelections);
 
                 enterMode(context.vimState, context.editor, 'normal');
             },
@@ -315,12 +320,12 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['z', 'z'],
             modes: ['normal', 'visual', 'visualLine'],
-            execute: (context) => {
+            execute: async (context) => {
                 const editor = context.editor;
                 if (!editor) return;
 
                 const selection = editor.selection;
-                vscode.commands.executeCommand('revealLine', {
+                await vscode.commands.executeCommand('revealLine', {
                     lineNumber: selection.active.line,
                     at: 'center',
                 });
@@ -330,12 +335,12 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['z', 't'],
             modes: ['normal', 'visual', 'visualLine'],
-            execute: (context) => {
+            execute: async (context) => {
                 const editor = context.editor;
                 if (!editor) return;
 
                 const selection = editor.selection;
-                vscode.commands.executeCommand('revealLine', {
+                await vscode.commands.executeCommand('revealLine', {
                     lineNumber: selection.active.line,
                     at: 'top',
                 });
@@ -345,12 +350,12 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['z', 'b'],
             modes: ['normal', 'visual', 'visualLine'],
-            execute: (context) => {
+            execute: async (context) => {
                 const editor = context.editor;
                 if (!editor) return;
 
                 const selection = editor.selection;
-                vscode.commands.executeCommand('revealLine', {
+                await vscode.commands.executeCommand('revealLine', {
                     lineNumber: selection.active.line,
                     at: 'bottom',
                 });
@@ -386,14 +391,16 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['D'],
             modes: ['normal'],
-            execute: async (context) => delegateAction(actions, context, ['d', '$']),
+            execute: async (context) => {
+                await delegateAction(actions, context, ['d', '$']);
+            },
         }),
 
         newOperatorAction({
             operatorKeys: ['y'],
             modes: ['normal'],
             textObjects: [newWholeLineTextObject({ keys: ['y'], includeLineBreak: true }), ...textObjects],
-            execute: (context, matches) => {
+            execute: async (context, matches) => {
                 context.vimState.register.contents = matches.map((match) => ({
                     text: context.document.getText(match.range),
                     isLinewise: match.isLinewise ?? false,
@@ -403,7 +410,9 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['Y'],
             modes: ['normal'],
-            execute: (context) => delegateAction(actions, context, ['y', 'y']),
+            execute: async (context) => {
+                await delegateAction(actions, context, ['y', 'y']);
+            },
         }),
 
         newOperatorAction({
@@ -420,24 +429,30 @@ export function buildActions(): Action[] {
                         editBuilder.delete(match.range);
                     }
                 });
-                enterMode(context.vimState, context.editor, 'insert');
+                await enterMode(context.vimState, context.editor, 'insert');
             },
         }),
         newAction({
             keys: ['C'],
             modes: ['normal'],
-            execute: async (context) => delegateAction(actions, context, ['c', '$']),
+            execute: async (context) => {
+                await delegateAction(actions, context, ['c', '$']);
+            },
         }),
 
         newAction({
             keys: ['s'],
             modes: ['normal'],
-            execute: async (context) => delegateAction(actions, context, ['c', 'l']),
+            execute: async (context) => {
+                await delegateAction(actions, context, ['c', 'l']);
+            },
         }),
         newAction({
             keys: ['S'],
             modes: ['normal'],
-            execute: async (context) => delegateAction(actions, context, ['c', 'c']),
+            execute: async (context) => {
+                await delegateAction(actions, context, ['c', 'c']);
+            },
         }),
     );
 
@@ -473,7 +488,7 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['y'],
             modes: ['visual', 'visualLine'],
-            execute: (context) => {
+            execute: async (context) => {
                 context.vimState.register.contents = context.editor.selections.map((selection) => {
                     let adjustedSelection = selection;
                     if (context.vimState.mode === 'visualLine' && selection.end.character !== 0) {
@@ -520,7 +535,9 @@ export function buildActions(): Action[] {
         newAction({
             keys: ['s'],
             modes: ['visual', 'visualLine'],
-            execute: async (context) => delegateAction(actions, context, ['c']),
+            execute: async (context) => {
+                await delegateAction(actions, context, ['c']);
+            },
         }),
     );
 
@@ -528,10 +545,10 @@ export function buildActions(): Action[] {
     return actions;
 }
 
-export function delegateAction(actions: Action[], context: Context, keys: string[]): ActionResult {
+export async function delegateAction(actions: Action[], context: Context, keys: string[]): Promise<ActionResult> {
     let finalResult: 'noMatch' | 'needsMoreKey' = 'noMatch';
     for (const action of actions) {
-        const result = action(context, keys);
+        const result = await action(context, keys);
         if (result === 'executed') {
             return 'executed';
         } else if (result === 'needsMoreKey') {
