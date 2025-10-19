@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Selection } from 'vscode';
 import { enterMode } from '../../modes';
+import { findLineEnd, findLineStartAfterIndent } from '../../utils/positionFinder';
 import { newAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
 
@@ -112,7 +113,8 @@ export function buildMulticursorActions(): Action[] {
                     const endLine = Math.max(selection.anchor.line, selection.active.line);
                     const cursors: Selection[] = [];
                     for (let line = startLine; line <= endLine; line++) {
-                        cursors.push(new Selection(new vscode.Position(line, 0), new vscode.Position(line, 0)));
+                        const lineStart = findLineStartAfterIndent(context.document, new vscode.Position(line, 0));
+                        cursors.push(new Selection(lineStart, lineStart));
                     }
                     return cursors;
                 });
@@ -133,10 +135,8 @@ export function buildMulticursorActions(): Action[] {
                     const endLine = Math.max(selection.anchor.line, selection.active.line);
                     const cursors: Selection[] = [];
                     for (let line = startLine; line <= endLine; line++) {
-                        const lineLength = doc.lineAt(line).text.length;
-                        cursors.push(
-                            new Selection(new vscode.Position(line, lineLength), new vscode.Position(line, lineLength)),
-                        );
+                        const lineEnd = findLineEnd(doc, new vscode.Position(line, 0));
+                        cursors.push(new Selection(lineEnd, lineEnd));
                     }
                     return cursors;
                 });
