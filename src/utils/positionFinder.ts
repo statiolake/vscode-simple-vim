@@ -112,18 +112,24 @@ export function findWordBoundary(
     };
 
     if (distance === 'nearer') {
-        // すでに始まっている単語はスキップする
+        // すでに始まっている単語の末尾までスキップする
         const previousChar = getTextOfOffsetRange(document, offset - delta, offset);
         skipWhile((char) => !isBoundary(previousChar, char));
-        // その後、空白を無視する
+        // その後、空白を無視すると次の単語の先頭にいる
         skipWhile(isWhitespace);
     } else {
-        // すでに空白にいる場合はスキップする
         const previousChar = getTextOfOffsetRange(document, offset - delta, offset);
-        if (isWhitespace(previousChar)) skipWhile(isWhitespace);
-        // その後、始まっている or これから始まる単語をスキップする
-        const currentChar = getTextOfOffsetRange(document, offset, offset + delta);
-        skipWhile((char) => !isWhitespace(char) && !isBoundary(currentChar, char));
+        if (isWhitespace(previousChar)) {
+            // 空白のど真ん中にいるときはまず空白をスキップする
+            skipWhile(isWhitespace);
+            // その後、これから始まる単語の末尾までスキップする
+            const currentChar = getTextOfOffsetRange(document, offset, offset + delta);
+            skipWhile((char) => !isBoundary(currentChar, char));
+        } else {
+            // すでに単語が始まっている場合は、その単語の末尾までスキップする
+            const previousChar = getTextOfOffsetRange(document, offset - delta, offset);
+            skipWhile((char) => !isBoundary(previousChar, char));
+        }
     }
 
     return document.positionAt(offset);
