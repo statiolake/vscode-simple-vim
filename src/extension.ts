@@ -7,7 +7,8 @@ import {
     type TextEditor,
     type TextEditorSelectionChangeEvent,
 } from 'vscode';
-import { buildActions } from './action/actions';
+import { buildActions, delegateAction } from './action/actions';
+import type { Context } from './context';
 import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
 import { typeHandler } from './typeHandler';
@@ -97,6 +98,38 @@ export async function activate(context: ExtensionContext): Promise<void> {
                 return;
             }
             await typeHandler(vimState, args.keys);
+        }),
+        vscode.commands.registerCommand('simple-vim.execute', async (args: unknown) => {
+            // バリデーション
+            if (!args || typeof args !== 'object' || !('keys' in args) || !Array.isArray(args.keys)) {
+                console.error('simple-vim.execute: keys argument must be an array');
+                return;
+            }
+
+            // アクティブなエディタの確認
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                console.error('simple-vim.execute: no active editor');
+                return;
+            }
+
+            // Context の構築
+            const context: Context = {
+                editor,
+                document: editor.document,
+                vimState,
+                commentConfigProvider: globalCommentConfigProvider,
+            };
+
+            // delegateAction で実行
+            const result = await delegateAction(vimState.actions, context, args.keys);
+
+            // 結果の出力
+            if (result === 'noMatch') {
+                vscode.window.showWarningMessage(
+                    `simple-vim: どのアクションともマッチしませんでした: ${args.keys.join('')}`,
+                );
+            }
         }),
     );
 
