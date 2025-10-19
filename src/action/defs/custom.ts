@@ -7,7 +7,7 @@ import type { Action } from '../actionTypes';
  * カスタムキーバインディングの設定スキーマ
  */
 const CustomBindingSchema = z.object({
-    keys: z.array(z.string()).min(1, 'キーは少なくとも 1 文字以上必要です'),
+    keys: z.array(z.string()).min(1, 'keys must have at least one element'),
     modes: z.array(z.enum(['normal', 'visual', 'visualLine', 'insert'])).optional(),
     commands: z
         .array(
@@ -16,7 +16,7 @@ const CustomBindingSchema = z.object({
                 args: z.unknown().optional(),
             }),
         )
-        .min(1, '実行するコマンドは少なくとも 1 つ以上必要です'),
+        .min(1, 'commands must have at least one element'),
 });
 
 /**
@@ -34,12 +34,12 @@ export function buildCustomActions(): Action[] {
     if (!bindingsResult.success) {
         const errorMessage = bindingsResult.error.issues
             .map((issue) => {
-                const path = issue.path.length > 0 ? `[${issue.path.join('.')}]` : 'ルート';
+                const path = issue.path.length > 0 ? `[${issue.path.join('.')}]` : 'root';
                 return `${path}: ${issue.message}`;
             })
             .join('\n');
 
-        vscode.window.showErrorMessage(`Waltz: カスタムキーバインディングの設定にエラーがあります:\n${errorMessage}`);
+        vscode.window.showErrorMessage(`Waltz: Invalid custom bindings configuration:\n${errorMessage}`);
         return actions;
     }
 
@@ -61,7 +61,7 @@ export function buildCustomActions(): Action[] {
                     } catch (error) {
                         const errorMsg = error instanceof Error ? error.message : String(error);
                         vscode.window.showErrorMessage(
-                            `キーバインド "${binding.keys.join('')}" の実行中にエラーが発生しました: "${cmd.command}" - ${errorMsg}`,
+                            `Waltz: Failed to execute command "${cmd.command}" for binding "${binding.keys.join('')}": ${errorMsg}`,
                         );
                         break;
                     }
