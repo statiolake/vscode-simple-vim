@@ -34,15 +34,8 @@ export function buildEditActions(): Action[] {
             execute: async (context) => {
                 const editor = context.editor;
 
-                // 現在の内容を保存し、以前の内容を取得する
+                // レジスタの内容を取得する
                 const contents = context.vimState.register.contents;
-                if (editor.selections.some((s) => !s.isEmpty)) {
-                    context.vimState.register.contents = editor.selections.map((selection) => ({
-                        text: context.document.getText(selection),
-                        isLinewise: false,
-                    }));
-                }
-
                 await editor.edit((editBuilder) => {
                     for (let i = 0; i < editor.selections.length; i++) {
                         const selection = editor.selections[i];
@@ -82,14 +75,8 @@ export function buildEditActions(): Action[] {
             execute: async (context) => {
                 const editor = context.editor;
 
-                // 現在の内容を保存し、以前の内容を取得する
+                // レジスタの内容を取得する
                 const contents = context.vimState.register.contents;
-                if (editor.selections.some((s) => !s.isEmpty)) {
-                    context.vimState.register.contents = editor.selections.map((selection) => ({
-                        text: context.document.getText(selection),
-                        isLinewise: false,
-                    }));
-                }
 
                 // 元のカーソル位置を offset で保存（挿入後に戻すため）
                 const originalOffsets = editor.selections.map((s) => context.document.offsetAt(s.start));
