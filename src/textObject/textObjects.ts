@@ -1,6 +1,6 @@
-import { Position, Range } from 'vscode';
+import { Range } from 'vscode';
 import type { Motion } from '../motion/motionTypes';
-import { findWordBoundary } from '../utils/positionFinder';
+import { findAdjacentPosition, findInsideBalancedPairs, findWordBoundary } from '../utils/positionFinder';
 import { isCharacterTypeBoundary, isWhitespaceBoundary } from '../utils/unicode';
 import { newTextObject } from './textObjectBuilder';
 import type { TextObject } from './textObjectTypes';
@@ -114,88 +114,21 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
         }),
     );
 
-    // Bracket text objects
+    // 括弧テキストオブジェクト
     const createBracketTextObject = (open: string, close: string, keys: string[], inner: boolean): TextObject => {
         const baseTextObject = newTextObject({
             keys,
             compute: (context, position) => {
-                let openLine: number | undefined;
-                let openChar: number | undefined;
-                let closeLine: number | undefined;
-                let closeChar: number | undefined;
-                let depth = 0;
-
-                // Search backward for opening bracket/quote (across multiple lines)
-                for (let line = position.line; line >= 0; line--) {
-                    const lineText = context.document.lineAt(line).text;
-                    const startChar = line === position.line ? position.character - 1 : lineText.length - 1;
-
-                    for (let i = startChar; i >= 0; i--) {
-                        if (lineText[i] === open) {
-                            depth--;
-                            if (depth < 0) {
-                                openLine = line;
-                                openChar = i;
-                                break;
-                            }
-                        } else if (lineText[i] === close) {
-                            depth++;
-                        }
-                    }
-
-                    if (openLine !== undefined) {
-                        break;
-                    }
-                }
-
-                if (openLine === undefined || openChar === undefined) {
-                    return new Range(position, position);
-                }
-
-                // Search forward for closing bracket/quote (across multiple lines)
-                depth = 0;
-                for (let line = position.line; line < context.document.lineCount; line++) {
-                    const lineText = context.document.lineAt(line).text;
-                    const startChar = line === position.line ? position.character : 0;
-
-                    for (let i = startChar; i < lineText.length; i++) {
-                        if (lineText[i] === close) {
-                            depth--;
-                            if (depth < 0) {
-                                closeLine = line;
-                                closeChar = i;
-                                break;
-                            }
-                        } else if (lineText[i] === open) {
-                            depth++;
-                        }
-                    }
-
-                    if (closeLine !== undefined) {
-                        break;
-                    }
-                }
-
-                if (closeLine === undefined || closeChar === undefined) {
-                    return new Range(position, position);
-                }
+                const range = findInsideBalancedPairs(context.document, position, open, close);
+                if (!range) return new Range(position, position);
 
                 if (inner) {
-                    // Inner: exclude brackets/quotes
-                    const startPos =
-                        openChar === context.document.lineAt(openLine).text.length - 1 && openLine < closeLine
-                            ? new Position(openLine + 1, 0)
-                            : new Position(openLine, openChar + 1);
-                    const endPos = new Position(closeLine, closeChar);
-                    return new Range(startPos, endPos);
+                    // 内部: 括弧/クォート自体は含まない
+                    return range;
                 } else {
-                    // Around: include brackets/quotes
-                    const startPos = new Position(openLine, openChar);
-                    const endPos =
-                        closeChar === context.document.lineAt(closeLine).text.length - 1 &&
-                        closeLine < context.document.lineCount - 1
-                            ? new Position(closeLine + 1, 0)
-                            : new Position(closeLine, closeChar + 1);
+                    // 周辺: 括弧/クォート自体を含む
+                    const startPos = findAdjacentPosition(context.document, 'before', range.start);
+                    const endPos = findAdjacentPosition(context.document, 'after', range.end);
                     return new Range(startPos, endPos);
                 }
             },
@@ -204,46 +137,46 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
         return baseTextObject;
     };
 
-    // Bracket and brace text objects
+    // 括弧とブレースのテキストオブジェクト
     textObjects.push(
-        // Parentheses
-        createBracketTextObject('(', ')', ['i', '('], true), // inner parentheses
-        createBracketTextObject('(', ')', ['a', '('], false), // around parentheses
-        createBracketTextObject('(', ')', ['i', 'b'], true), // inner bracket (alias)
-        createBracketTextObject('(', ')', ['a', 'b'], false), // around bracket (alias)
+        // 括弧
+        createBracketTextObject('(', ')', ['i', '('], true), // 内部括弧
+        createBracketTextObject('(', ')', ['a', '('], false), // 周辺括弧
+        createBracketTextObject('(', ')', ['i', 'b'], true), // 内部括弧（エイリアス）
+        createBracketTextObject('(', ')', ['a', 'b'], false), // 周辺括弧（エイリアス）
 
-        // Braces
-        createBracketTextObject('{', '}', ['i', '{'], true), // inner braces
-        createBracketTextObject('{', '}', ['a', '{'], false), // around braces
-        createBracketTextObject('{', '}', ['i', 'B'], true), // inner brace (alias)
-        createBracketTextObject('{', '}', ['a', 'B'], false), // around brace (alias)
+        // ブレース
+        createBracketTextObject('{', '}', ['i', '{'], true), // 内部ブレース
+        createBracketTextObject('{', '}', ['a', '{'], false), // 周辺ブレース
+        createBracketTextObject('{', '}', ['i', 'B'], true), // 内部ブレース（エイリアス）
+        createBracketTextObject('{', '}', ['a', 'B'], false), // 周辺ブレース（エイリアス）
 
-        // Square brackets
-        createBracketTextObject('[', ']', ['i', '['], true), // inner square brackets
-        createBracketTextObject('[', ']', ['a', '['], false), // around square brackets
-        createBracketTextObject('[', ']', ['i', ']'], true), // inner square brackets (alias)
-        createBracketTextObject('[', ']', ['a', ']'], false), // around square brackets (alias)
+        // 角括弧
+        createBracketTextObject('[', ']', ['i', '['], true), // 内部角括弧
+        createBracketTextObject('[', ']', ['a', '['], false), // 周辺角括弧
+        createBracketTextObject('[', ']', ['i', ']'], true), // 内部角括弧（エイリアス）
+        createBracketTextObject('[', ']', ['a', ']'], false), // 周辺角括弧（エイリアス）
 
-        // Angle brackets
-        createBracketTextObject('<', '>', ['i', '<'], true), // inner angle brackets
-        createBracketTextObject('<', '>', ['a', '<'], false), // around angle brackets
-        createBracketTextObject('<', '>', ['i', '>'], true), // inner angle brackets (alias)
-        createBracketTextObject('<', '>', ['a', '>'], false), // around angle brackets (alias)
+        // 山括弧
+        createBracketTextObject('<', '>', ['i', '<'], true), // 内部山括弧
+        createBracketTextObject('<', '>', ['a', '<'], false), // 周辺山括弧
+        createBracketTextObject('<', '>', ['i', '>'], true), // 内部山括弧（エイリアス）
+        createBracketTextObject('<', '>', ['a', '>'], false), // 周辺山括弧（エイリアス）
     );
 
-    // Quote text objects (using the same bracket logic)
+    // クォートのテキストオブジェクト
     textObjects.push(
-        // Double quotes
-        createBracketTextObject('"', '"', ['i', '"'], true), // inner double quotes
-        createBracketTextObject('"', '"', ['a', '"'], false), // around double quotes
+        // ダブルクォート
+        createBracketTextObject('"', '"', ['i', '"'], true), // 内部ダブルクォート
+        createBracketTextObject('"', '"', ['a', '"'], false), // 周辺ダブルクォート
 
-        // Single quotes
-        createBracketTextObject("'", "'", ['i', "'"], true), // inner single quotes
-        createBracketTextObject("'", "'", ['a', "'"], false), // around single quotes
+        // シングルクォート
+        createBracketTextObject("'", "'", ['i', "'"], true), // 内部シングルクォート
+        createBracketTextObject("'", "'", ['a', "'"], false), // 周辺シングルクォート
 
-        // Backticks
-        createBracketTextObject('`', '`', ['i', '`'], true), // inner backticks
-        createBracketTextObject('`', '`', ['a', '`'], false), // around backticks
+        // バッククォート
+        createBracketTextObject('`', '`', ['i', '`'], true), // 内部バッククォート
+        createBracketTextObject('`', '`', ['a', '`'], false), // 周辺バッククォート
     );
 
     return textObjects;
