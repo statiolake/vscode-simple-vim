@@ -77,30 +77,76 @@ export function buildMulticursorActions(): Action[] {
         // Visual mode の I - 各選択範囲の先頭で insert モードに入る
         newAction({
             keys: ['I'],
-            modes: ['visual', 'visualLine'],
-            execute: async (_context) => {
+            modes: ['visual'],
+            execute: async (context) => {
                 // 各選択範囲の先頭にカーソルを配置
-                const newSelections = _context.editor.selections.map(
+                const newSelections = context.editor.selections.map(
                     (selection) => new Selection(selection.start, selection.start),
                 );
-                updateSelections(_context.editor, newSelections);
+                updateSelections(context.editor, newSelections);
                 // Insert モードに入る
-                await enterMode(_context.vimState, _context.editor, 'insert');
+                await enterMode(context.vimState, context.editor, 'insert');
             },
         }),
 
         // Visual mode の A - 各選択範囲の末尾で insert モードに入る
         newAction({
             keys: ['A'],
-            modes: ['visual', 'visualLine'],
-            execute: async (_context) => {
+            modes: ['visual'],
+            execute: async (context) => {
                 // 各選択範囲の末尾にカーソルを配置
-                const newSelections = _context.editor.selections.map(
+                const newSelections = context.editor.selections.map(
                     (selection) => new Selection(selection.end, selection.end),
                 );
-                updateSelections(_context.editor, newSelections);
+                updateSelections(context.editor, newSelections);
                 // Insert モードに入る
-                await enterMode(_context.vimState, _context.editor, 'insert');
+                await enterMode(context.vimState, context.editor, 'insert');
+            },
+        }),
+
+        // Visual Line mode の I - 各行の先頭にマルチカーソルを挿入
+        newAction({
+            keys: ['I'],
+            modes: ['visualLine'],
+            execute: async (context) => {
+                // Visual Line の各行の先頭にカーソルを配置
+                const newSelections = context.editor.selections.flatMap((selection) => {
+                    const startLine = Math.min(selection.anchor.line, selection.active.line);
+                    const endLine = Math.max(selection.anchor.line, selection.active.line);
+                    const cursors: Selection[] = [];
+                    for (let line = startLine; line <= endLine; line++) {
+                        cursors.push(new Selection(new vscode.Position(line, 0), new vscode.Position(line, 0)));
+                    }
+                    return cursors;
+                });
+                updateSelections(context.editor, newSelections);
+                // Insert モードに入る
+                await enterMode(context.vimState, context.editor, 'insert');
+            },
+        }),
+
+        // Visual Line mode の A - 各行の末尾にマルチカーソルを挿入
+        newAction({
+            keys: ['A'],
+            modes: ['visualLine'],
+            execute: async (context) => {
+                const doc = context.editor.document;
+                // Visual Line の各行の末尾にカーソルを配置
+                const newSelections = context.editor.selections.flatMap((selection) => {
+                    const startLine = Math.min(selection.anchor.line, selection.active.line);
+                    const endLine = Math.max(selection.anchor.line, selection.active.line);
+                    const cursors: Selection[] = [];
+                    for (let line = startLine; line <= endLine; line++) {
+                        const lineLength = doc.lineAt(line).text.length;
+                        cursors.push(
+                            new Selection(new vscode.Position(line, lineLength), new vscode.Position(line, lineLength)),
+                        );
+                    }
+                    return cursors;
+                });
+                updateSelections(context.editor, newSelections);
+                // Insert モードに入る
+                await enterMode(context.vimState, context.editor, 'insert');
             },
         }),
     ];

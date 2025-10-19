@@ -189,7 +189,7 @@ export function buildMotions(): Motion[] {
     motions.push(
         newMotion({
             keys: ['g', 'g'],
-            compute: (_context, _position) => findDocumentStart(_context.document),
+            compute: (context, _position) => findDocumentStart(context.document),
         }),
     );
 
@@ -225,7 +225,7 @@ export function buildMotions(): Motion[] {
     motions.push(
         newMotion({
             keys: ['0'],
-            compute: (_context, position) => findLineStart(_context.document, position),
+            compute: (context, position) => findLineStart(context.document, position),
         }),
     );
 
