@@ -1,8 +1,12 @@
 import * as vscode from 'vscode';
 import { Range, Selection } from 'vscode';
 import { enterMode } from '../../modes';
-import { updateSelections } from '../../utils/cursor';
-import { findAdjacentPosition } from '../../utils/positionFinder';
+import {
+    findAdjacentPosition,
+    findReplacedOffsetRanges,
+    OffsetRange,
+    type OffsetReplaceData,
+} from '../../utils/positionFinder';
 import { newAction, newRegexAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
 
@@ -36,6 +40,7 @@ export function buildEditActions(): Action[] {
 
                 // レジスタの内容を取得する
                 const contents = context.vimState.register.contents;
+                const replaces: Array<OffsetReplaceData> = [];
                 await editor.edit((editBuilder) => {
                     for (let i = 0; i < editor.selections.length; i++) {
                         const selection = editor.selections[i];
@@ -55,14 +60,36 @@ export function buildEditActions(): Action[] {
                             const line = context.document.lineAt(selection.active.line);
                             const insertPos = line.range.end;
                             // 通常 register 側に改行が含まれているが、今回改行を追加するのにかえってじゃまになるので削っておく
-                            const insertText = content.text.endsWith('\n') ? content.text.slice(0, -1) : content.text;
-                            editBuilder.insert(insertPos, `\n${insertText}`);
+                            const insertText = `\n${content.text.endsWith('\n') ? content.text.slice(0, -1) : content.text}`;
+                            replaces.push({
+                                range: OffsetRange.fromRange(context.document, new Range(insertPos, insertPos)),
+                                newText: insertText,
+                            });
+                            editBuilder.insert(insertPos, insertText);
                         } else {
                             // 通常: 選択範囲位置に挿入
                             editBuilder.replace(selection, content.text);
+                            replaces.push({
+                                range: OffsetRange.fromRange(context.document, selection),
+                                newText: content.text,
+                            });
                         }
                     }
                 });
+
+                // 挿入後の範囲を一度選択して、また挿入後の位置にカーソルをセットする
+                const newRanges = await findReplacedOffsetRanges(replaces);
+                editor.selections = newRanges.map(
+                    (r) =>
+                        new Selection(
+                            editor.document.positionAt(r.startOffset),
+                            editor.document.positionAt(r.endOffset),
+                        ),
+                );
+                editor.selections = newRanges.map(
+                    (r) =>
+                        new Selection(editor.document.positionAt(r.endOffset), editor.document.positionAt(r.endOffset)),
+                );
 
                 enterMode(context.vimState, context.editor, 'normal');
             },
@@ -77,13 +104,7 @@ export function buildEditActions(): Action[] {
 
                 // レジスタの内容を取得する
                 const contents = context.vimState.register.contents;
-
-                // 元のカーソル位置を offset で保存（挿入後に戻すため）
-                const originalOffsets = editor.selections.map((s) => context.document.offsetAt(s.start));
-
-                // 各挿入による offset の変化量を記録
-                const insertionInfos: Array<{ offset: number; insertedLength: number; deletedLength: number }> = [];
-
+                const replaces: Array<OffsetReplaceData> = [];
                 await editor.edit((editBuilder) => {
                     for (let i = 0; i < editor.selections.length; i++) {
                         const selection = editor.selections[i];
@@ -103,45 +124,40 @@ export function buildEditActions(): Action[] {
                             const line = context.document.lineAt(selection.active.line);
                             const insertPos = line.range.start;
                             // 通常 register 側に改行が含まれているが、今回改行を追加するのにかえってじゃまになるので削っておく
-                            const insertText = content.text.endsWith('\n') ? content.text.slice(0, -1) : content.text;
-                            editBuilder.insert(insertPos, `${insertText}\n`);
-
-                            insertionInfos.push({
-                                offset: context.document.offsetAt(insertPos),
-                                insertedLength: insertText.length + 1, // +1 for \n
-                                deletedLength: 0,
+                            const insertText = `${content.text.endsWith('\n') ? content.text.slice(0, -1) : content.text}\n`;
+                            replaces.push({
+                                range: OffsetRange.fromRange(context.document, new Range(insertPos, insertPos)),
+                                newText: insertText,
                             });
+                            editBuilder.insert(insertPos, insertText);
                         } else {
                             // 通常: カーソル位置に挿入
                             editBuilder.replace(selection, content.text);
-
-                            insertionInfos.push({
-                                offset: context.document.offsetAt(selection.start),
-                                insertedLength: content.text.length,
-                                deletedLength:
-                                    context.document.offsetAt(selection.end) -
-                                    context.document.offsetAt(selection.start),
+                            replaces.push({
+                                range: OffsetRange.fromRange(context.document, selection),
+                                newText: content.text,
                             });
                         }
                     }
                 });
 
-                // 元のカーソル位置に、挿入による影響を加味して戻す
-                const newSelections = originalOffsets.map((offset, i) => {
-                    let adjustedOffset = offset;
-
-                    // 自分より前の挿入による影響を計算
-                    for (let j = 0; j < i; j++) {
-                        const info = insertionInfos[j];
-                        if (info.offset <= offset) {
-                            adjustedOffset += info.insertedLength - info.deletedLength;
-                        }
-                    }
-
-                    const adjustedPos = context.document.positionAt(adjustedOffset);
-                    return new Selection(adjustedPos, adjustedPos);
-                });
-                updateSelections(editor, newSelections);
+                // 挿入後の範囲を一度選択して、また挿入後の開始位置にカーソルをセットする
+                // こうすることで cursorUndo したときに挿入された範囲を選択できる
+                const newRanges = await findReplacedOffsetRanges(replaces);
+                editor.selections = newRanges.map(
+                    (r) =>
+                        new Selection(
+                            editor.document.positionAt(r.startOffset),
+                            editor.document.positionAt(r.endOffset),
+                        ),
+                );
+                editor.selections = newRanges.map(
+                    (r) =>
+                        new Selection(
+                            editor.document.positionAt(r.startOffset),
+                            editor.document.positionAt(r.startOffset),
+                        ),
+                );
 
                 enterMode(context.vimState, context.editor, 'normal');
             },

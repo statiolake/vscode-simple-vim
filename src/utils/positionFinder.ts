@@ -296,3 +296,76 @@ export function findMatchingTag(document: TextDocument, position: Position): Tag
 
     return undefined;
 }
+
+export class OffsetRange {
+    startOffset: number;
+    endOffset: number;
+
+    constructor(startOffset: number, endOffset: number) {
+        this.startOffset = startOffset;
+        this.endOffset = endOffset;
+    }
+
+    with(updates: { startOffset?: number; endOffset?: number }): OffsetRange {
+        return new OffsetRange(updates.startOffset ?? this.startOffset, updates.endOffset ?? this.endOffset);
+    }
+
+    static fromRange(document: TextDocument, range: Range): OffsetRange {
+        return new OffsetRange(document.offsetAt(range.start), document.offsetAt(range.end));
+    }
+
+    toRange(document: TextDocument): Range {
+        return new Range(document.positionAt(this.startOffset), document.positionAt(this.endOffset));
+    }
+}
+
+export type OffsetReplaceData = {
+    range: OffsetRange;
+    newText: string;
+};
+
+/**
+ * 置換後の範囲を探す
+ */
+export async function findReplacedOffsetRanges(replaces: Array<OffsetReplaceData>): Promise<OffsetRange[]> {
+    // まずレンジを先頭から並べ替える
+    const reordered = Array(replaces.length)
+        .fill(0)
+        .map((_, i) => i);
+    reordered.sort((a, b) => {
+        const rangeA = replaces[a].range;
+        const rangeB = replaces[b].range;
+        if (rangeA.startOffset < rangeB.startOffset) return -1;
+        if (rangeA.startOffset > rangeB.startOffset) return 1;
+        return 0;
+    });
+    replaces = reordered.map((i) => replaces[i]);
+    const afterOffsetDeltaRanges: Array<{ delta: number; length: number }> = [];
+
+    for (let i = 0; i < replaces.length; i++) {
+        const range = replaces[i].range;
+        const text = replaces[i].newText;
+        afterOffsetDeltaRanges.push({
+            delta: text.length - (range.endOffset - range.startOffset),
+            length: text.length,
+        });
+    }
+
+    // 元のカーソル位置に、挿入による影響を加味して戻す
+    let totalDelta = 0;
+    const newRanges = replaces.map((replace, i) => {
+        const offsetDeltaRange = afterOffsetDeltaRanges[i];
+        const newStart = replace.range.startOffset + totalDelta;
+        const newEnd = newStart + offsetDeltaRange.length;
+        const newRange = new OffsetRange(newStart, newEnd);
+        totalDelta += offsetDeltaRange.delta;
+        return newRange;
+    });
+
+    const restoredRanges = Array(replaces.length);
+    for (let i = 0; i < reordered.length; i++) {
+        restoredRanges[reordered[i]] = newRanges[i];
+    }
+
+    return restoredRanges;
+}
