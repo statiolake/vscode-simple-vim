@@ -8,6 +8,7 @@ import { buildEditActions } from './defs/edit';
 import { buildLspActions } from './defs/lsp';
 import { buildMiscActions } from './defs/misc';
 import { buildModeActions } from './defs/mode';
+import { buildMulticursorActions } from './defs/multicursor';
 import { buildOperatorActions } from './defs/operator';
 import { createYsSurroundAction, csSurroundAction, dsSurroundAction, visualSurroundAction } from './defs/surround';
 import { buildViewportActions } from './defs/viewport';
@@ -40,6 +41,9 @@ export function buildActions(): Action[] {
 
     console.log('Building LSP actions');
     actions.push(...buildLspActions());
+
+    console.log('Building multicursor actions');
+    actions.push(...buildMulticursorActions());
 
     console.log('Building viewport actions');
     actions.push(...buildViewportActions());

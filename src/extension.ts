@@ -41,7 +41,9 @@ async function onSelectionChange(vimState: VimState, e: TextEditorSelectionChang
     }
 
     // 選択範囲の先頭が表示されるようにスクロールする
-    e.textEditor.revealRange(new Range(e.selections[0].active, e.selections[0].active));
+    // マルチカーソルの場合、最後のカーソル位置を reveal したいので最後のカーソルを見る
+    const lastSelection = e.selections[e.selections.length - 1];
+    e.textEditor.revealRange(new Range(lastSelection.active, lastSelection.active));
 }
 
 async function onDidChangeActiveTextEditor(vimState: VimState, editor: TextEditor | undefined): Promise<void> {
