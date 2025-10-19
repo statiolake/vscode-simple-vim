@@ -14,14 +14,14 @@ export async function escapeHandler(vimState: VimState): Promise<void> {
             break;
         case 'normal':
             if (editor.selections.length > 1) {
-                await updateSelections(editor, [editor.selection]);
+                updateSelections(editor, [editor.selection]);
             }
             break;
         case 'visual': {
             const newSelections = editor.selections.map((selection) => {
                 return new vscode.Selection(selection.active, selection.active);
             });
-            await updateSelections(editor, newSelections);
+            updateSelections(editor, newSelections);
             await enterMode(vimState, editor, 'normal');
             break;
         }
@@ -29,7 +29,7 @@ export async function escapeHandler(vimState: VimState): Promise<void> {
             const newSelections = editor.selections.map((selection) => {
                 return new vscode.Selection(selection.active, selection.active);
             });
-            await updateSelections(editor, newSelections);
+            updateSelections(editor, newSelections);
             await enterMode(vimState, editor, 'normal');
             break;
         }

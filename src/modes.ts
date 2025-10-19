@@ -19,7 +19,7 @@ export async function enterMode(vimState: VimState, editor: vscode.TextEditor | 
         const newSelections = editor.selections.map(
             (selection) => new vscode.Selection(selection.active, selection.active),
         );
-        await updateSelections(editor, newSelections);
+        updateSelections(editor, newSelections);
     }
 
     if (mode === 'visualLine' && editor) {

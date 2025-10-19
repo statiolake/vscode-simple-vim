@@ -47,7 +47,7 @@ export function buildActions(): Action[] {
                     const newPosition = findLineStartAfterIndent(context.document, selection.active);
                     return new vscode.Selection(newPosition, newPosition);
                 });
-                await updateSelections(context.editor, newSelections);
+                updateSelections(context.editor, newSelections);
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),
@@ -60,7 +60,7 @@ export function buildActions(): Action[] {
                     const newPosition = findLineEnd(context.document, selection.active);
                     return new vscode.Selection(newPosition, newPosition);
                 });
-                await updateSelections(context.editor, newSelections);
+                updateSelections(context.editor, newSelections);
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),
@@ -122,7 +122,7 @@ export function buildActions(): Action[] {
                     const newPosition = findAdjacentPosition(context.document, 'after', selection.active);
                     return new vscode.Selection(selection.active, newPosition);
                 });
-                await updateSelections(context.editor, newSelections);
+                updateSelections(context.editor, newSelections);
                 saveCurrentSelectionsToRegister(context.vimState, context.editor, { isLinewise: false });
                 await vscode.commands.executeCommand('deleteRight');
             },
@@ -241,7 +241,7 @@ export function buildActions(): Action[] {
                     const adjustedPos = context.document.positionAt(adjustedOffset);
                     return new vscode.Selection(adjustedPos, adjustedPos);
                 });
-                await updateSelections(editor, newSelections);
+                updateSelections(editor, newSelections);
 
                 enterMode(context.vimState, context.editor, 'normal');
             },

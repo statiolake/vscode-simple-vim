@@ -100,8 +100,7 @@ export function motionToAction(motion: Motion): Action {
             return new Selection(result.position, result.position);
         });
 
-        // updateSelections を await
-        await updateSelections(context.editor, newSelections);
+        updateSelections(context.editor, newSelections);
 
         return 'executed';
     };
@@ -154,8 +153,7 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
             );
         });
 
-        // updateSelections を await
-        await updateSelections(context.editor, newSelections);
+        updateSelections(context.editor, newSelections);
 
         return 'executed';
     };
