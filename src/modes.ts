@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { Selection, type TextEditor, TextEditorCursorStyle } from 'vscode';
 import type { Mode } from './modesTypes';
 import { typeHandler } from './typeHandler';
-import { updateSelections } from './utils/cursor';
 import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
 
@@ -17,8 +16,7 @@ export async function enterMode(vimState: VimState, editor: TextEditor | undefin
 
     if (mode === 'normal' && editor) {
         // ノーマルモードに入ったら、選択範囲を解除する
-        const newSelections = editor.selections.map((selection) => new Selection(selection.active, selection.active));
-        updateSelections(editor, newSelections);
+        editor.selections = editor.selections.map((selection) => new Selection(selection.active, selection.active));
     }
 
     if (mode === 'visualLine' && editor) {

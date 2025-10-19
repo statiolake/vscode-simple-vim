@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { Selection } from 'vscode';
 import { enterMode } from './modes';
-import { updateSelections } from './utils/cursor';
+
 import type { VimState } from './vimState';
 
 export async function escapeHandler(vimState: VimState): Promise<void> {
@@ -15,14 +15,14 @@ export async function escapeHandler(vimState: VimState): Promise<void> {
             break;
         case 'normal':
             if (editor.selections.length > 1) {
-                updateSelections(editor, [editor.selection]);
+                editor.selections = [editor.selection];
             }
             break;
         case 'visual': {
             const newSelections = editor.selections.map((selection) => {
                 return new Selection(selection.active, selection.active);
             });
-            updateSelections(editor, newSelections);
+            editor.selections = newSelections;
             await enterMode(vimState, editor, 'normal');
             break;
         }
@@ -30,7 +30,7 @@ export async function escapeHandler(vimState: VimState): Promise<void> {
             const newSelections = editor.selections.map((selection) => {
                 return new Selection(selection.active, selection.active);
             });
-            updateSelections(editor, newSelections);
+            editor.selections = newSelections;
             await enterMode(vimState, editor, 'normal');
             break;
         }

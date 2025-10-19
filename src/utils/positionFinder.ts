@@ -231,19 +231,22 @@ export function findMatchingTag(document: TextDocument, position: Position): Tag
     let openingTagEnd = 0;
 
     let match: RegExpExecArray | null;
-    while ((match = tagPattern.exec(text)) !== null) {
-        if (match.index >= offset) break;
+    while (true) {
+        match = tagPattern.exec(text);
+        if (match !== null) {
+            if (match.index >= offset) break;
 
-        const tagStart = match.index;
-        const tagEnd = tagPattern.lastIndex;
-        const fullTag = text.substring(tagStart, tagEnd);
+            const tagStart = match.index;
+            const tagEnd = tagPattern.lastIndex;
+            const fullTag = text.substring(tagStart, tagEnd);
 
-        // 自己閉じタグはスキップ
-        if (fullTag.includes('/>')) continue;
+            // 自己閉じタグはスキップ
+            if (fullTag.includes('/>')) continue;
 
-        openingTagName = match[1];
-        openingTagStart = tagStart;
-        openingTagEnd = tagEnd;
+            openingTagName = match[1];
+            openingTagStart = tagStart;
+            openingTagEnd = tagEnd;
+        }
     }
 
     if (openingTagName === '') return undefined;

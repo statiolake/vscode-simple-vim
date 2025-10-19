@@ -3,7 +3,6 @@ import type { Context } from '../context';
 import type { Mode } from '../modesTypes';
 import type { Motion } from '../motion/motionTypes';
 import type { TextObject, TextObjectMatch } from '../textObject/textObjectTypes';
-import { updateSelections } from '../utils/cursor';
 import { keysParserPrefix, keysParserRegex } from '../utils/keysParser/keysParser';
 import type { KeysParser } from '../utils/keysParser/keysParserTypes';
 import type { Action, ActionResult } from './actionTypes';
@@ -91,7 +90,7 @@ export function motionToAction(motion: Motion): Action {
         if (firstResult.result !== 'match') return firstResult.result;
 
         // すべてのカーソルを新しい位置に移動
-        const newSelections = results.map((result, index) => {
+        context.editor.selections = results.map((result, index) => {
             const currentSelection = context.editor.selections[index];
 
             if (result.result !== 'match') return currentSelection;
@@ -99,8 +98,6 @@ export function motionToAction(motion: Motion): Action {
             // Normal モードなので、Motion の位置にカーソルを移動するだけ
             return new Selection(result.position, result.position);
         });
-
-        updateSelections(context.editor, newSelections);
 
         return 'executed';
     };
@@ -123,7 +120,7 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
 
         // 基本的には、anchor は動かさず active をセットする。ただし、anchorが遡るような range が帰ってきた場合
         // は、anchor も調整する。
-        const newSelections = results.map((result, index) => {
+        context.editor.selections = results.map((result, index) => {
             const currentSelection = context.editor.selections[index];
 
             // どちらが anchor になるのかは少し考える必要がある。 w, b などの通常のモーションであれば、片方は今のカーソ
@@ -152,8 +149,6 @@ export function textObjectToVisualAction(textObject: TextObject): Action {
                 resultActive,
             );
         });
-
-        updateSelections(context.editor, newSelections);
 
         return 'executed';
     };

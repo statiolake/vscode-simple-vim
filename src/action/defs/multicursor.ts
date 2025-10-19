@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { Selection } from 'vscode';
 import { enterMode } from '../../modes';
-import { updateSelections } from '../../utils/cursor';
 import { newAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
 
@@ -80,10 +79,9 @@ export function buildMulticursorActions(): Action[] {
             modes: ['visual'],
             execute: async (context) => {
                 // 各選択範囲の先頭にカーソルを配置
-                const newSelections = context.editor.selections.map(
+                context.editor.selections = context.editor.selections.map(
                     (selection) => new Selection(selection.start, selection.start),
                 );
-                updateSelections(context.editor, newSelections);
                 // Insert モードに入る
                 await enterMode(context.vimState, context.editor, 'insert');
             },
@@ -95,10 +93,9 @@ export function buildMulticursorActions(): Action[] {
             modes: ['visual'],
             execute: async (context) => {
                 // 各選択範囲の末尾にカーソルを配置
-                const newSelections = context.editor.selections.map(
+                context.editor.selections = context.editor.selections.map(
                     (selection) => new Selection(selection.end, selection.end),
                 );
-                updateSelections(context.editor, newSelections);
                 // Insert モードに入る
                 await enterMode(context.vimState, context.editor, 'insert');
             },
@@ -110,7 +107,7 @@ export function buildMulticursorActions(): Action[] {
             modes: ['visualLine'],
             execute: async (context) => {
                 // Visual Line の各行の先頭にカーソルを配置
-                const newSelections = context.editor.selections.flatMap((selection) => {
+                context.editor.selections = context.editor.selections.flatMap((selection) => {
                     const startLine = Math.min(selection.anchor.line, selection.active.line);
                     const endLine = Math.max(selection.anchor.line, selection.active.line);
                     const cursors: Selection[] = [];
@@ -119,7 +116,6 @@ export function buildMulticursorActions(): Action[] {
                     }
                     return cursors;
                 });
-                updateSelections(context.editor, newSelections);
                 // Insert モードに入る
                 await enterMode(context.vimState, context.editor, 'insert');
             },
@@ -132,7 +128,7 @@ export function buildMulticursorActions(): Action[] {
             execute: async (context) => {
                 const doc = context.editor.document;
                 // Visual Line の各行の末尾にカーソルを配置
-                const newSelections = context.editor.selections.flatMap((selection) => {
+                context.editor.selections = context.editor.selections.flatMap((selection) => {
                     const startLine = Math.min(selection.anchor.line, selection.active.line);
                     const endLine = Math.max(selection.anchor.line, selection.active.line);
                     const cursors: Selection[] = [];
@@ -144,7 +140,6 @@ export function buildMulticursorActions(): Action[] {
                     }
                     return cursors;
                 });
-                updateSelections(context.editor, newSelections);
                 // Insert モードに入る
                 await enterMode(context.vimState, context.editor, 'insert');
             },

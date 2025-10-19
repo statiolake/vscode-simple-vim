@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { Selection } from 'vscode';
 import { enterMode } from '../../modes';
-import { updateSelections } from '../../utils/cursor';
 import { findLineEnd, findLineStartAfterIndent } from '../../utils/positionFinder';
 import { newAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
@@ -34,11 +33,10 @@ export function buildModeActions(): Action[] {
             keys: ['I'],
             modes: ['normal'],
             execute: async (context) => {
-                const newSelections = context.editor.selections.map((selection) => {
+                context.editor.selections = context.editor.selections.map((selection) => {
                     const newPosition = findLineStartAfterIndent(context.document, selection.active);
                     return new Selection(newPosition, newPosition);
                 });
-                updateSelections(context.editor, newSelections);
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),
@@ -48,11 +46,10 @@ export function buildModeActions(): Action[] {
             keys: ['A'],
             modes: ['normal'],
             execute: async (context) => {
-                const newSelections = context.editor.selections.map((selection) => {
+                context.editor.selections = context.editor.selections.map((selection) => {
                     const newPosition = findLineEnd(context.document, selection.active);
                     return new Selection(newPosition, newPosition);
                 });
-                updateSelections(context.editor, newSelections);
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),
