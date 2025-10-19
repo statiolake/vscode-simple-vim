@@ -1,11 +1,24 @@
-# SimpleVim (statiolake)
+# Waltz
 
-**This is a fork of [jpotterm/vscode-simple-vim](https://github.com/jpotterm/vscode-simple-vim) with personal customizations by statiolake.**
+**Graceful modal editing for VS Code.**
 
-An opinionated Vim-like extension for VSCode that prioritizes simplicity (of use and implementation) and integration with native VSCode features.
+Waltz is a modal editing extension for VS Code that emphasizes smooth integration with VS Code's native features. It provides Vim-inspired keybindings while fully embracing VS Code's philosophy — from multiple cursors to native selection handling.
 
-Once you enter Insert mode it will be a completely vanilla VSCode experience: the only event SimpleVim will listen for is the `Escape` key to go back to Normal mode.
+## Inspiration & Credits
 
+- **Based on**: [jpotterm/vscode-simple-vim](https://github.com/jpotterm/vscode-simple-vim) - The original codebase that made this project possible
+- **Philosophically inspired by**: [71/dance](https://github.com/71/dance) - A Kakoune-inspired modal editor that influenced Waltz's design philosophy around selection-first editing and VS Code-native integration
+
+Waltz aims to provide a graceful editing experience that feels natural in VS Code, like a waltz that flows smoothly with the editor's native capabilities.
+
+## Philosophy
+
+Unlike traditional Vim emulation that fights against VS Code's architecture, Waltz embraces it:
+
+- **VS Code-native approach**: Works seamlessly with VS Code's selection model, cursor behavior, and editing primitives
+- **Multiple cursors first-class**: Full support for VS Code's multiple cursor features instead of macros
+- **Smooth integration**: Designed to complement, not replace, VS Code's built-in features
+- **Modal editing without the baggage**: The power of modal editing without strict Vim compatibility constraints
 
 ## Operators
 
@@ -131,7 +144,7 @@ Actions are miscellaneous commands that don't follow the well-defined patterns o
 
 ## LSP Actions
 
-These actions integrate with VSCode's Language Server Protocol features for code intelligence.
+These actions integrate with VS Code's Language Server Protocol features for code intelligence.
 
 | Keys | Description |
 |-|-|
@@ -151,50 +164,40 @@ These actions integrate with VSCode's Language Server Protocol features for code
 
 ## Differences From Vim
 
-SimpleVim prioritizes simplicity and integration with native VSCode features over compatability with Vim. If full Vim compatibility is important to you, consider trying a different extension. Here are some of the ways SimpleVim is different from Vim.
+Waltz prioritizes smooth integration with VS Code over strict Vim compatibility. If full Vim compatibility is important to you, consider trying a different extension. Here are some of the ways Waltz differs from Vim:
 
-- SimpleVim has no macros. Instead it has first class multiple cursor support which you can use to achieve something similar. You can place additional cursors by any of the ways native to VSCode including: `Cmd+d`, `Cmd+Alt+Down` or `Alt+Click`. Simply place cursors everywhere you would have run the macro and see your changes to each place in real time.
+- **No macros**: Waltz has first-class multiple cursor support instead. Place cursors everywhere you would have run the macro (`Cmd+d`, `Cmd+Alt+Down`, `Alt+Click`) and see your changes in real time.
 
-- SimpleVim has no `.` (repeat) command. Use multiple cursors instead (see previous bullet).
+- **No `.` (repeat) command**: Use multiple cursors instead (see previous bullet).
 
-- SimpleVim has no count. In Vim you can prefix commands with a number and it will run them that many times. In SimpleVim that is not supported. Instead you can just type the command again or use a command that accomplishes your goal with fewer repetitions.
+- **No count**: In Vim you can prefix commands with a number. In Waltz, just type the command again or use a command that accomplishes your goal with fewer repetitions.
 
-- SimpleVim lets the cursor go one past the last character of the line in Normal mode. It would be nice to prevent this, but because of VSCode's selection model and extension API there is no good way to do it. It would require ugly hacks and would make other parts of the SimpleVim experience buggy.
+- **Cursor can go past last character**: In Normal mode, the cursor can go one past the last character of the line. This is due to VS Code's selection model and API limitations.
 
-- SimpleVim has no registers. The `d` operator has been modified to yank (copy to clipboard) and delete text at the same time, so deleting text will also copy it to the clipboard.
+- **No registers**: The `d` operator has been modified to yank and delete simultaneously, so deleting text also copies it to the clipboard.
 
-- SimpleVim's `f` and `t` motions work slightly differently from Vim's. `t` and `f` behave like Vim's `/` command, but `t` takes one character and `f` takes two. Or in other words, `t` works like Vim's `t` in Normal mode but Vim's `f` in Visual mode. And `f` behaves like the vim-sneak plugin.
+- **Different `f` and `t` motions**: `t` takes one character and `f` takes two (like vim-sneak). `t` works like Vim's `t` in Normal mode but Vim's `f` in Visual mode.
 
-- SimpleVim has no `/` (search) command. Instead you can either use the `f` motion or the native VSCode find. Between them most of the uses for `/` are taken care of.
+- **No `/` (search) command**: Use the `f` motion or native VS Code find instead.
 
-- SimpleVim has no `>` (indent) command. Instead you can use VSCode's `Cmd+]`.
+- **No `>` (indent) command**: Use VS Code's `Cmd+]` instead.
 
-- SimpleVim has no `gU` (uppercase) command. Instead you can use VSCode's `Transform to Uppercase` from the Command Palette.
+- **No `gU` (uppercase) command**: Use VS Code's `Transform to Uppercase` from the Command Palette.
 
-- SimpleVim has no jump list (`Ctrl+o` and `Ctrl+i` in Vim). Instead you can use VSCode's native jump list with `Ctrl+-` and `Ctrl+_`.
+- **No jump list commands**: Use VS Code's native jump list with `Ctrl+-` and `Ctrl+_` instead of `Ctrl+o` and `Ctrl+i`.
 
-- SimpleVim does not support marks. If you're jumping back and forth often between two places in a file you can use VSCode's split window feature, and use `Cmd+1` and `Cmd+2` to focus them. If you just need to jump back to where you've been, you can use VSCode's `Ctrl+-`.
+- **No marks**: Use VS Code's split window feature with `Cmd+1` and `Cmd+2`, or use `Ctrl+-` to jump back.
 
 
 ## Settings
 
-### Yank Highlight Color
-
-The `y` (yank) operator temporarily changes the background color of the range being yanked to make it obvious what you're yanking. Otherwise you might not realize you yanked the wrong thing until you tried to put it somewhere else. You can change the background color it uses with the `simpleVim.yankHighlightBackgroundColor` setting.
-
-```json
-{
-    "simpleVim.yankHighlightBackgroundColor": "#F8F3AB"
-}
-```
-
 ### Custom Key Bindings
 
-You can add custom key bindings that execute VSCode commands using the `simple-vim.customBindings` setting. This allows you to extend SimpleVim with your own key mappings.
+You can add custom key bindings that execute VS Code commands using the `waltz.customBindings` setting. This allows you to extend Waltz with your own key mappings.
 
 ```json
 {
-    "simple-vim.customBindings": [
+    "waltz.customBindings": [
         {
             "keys": ["g", "d"],
             "modes": ["normal", "visual"],
@@ -221,15 +224,6 @@ You can add custom key bindings that execute VSCode commands using the `simple-v
                     "command": "workbench.action.quickOpen"
                 }
             ]
-        },
-        {
-            "keys": ["g", "f"],
-            "modes": ["normal"],
-            "commands": [
-                {
-                    "command": "editor.action.formatDocument"
-                }
-            ]
         }
     ]
 }
@@ -239,7 +233,7 @@ You can also execute multiple commands sequentially:
 
 ```json
 {
-    "simple-vim.customBindings": [
+    "waltz.customBindings": [
         {
             "keys": ["space", "w"],
             "modes": ["normal"],
@@ -260,8 +254,12 @@ Each binding has the following properties:
 
 - `keys` (required): An array of strings representing the key sequence (e.g., `["g", "d"]`)
 - `commands` (required): An array of command objects to execute sequentially. Each command object has:
-  - `command` (required): The VSCode command to execute (e.g., `"editor.action.revealDefinition"`)
+  - `command` (required): The VS Code command to execute (e.g., `"editor.action.revealDefinition"`)
   - `args` (optional): Arguments to pass to the command
-- `modes` (optional): An array of modes where this binding is active. Valid values are `"normal"`, `"visual"`, `"visualLine"`, and `"insert"`. If not specified, the binding applies to all modes except insert mode.
+- `modes` (optional): An array of modes where this binding is active. Valid values are `"normal"`, `"visual"`, `"visualLine"`, and `"insert"`. If not specified, the binding applies to all modes.
 
 Custom bindings are checked before default bindings, so you can override built-in key mappings if needed.
+
+## License
+
+MIT License - See [LICENSE.txt](LICENSE.txt) for details.

@@ -28,7 +28,7 @@ export async function enterMode(vimState: VimState, editor: TextEditor | undefin
 }
 
 function updateModeContext(mode: Mode) {
-    vscode.commands.executeCommand('setContext', 'simple-vim.mode', mode);
+    vscode.commands.executeCommand('setContext', 'waltz.mode', mode);
 }
 
 function updateCursorStyle(editor: TextEditor | undefined, mode: Mode): void {

@@ -23,7 +23,7 @@ const CustomBindingSchema = z.object({
  * カスタムキーバインディングからアクションを生成
  */
 export function buildCustomActions(): Action[] {
-    const config = vscode.workspace.getConfiguration('simple-vim');
+    const config = vscode.workspace.getConfiguration('waltz');
     const customBindingsRaw = config.get<unknown>('customBindings', []);
 
     const actions: Action[] = [];
@@ -39,7 +39,7 @@ export function buildCustomActions(): Action[] {
             })
             .join('\n');
 
-        vscode.window.showErrorMessage(`simple-vim カスタムキーバインディング設定エラー:\n${errorMessage}`);
+        vscode.window.showErrorMessage(`Waltz: カスタムキーバインディングの設定にエラーがあります:\n${errorMessage}`);
         return actions;
     }
 

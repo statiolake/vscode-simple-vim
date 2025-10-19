@@ -1,13 +1,13 @@
 {
-  "name": "simple-vim-statiolake",
-  "displayName": "Simple Vim (statiolake)",
-  "description": "Simple Vim extension for VSCode (forked from jpotterm/vscode-simple-vim)",
+  "name": "waltz",
+  "displayName": "Waltz",
+  "description": "Graceful modal editing for VS Code. A Vim-inspired editor with VS Code-native selection handling.",
   "version": "0.3.0",
   "license": "MIT",
   "publisher": "statiolake",
   "repository": {
     "type": "git",
-    "url": "https://github.com/statiolake/vscode-simple-vim.git"
+    "url": "https://github.com/statiolake/vscode-waltz.git"
   },
   "engines": {
     "vscode": "^1.75.0"
@@ -16,7 +16,7 @@
     "ui"
   ],
   "categories": [
-    "Other"
+    "Keymaps"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -26,29 +26,29 @@
     "keybindings": [
       {
         "key": "Escape",
-        "command": "simple-vim.escapeKey",
+        "command": "waltz.escapeKey",
         "when": "editorTextFocus"
       },
       {
         "key": "ctrl+r",
         "command": "redo",
-        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
         "key": "ctrl+d",
-        "command": "simple-vim.send",
+        "command": "waltz.send",
         "args": {
           "keys": "<C-d>"
         },
-        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
         "key": "ctrl+u",
-        "command": "simple-vim.send",
+        "command": "waltz.send",
         "args": {
           "keys": "<C-u>"
         },
-        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
         "key": "ctrl+o",
@@ -58,49 +58,44 @@
       {
         "key": "ctrl+o",
         "command": "workbench.action.navigateBack",
-        "when": "editorTextFocus && simple-vim.mode == 'normal'"
+        "when": "editorTextFocus && waltz.mode == 'normal'"
       },
       {
         "key": "ctrl+i",
         "command": "workbench.action.navigateForward",
-        "when": "editorTextFocus && simple-vim.mode == 'normal'"
+        "when": "editorTextFocus && waltz.mode == 'normal'"
       },
       {
         "key": "ctrl+w",
         "command": "deleteWordLeft",
-        "when": "textInputFocus && !editorReadonly && simple-vim.mode == 'insert'"
+        "when": "textInputFocus && !editorReadonly && waltz.mode == 'insert'"
       },
       {
         "key": "backspace",
-        "command": "simple-vim.noop",
-        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+        "command": "waltz.noop",
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
         "key": "delete",
-        "command": "simple-vim.noop",
-        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+        "command": "waltz.noop",
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
         "key": "enter",
-        "command": "simple-vim.noop",
-        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+        "command": "waltz.noop",
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
         "key": "tab",
-        "command": "simple-vim.noop",
-        "when": "editorTextFocus && simple-vim.mode != 'insert'"
+        "command": "waltz.noop",
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "SimpleVim Configuration",
+      "title": "Waltz Configuration",
       "properties": {
-        "simple-vim.yankHighlightBackgroundColor": {
-          "type": "string",
-          "default": "#F8F3AB",
-          "description": "Background color that flashes to show the range when yanking."
-        },
-        "simple-vim.customBindings": {
+        "waltz.customBindings": {
           "type": "array",
           "default": [],
           "description": "Custom key bindings that execute VSCode commands.",

@@ -59,7 +59,7 @@ async function onDidChangeActiveTextEditor(vimState: VimState, editor: TextEdito
 }
 
 function onDidChangeConfiguration(vimState: VimState, e: ConfigurationChangeEvent): void {
-    if (!e.affectsConfiguration('simple-vim')) return;
+    if (!e.affectsConfiguration('waltz')) return;
     vimState.actions = buildActions();
 }
 
@@ -88,28 +88,28 @@ export async function activate(context: ExtensionContext): Promise<void> {
         vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(vimState, editor)),
         vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(vimState, e)),
         vscode.workspace.onDidChangeConfiguration((e) => onDidChangeConfiguration(vimState, e)),
-        vscode.commands.registerCommand('simple-vim.escapeKey', async () => escapeHandler(vimState)),
-        vscode.commands.registerCommand('simple-vim.noop', () => {
+        vscode.commands.registerCommand('waltz.escapeKey', async () => escapeHandler(vimState)),
+        vscode.commands.registerCommand('waltz.noop', () => {
             // Do nothing - used to ignore keys in certain modes
         }),
-        vscode.commands.registerCommand('simple-vim.send', async (args: { keys: string }) => {
+        vscode.commands.registerCommand('waltz.send', async (args: { keys: string }) => {
             if (!args || !args.keys) {
-                console.error('simple-vim.send: keys argument is required');
+                console.error('waltz.send: keys argument is required');
                 return;
             }
             await typeHandler(vimState, args.keys);
         }),
-        vscode.commands.registerCommand('simple-vim.execute', async (args: unknown) => {
+        vscode.commands.registerCommand('waltz.execute', async (args: unknown) => {
             // バリデーション
             if (!args || typeof args !== 'object' || !('keys' in args) || !Array.isArray(args.keys)) {
-                console.error('simple-vim.execute: keys argument must be an array');
+                console.error('waltz.execute: keys argument must be an array');
                 return;
             }
 
             // アクティブなエディタの確認
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
-                console.error('simple-vim.execute: no active editor');
+                console.error('waltz.execute: no active editor');
                 return;
             }
 
@@ -127,7 +127,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
             // 結果の出力
             if (result === 'noMatch') {
                 vscode.window.showWarningMessage(
-                    `simple-vim: どのアクションともマッチしませんでした: ${args.keys.join('')}`,
+                    `Waltz: どのアクションともマッチしませんでした: ${args.keys.join('')}`,
                 );
             }
         }),
