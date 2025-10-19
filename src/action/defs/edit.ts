@@ -3,7 +3,6 @@ import { Range, Selection } from 'vscode';
 import { enterMode } from '../../modes';
 import { updateSelections } from '../../utils/cursor';
 import { findAdjacentPosition } from '../../utils/positionFinder';
-import { saveCurrentSelectionsToRegister } from '../../vimState';
 import { newAction, newRegexAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
 
@@ -17,12 +16,13 @@ export function buildEditActions(): Action[] {
             keys: ['x'],
             modes: ['normal'],
             execute: async (context) => {
-                const newSelections = context.editor.selections.map((selection) => {
+                context.vimState.register.contents = context.editor.selections.map((selection) => {
                     const newPosition = findAdjacentPosition(context.document, 'after', selection.active);
-                    return new Selection(selection.active, newPosition);
+                    return {
+                        text: context.document.getText(new Range(selection.active, newPosition)),
+                        isLinewise: false,
+                    };
                 });
-                updateSelections(context.editor, newSelections);
-                saveCurrentSelectionsToRegister(context.vimState, context.editor, { isLinewise: false });
                 await vscode.commands.executeCommand('deleteRight');
             },
         }),
@@ -35,7 +35,13 @@ export function buildEditActions(): Action[] {
                 const editor = context.editor;
 
                 // 現在の内容を保存し、以前の内容を取得する
-                const contents = saveCurrentSelectionsToRegister(context.vimState, editor, { isLinewise: false });
+                const contents = context.vimState.register.contents;
+                if (editor.selections.some((s) => !s.isEmpty)) {
+                    context.vimState.register.contents = editor.selections.map((selection) => ({
+                        text: context.document.getText(selection),
+                        isLinewise: false,
+                    }));
+                }
 
                 await editor.edit((editBuilder) => {
                     for (let i = 0; i < editor.selections.length; i++) {
@@ -77,7 +83,13 @@ export function buildEditActions(): Action[] {
                 const editor = context.editor;
 
                 // 現在の内容を保存し、以前の内容を取得する
-                const contents = saveCurrentSelectionsToRegister(context.vimState, editor, { isLinewise: false });
+                const contents = context.vimState.register.contents;
+                if (editor.selections.some((s) => !s.isEmpty)) {
+                    context.vimState.register.contents = editor.selections.map((selection) => ({
+                        text: context.document.getText(selection),
+                        isLinewise: false,
+                    }));
+                }
 
                 // 元のカーソル位置を offset で保存（挿入後に戻すため）
                 const originalOffsets = editor.selections.map((s) => context.document.offsetAt(s.start));
