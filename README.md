@@ -2,7 +2,7 @@
 
 **Graceful modal editing for VS Code.**
 
-Waltz is a modal editing extension for VS Code that emphasizes smooth integration with VS Code's native features. It provides Vim-inspired keybindings while fully embracing VS Code's philosophy — from multiple cursors to native selection handling.
+Waltz is a modal editing extension for VS Code that emphasizes smooth integration with VS Code's native features. It provides Vim-inspired keybindings while fully embracing VS Code's philosophy—from multiple cursors to native selection handling.
 
 ## Inspiration & Credits
 
@@ -20,202 +20,306 @@ Unlike traditional Vim emulation that fights against VS Code's architecture, Wal
 - **Smooth integration**: Designed to complement, not replace, VS Code's built-in features
 - **Modal editing without the baggage**: The power of modal editing without strict Vim compatibility constraints
 
+## Modes
+
+Waltz operates in four distinct modes:
+
+| Mode | Entry | Exit |
+|-|-|-|
+| **Normal** | Default, press `Escape` | Enter Insert/Visual/Visual Line mode |
+| **Insert** | `i`, `a`, `I`, `A`, `o`, `O` | `Escape` |
+| **Visual** | `v` from Normal mode | `Escape` or mode-switching actions |
+| **Visual Line** | `V` from Normal mode | `Escape` or mode-switching actions |
+
 ## Operators
 
-Operators act on a range of text. In Normal mode the range is specified by the OperatorRange typed after the operator. In Visual mode it is the visual selection.
+Operators act on text defined by motions or text objects. Used in Normal mode by typing an operator followed by a motion/text object.
+
+| Keys | Description | Modes |
+|-|-|-|
+| `d` | Delete (cuts to register) | Normal |
+| `y` | Yank (copies to register) | Normal |
+| `c` | Change (delete and insert) | Normal |
+
+### Operator Shorthands
 
 | Keys | Description |
 |-|-|
-| `d` | Yank and delete range. |
-| `c` | Delete range and enter insert mode. |
-| `y` | Yank range. |
-| `s` | Select range and enter Visual mode. |
-
-
-## OperatorRanges
-
-OperatorRanges select a range for an Operator to act on. They must be used in Normal mode by typing an Operator and then an OperatorRange.
-
-| Keys | Description |
-|-|-|
-| `l` | Character under cursor. |
-| `h` | Character to the left of cursor. |
-| `k` | Current line and line above. |
-| `j` | Current line and line below. |
-| `w` | From cursor to beginning of next word. |
-| `W` | From cursor to beginning of next word (including punctuation). |
-| `b` | From cursor to beginning of previous word. |
-| `B` | From cursor to beginning of previous word (including punctuation). |
-| `e` | From cursor to end of next word. |
-| `E` | From cursor to end of next word (including punctuation). |
-| `iw` | Word under cursor. |
-| `iW` | Word (including punctuation) under cursor. |
-| `aw` | Word under cursor and whitespace after. |
-| `aW` | Word (including punctuation) under cursor and whitespace after. |
-| `f<char><char>` | From cursor to next occurrence (case sensitive) of <char><char>. |
-| `F<char><char>` | From cursor to previous occurrence (case sensitive) of <char><char>. |
-| `t<char>` | From cursor to next occurrence (case sensitive) of <char>. |
-| `T<char>` | From cursor to previous occurrence (case sensitive) of <char>. |
-| `gg` | From current line to first line of the document. |
-| `G` | From current line to last line of the document. |
-| `}` | From current line to beginning of next paragraph. |
-| `{` | From current line to beginning of previous paragraph. |
-| `ip` | Current paragraph. |
-| `ap` | Current paragraph and whitespace after. |
-| `i<bracket>` | Inside the matching `<bracket>`s. Where `<bracket>` is a quote or opening bracket character (any of ``'"`({[<``).  |
-| `a<bracket>` | Outside the matching `<bracket>`s. Where `<bracket>` is a quote or opening bracket character (any of ``'"`({[<``). |
-| `it` | Inside XML tag. |
-| `at` | Outside XML tag. |
-| `ii` | Inside indentation level. |
-
+| `x` | Delete character at cursor |
+| `dd` | Delete entire line |
+| `yy` | Yank entire line |
+| `D` | Delete to end of line |
+| `Y` | Yank to end of line |
+| `C` | Delete to end of line and enter Insert mode |
 
 ## Motions
 
-Motions move the cursor and can be used in Normal or Visual mode. In Visual mode they only move one side of the selection; the other side stays anchored to where it was when you entered Visual mode.
+Motions move the cursor in Normal or Visual mode. In Visual mode, one side of the selection stays anchored while the other side moves.
+
+### Basic Character Motions
 
 | Keys | Description |
 |-|-|
-| `l` | Character right. |
-| `h` | Character left. |
-| `k` | Line up. |
-| `j` | Line down. |
-| `w` | Word right. |
-| `W` | Word (including punctuation) right. |
-| `b` | Word left. |
-| `B` | Word (including punctuation) left. |
-| `e` | Word end right. |
-| `E` | Word end (including punctuation) right. |
-| `f<char><char>` | Next occurrence (case sensitive) of <char><char>. |
-| `F<char><char>` | Previous occurrence (case sensitive) of <char><char>. |
-| `t<char>` | Next occurrence (case sensitive) of <char>. |
-| `T<char>` | Previous occurrence (case sensitive) of <char>. |
-| `gg` | First line of the document. |
-| `G` | Last line of the document. |
-| `}` | Down a paragraph. |
-| `{` | Up a paragraph. |
-| `$` | End of line. |
-| `_` | Beginning of line. |
-| `H` | Top of screen. |
-| `M` | Middle of screen. |
-| `L` | Bottom of screen. |
+| `h` | Move left |
+| `l` | Move right |
+| `k` | Move up |
+| `j` | Move down |
 
+### Word Motions
+
+| Keys | Description |
+|-|-|
+| `w` | Move to next word boundary (stops at punctuation) |
+| `W` | Move to next WORD boundary (stops at whitespace only) |
+| `b` | Move to previous word boundary |
+| `B` | Move to previous WORD boundary |
+| `e` | Move to end of current/next word |
+| `E` | Move to end of current/next WORD |
+| `ge` | Move to end of previous word |
+| `gE` | Move to end of previous WORD |
+
+### Line Navigation
+
+| Keys | Description |
+|-|-|
+| `0` | Move to start of line |
+| `$` | Move to end of line |
+| `^` | Move to first non-whitespace character |
+
+### Search Motions
+
+| Keys | Description |
+|-|-|
+| `f<char>` | Find character forward on current line (move to character) |
+| `F<char>` | Find character backward on current line |
+| `t<char>` | Find character forward on current line (move before character) |
+| `T<char>` | Find character backward on current line |
+| `;` | Repeat last search forward |
+| `,` | Repeat last search backward |
+
+### Document Navigation
+
+| Keys | Description |
+|-|-|
+| `gg` | Move to first line of document |
+| `G` | Move to last line of document |
+| `{` | Move to previous paragraph boundary |
+| `}` | Move to next paragraph boundary |
+| `%` | Move to matching bracket/paren (works with `()`, `[]`, `{}`) |
+
+### Page Navigation
+
+| Keys | Description |
+|-|-|
+| `Ctrl+d` | Scroll down half page |
+| `Ctrl+u` | Scroll up half page |
+
+## Text Objects
+
+Text objects select ranges of text for use with operators. They must follow an operator in Normal mode.
+
+### Word Text Objects
+
+| Keys | Description |
+|-|-|
+| `iw` | Inner word (word characters only) |
+| `aw` | A word (word + surrounding whitespace) |
+| `iW` | Inner WORD (non-whitespace only) |
+| `aW` | A WORD (WORD + surrounding whitespace) |
+
+### Bracket/Parenthesis Text Objects
+
+| Keys | Description |
+|-|-|
+| `i(` / `ib` | Inside parentheses |
+| `a(` / `ab` | Around parentheses |
+| `i{` / `iB` | Inside braces |
+| `a{` / `aB` | Around braces |
+| `i[` / `i]` | Inside square brackets |
+| `a[` / `a]` | Around square brackets |
+| `i<` / `i>` | Inside angle brackets |
+| `a<` / `a>` | Around angle brackets |
+
+### Quote Text Objects
+
+| Keys | Description |
+|-|-|
+| `i"` | Inside double quotes |
+| `a"` | Around double quotes |
+| `i'` | Inside single quotes |
+| `a'` | Around single quotes |
+| `` i` `` | Inside backticks |
+| `` a` `` | Around backticks |
+
+### Paragraph Text Objects
+
+| Keys | Description |
+|-|-|
+| `ip` | Inside paragraph |
+| `ap` | Around paragraph |
+
+### Indentation Text Objects
+
+| Keys | Description |
+|-|-|
+| `ii` | Inside indentation level |
+
+### Motions as Text Objects
+
+All motions can be used as text objects with operators. For example:
+- `dw` - Delete to next word
+- `d$` - Delete to end of line
+- `dj` - Delete current and next line
+
+## Surround Actions
+
+Vim-like surround operations for adding, deleting, and changing surrounding characters.
+
+### Add Surround
+
+| Keys | Description | Example |
+|-|-|-|
+| `ys<motion><char>` | Add surrounding character | `ysiw"` surrounds word with quotes |
+
+Supported surround characters: `()`, `{}`, `[]`, `<>`, `"`, `'`, `` ` ``, and bracket aliases `b` for `()`, `B` for `{}`
+
+### Delete Surround
+
+| Keys | Description | Example |
+|-|-|-|
+| `ds<char>` | Delete surrounding character | `ds"` removes surrounding quotes |
+
+### Change Surround
+
+| Keys | Description | Example |
+|-|-|-|
+| `cs<old><new>` | Change surrounding character | `cs"'` changes quotes |
+
+### Surround in Visual Mode
+
+| Keys | Description |
+|-|-|
+| `S<char>` | Surround selection with character |
 
 ## Actions
 
-Actions are miscellaneous commands that don't follow the well-defined patterns of Operators, OperatorRanges, or Motions.
+Miscellaneous editing commands.
+
+### Insert Mode Entry
+
+| Keys | Description | Modes |
+|-|-|-|
+| `i` | Enter Insert mode | Normal |
+| `a` | Move one char right and enter Insert mode | Normal |
+| `I` | Move to first non-whitespace and enter Insert mode | Normal |
+| `A` | Move to end of line and enter Insert mode | Normal |
+| `o` | Insert line below and enter Insert mode | Normal |
+| `O` | Insert line above and enter Insert mode | Normal |
+
+### Register Operations
+
+| Keys | Description | Modes |
+|-|-|-|
+| `p` | Paste register after cursor | Normal, Visual, Visual Line |
+| `P` | Paste register before cursor | Normal, Visual, Visual Line |
+
+### Text Manipulation
+
+| Keys | Description | Modes |
+|-|-|-|
+| `J` | Join current and next line | Normal, Visual, Visual Line |
+| `r<char>` | Replace character at cursor | Normal, Visual, Visual Line |
+
+### Undo/Redo
+
+| Keys | Description | Modes |
+|-|-|-|
+| `u` | Undo | Normal, Visual, Visual Line |
+| `Ctrl+r` | Redo | Normal (outside Insert mode) |
+
+### Screen Positioning
+
+| Keys | Description | Modes |
+|-|-|-|
+| `zz` | Center cursor line on screen | Normal, Visual, Visual Line |
+| `zt` | Move cursor line to top of screen | Normal, Visual, Visual Line |
+| `zb` | Move cursor line to bottom of screen | Normal, Visual, Visual Line |
+
+## LSP (Language Server Protocol) Actions
+
+Integrate with VS Code's language intelligence features. All available in Normal mode unless noted.
+
+### Navigation
 
 | Keys | Description |
 |-|-|
-| `i` | Enter Insert mode. |
-| `I` | Move to beginning of line and enter Insert mode. |
-| `a` | Move one character to the right and enter Insert mode. |
-| `A` | Move to end of line and enter Insert mode. |
-| `v` | Enter VisualCharacter mode. |
-| `V` | Enter VisualLine mode. |
-| `Escape` | Enter Normal mode. |
-| `o` | Insert line below and enter insert mode. |
-| `O` | Insert line above and enter insert mode. |
-| `p` | Put yanked text after cursor. |
-| `P` | Put yanked text before cursor. |
-| `gp` | Select the result of the last `p` or `P` actions and enter Visual mode. |
-| `u` | Undo. |
-| `Ctrl+r` | Redo. |
-| `dd` | Delete current line. |
-| `D` | Delete to the end of the line. |
-| `cc` | Delete current line and enter Insert mode. |
-| `C` | Delete to the end of the line and enter Insert mode. |
-| `yy` | Yank current line. |
-| `Y` | Yank to the end of the line. |
-| `rr` | Yank current line and delete it. |
-| `R` | Yank to the end of the line and delete it. |
-| `ss` | Select current line. |
-| `S` | Select to the end of the line. |
-| `x` | Delete character. |
-| `zt` | Scroll so that cursor is at the top of the screen. |
-| `zz` | Scroll so that cursor is in the middle of the screen. |
-| `zb` | Scroll so that cursor is at the bottom of the screen. |
-| `Ctrl+d` | Scroll down half page. |
-| `Ctrl+u` | Scroll up half page. |
-| `Ctrl+f` | Scroll down full page. |
-| `Ctrl+b` | Scroll up full page. |
-| `;` | Repeat the last `f`, `F`, `t` or `T` motion forward. |
-| `,` | Repeat the last `f`, `F`, `t` or `T` motion backward. |
+| `gh` | Show hover information (type hints, documentation) |
+| `gd` | Go to definition |
+| `gD` | Go to declaration |
+| `gy` | Go to type definition |
+| `gI` | Go to implementation |
+| `gr` | Go to references |
 
+### Editing
 
-## LSP Actions
+| Keys | Description | Modes |
+|-|-|-|
+| `gR` | Rename symbol | Normal |
+| `g.` | Open code actions / quick fix menu | Normal, Visual, Visual Line |
+| `gf` | Format document | Normal, Visual, Visual Line |
 
-These actions integrate with VS Code's Language Server Protocol features for code intelligence.
+### Diagnostics
 
 | Keys | Description |
 |-|-|
-| `gh` | Show hover information (type info, documentation). |
-| `gd` | Go to definition. |
-| `gD` | Go to declaration. |
-| `gy` | Go to type definition. |
-| `gI` | Go to implementation. |
-| `gr` | Go to references. |
-| `gR` | Rename symbol. |
-| `g.` | Show code actions / quick fix. |
-| `gp` | Open problems panel. |
-| `[d` | Go to previous diagnostic/problem. |
-| `]d` | Go to next diagnostic/problem. |
-| `gf` | Format document. |
-
+| `gp` | Open problems panel |
+| `[d` | Go to previous problem/diagnostic |
+| `]d` | Go to next problem/diagnostic |
 
 ## Differences From Vim
 
-Waltz prioritizes smooth integration with VS Code over strict Vim compatibility. If full Vim compatibility is important to you, consider trying a different extension. Here are some of the ways Waltz differs from Vim:
+Waltz prioritizes smooth integration with VS Code over strict Vim compatibility. Here are key differences:
 
-- **No macros**: Waltz has first-class multiple cursor support instead. Place cursors everywhere you would have run the macro (`Cmd+d`, `Cmd+Alt+Down`, `Alt+Click`) and see your changes in real time.
+- **No macros**: Use VS Code's multiple cursors instead. Place cursors with `Cmd+d`, `Cmd+Alt+Down`, or `Alt+Click` to edit all locations simultaneously.
 
-- **No `.` (repeat) command**: Use multiple cursors instead (see previous bullet).
+- **No `.` (repeat) command**: Use multiple cursors or repeat the command instead.
 
-- **No count**: In Vim you can prefix commands with a number. In Waltz, just type the command again or use a command that accomplishes your goal with fewer repetitions.
+- **No count prefix**: In Vim you can use counts like `3w`. In Waltz, just repeat the command or use a command that accomplishes your goal in one action.
 
-- **Cursor can go past last character**: In Normal mode, the cursor can go one past the last character of the line. This is due to VS Code's selection model and API limitations.
+- **Cursor can exceed line length**: In Normal mode, the cursor can go one position past the last character due to VS Code's selection model.
 
-- **No registers**: The `d` operator has been modified to yank and delete simultaneously, so deleting text also copies it to the clipboard.
+- **No registers**: The `d` operator copies to clipboard when deleting, so deleted text is available for pasting.
 
-- **Different `f` and `t` motions**: `t` takes one character and `f` takes two (like vim-sneak). `t` works like Vim's `t` in Normal mode but Vim's `f` in Visual mode.
+- **Different `f` and `t` motions**:
+  - `t` takes one character
+  - `f` takes two characters (like vim-sneak plugin)
+  - `t` works like Vim's `t` in Normal mode but like `f` in Visual mode
 
-- **No `/` (search) command**: Use the `f` motion or native VS Code find instead.
+- **No `/` (search) command**: Use the `f` motion or VS Code's native find (`Cmd+f`).
 
-- **No `>` (indent) command**: Use VS Code's `Cmd+]` instead.
+- **No jump list**: Use VS Code's native navigation with `Ctrl+-` and `Ctrl+_` instead of `Ctrl+o` and `Ctrl+i`.
 
-- **No `gU` (uppercase) command**: Use VS Code's `Transform to Uppercase` from the Command Palette.
-
-- **No jump list commands**: Use VS Code's native jump list with `Ctrl+-` and `Ctrl+_` instead of `Ctrl+o` and `Ctrl+i`.
-
-- **No marks**: Use VS Code's split window feature with `Cmd+1` and `Cmd+2`, or use `Ctrl+-` to jump back.
-
+- **No marks**: Use VS Code's split view with `Cmd+1` and `Cmd+2` to navigate between locations, or `Ctrl+-` to jump back.
 
 ## Settings
 
+### Yank Highlight Color
+
+The `y` (yank) operator temporarily highlights the yanked text to make it obvious what you're copying. Customize the highlight color:
+
+```json
+{
+    "waltz.yankHighlightBackgroundColor": "#F8F3AB"
+}
+```
+
 ### Custom Key Bindings
 
-You can add custom key bindings that execute VS Code commands using the `waltz.customBindings` setting. This allows you to extend Waltz with your own key mappings.
+Extend Waltz with custom key bindings via the `waltz.customBindings` setting:
 
 ```json
 {
     "waltz.customBindings": [
-        {
-            "keys": ["g", "d"],
-            "modes": ["normal", "visual"],
-            "commands": [
-                {
-                    "command": "editor.action.revealDefinition"
-                }
-            ]
-        },
-        {
-            "keys": ["g", "r"],
-            "modes": ["normal"],
-            "commands": [
-                {
-                    "command": "editor.action.goToReferences"
-                }
-            ]
-        },
         {
             "keys": ["space", "f"],
             "modes": ["normal"],
@@ -224,16 +328,7 @@ You can add custom key bindings that execute VS Code commands using the `waltz.c
                     "command": "workbench.action.quickOpen"
                 }
             ]
-        }
-    ]
-}
-```
-
-You can also execute multiple commands sequentially:
-
-```json
-{
-    "waltz.customBindings": [
+        },
         {
             "keys": ["space", "w"],
             "modes": ["normal"],
@@ -250,15 +345,37 @@ You can also execute multiple commands sequentially:
 }
 ```
 
-Each binding has the following properties:
+#### Custom Binding Options
 
-- `keys` (required): An array of strings representing the key sequence (e.g., `["g", "d"]`)
-- `commands` (required): An array of command objects to execute sequentially. Each command object has:
-  - `command` (required): The VS Code command to execute (e.g., `"editor.action.revealDefinition"`)
+- `keys` (required): Array of strings for the key sequence (e.g., `["g", "d"]`)
+- `commands` (required): Array of VS Code commands to execute sequentially, each with:
+  - `command` (required): The VS Code command ID
   - `args` (optional): Arguments to pass to the command
-- `modes` (optional): An array of modes where this binding is active. Valid values are `"normal"`, `"visual"`, `"visualLine"`, and `"insert"`. If not specified, the binding applies to all modes.
+- `modes` (optional): Array of modes where binding is active (`"normal"`, `"visual"`, `"visualLine"`, `"insert"`). If omitted, applies to all modes.
 
-Custom bindings are checked before default bindings, so you can override built-in key mappings if needed.
+Custom bindings are checked before default bindings, allowing you to override built-in mappings.
+
+## Tips & Tricks
+
+### Navigate with Multiple Cursors
+
+Place cursors on multiple lines and use motions to select together:
+1. Position cursor with `Cmd+d` or `Cmd+Alt+Down`
+2. Use motions like `w`, `$`, etc. to navigate all cursors
+3. Execute operators like `d`, `y`, `c` to edit all positions
+
+### Combine Text Objects and Operators
+
+- `diw` - Delete inner word
+- `ci"` - Change inside double quotes
+- `ya{` - Yank around braces
+- `ds(` - Delete surrounding parentheses
+
+### Using Search Motions
+
+- `f,` then `;` - Find commas and repeat forward
+- `t(` then `,` - Find before ( and repeat backward
+- Great for navigating through code with known character patterns
 
 ## License
 
