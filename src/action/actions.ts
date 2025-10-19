@@ -9,7 +9,13 @@ import { updateSelections } from '../utils/cursor';
 import { findAdjacentPosition, findLineEnd, findLineStartAfterIndent } from '../utils/positionFinder';
 import { expandSelectionsToNextLineStart } from '../utils/visualLine';
 import { saveCurrentSelectionsToRegister } from '../vimState';
-import { motionToAction, newAction, newOperatorAction, textObjectToVisualAction } from './actionBuilder';
+import {
+    motionToAction,
+    newAction,
+    newOperatorAction,
+    newRegexAction,
+    textObjectToVisualAction,
+} from './actionBuilder';
 import type { Action, ActionResult } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用
 
@@ -312,6 +318,32 @@ export function buildActions(): Action[] {
                         editBuilder.replace(range, joinLines(text));
                     }
                 });
+            },
+        }),
+
+        // r コマンド
+        newRegexAction({
+            pattern: /^r(?<replaceTo>.{1})$/,
+            partial: /^r(.{0,1})$/,
+            modes: ['normal', 'visual', 'visualLine'],
+            execute: async (context, variables) => {
+                const replaceChar = variables.replaceTo;
+                if (!replaceChar || replaceChar.length !== 1) return;
+                const editor = context.editor;
+
+                await editor.edit((editBuilder) => {
+                    for (const selection of editor.selections) {
+                        let range: Range = selection;
+                        if (selection.isEmpty) {
+                            // カーソル位置の文字を置換
+                            const position = selection.active;
+                            range = new Range(position, position.translate(0, 1));
+                        }
+
+                        editBuilder.replace(range, replaceChar.repeat(range.end.character - range.start.character));
+                    }
+                });
+                enterMode(context.vimState, context.editor, 'normal');
             },
         }),
     );
