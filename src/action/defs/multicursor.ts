@@ -65,7 +65,7 @@ export function buildMulticursorActions(): Action[] {
             },
         }),
 
-        // zgv - カーソル操作を元に戻す
+        // zu - カーソル操作を元に戻す
         newAction({
             keys: ['z', 'u'],
             modes: ['normal'],
