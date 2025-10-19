@@ -5,6 +5,7 @@ import { motionToAction, textObjectToVisualAction } from './actionBuilder';
 import type { Action, ActionResult } from './actionTypes';
 import { buildCustomActions } from './defs/custom';
 import { buildEditActions } from './defs/edit';
+import { buildLspActions } from './defs/lsp';
 import { buildMiscActions } from './defs/misc';
 import { buildModeActions } from './defs/mode';
 import { buildOperatorActions } from './defs/operator';
@@ -36,6 +37,9 @@ export function buildActions(): Action[] {
 
     console.log('Building misc actions');
     actions.push(...buildMiscActions());
+
+    console.log('Building LSP actions');
+    actions.push(...buildLspActions());
 
     console.log('Building viewport actions');
     actions.push(...buildViewportActions());
