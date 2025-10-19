@@ -182,6 +182,7 @@
     "typescript-eslint": "^8.46.0"
   },
   "dependencies": {
-    "jsonc-parser": "^3.3.1"
+    "jsonc-parser": "^3.3.1",
+    "zod": "^4.1.12"
   }
 }
