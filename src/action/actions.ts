@@ -7,6 +7,7 @@ import { newWholeLineTextObject } from '../textObject/textObjectBuilder';
 import { buildTextObjects } from '../textObject/textObjects';
 import { updateSelections } from '../utils/cursor';
 import { findAdjacentPosition, findLineEnd, findLineStartAfterIndent } from '../utils/positionFinder';
+import { expandSelectionsToNextLineStart } from '../utils/visualLine';
 import { saveCurrentSelectionsToRegister } from '../vimState';
 import { motionToAction, newAction, newOperatorAction, textObjectToVisualAction } from './actionBuilder';
 import type { Action, ActionResult } from './actionTypes';
@@ -362,9 +363,12 @@ export function buildActions(): Action[] {
             },
         }),
     );
+
     const textObjects = buildTextObjects(motions);
 
-    // ビジュアルモードで選択範囲をテキストオブジェクトで指定するためのやつ
+    // ビジュアルモードで選択範囲をテキストオブジェクトで指定するやつ。 viw など。一見 v + iw というオペレータに見える
+    // が、v 自体がビジュアルモードに切り替えるコマンドなのでこれはできない。代わりに visual mode での iw コマンドとして
+    // 振る舞う。
     actions.push(...textObjects.map((obj) => textObjectToVisualAction(obj)));
 
     // オペレータ: d, y, c
@@ -377,10 +381,12 @@ export function buildActions(): Action[] {
             modes: ['normal'],
             textObjects: [newWholeLineTextObject({ keys: ['d'], includeLineBreak: true }), ...textObjects],
             execute: async (context, matches) => {
-                context.vimState.register.contents = matches.map((match) => ({
-                    text: context.document.getText(match.range),
-                    isLinewise: match.isLinewise ?? false,
-                }));
+                if (matches.length === 0) return;
+
+                saveCurrentSelectionsToRegister(context.vimState, context.editor, {
+                    isLinewise: matches[0].isLinewise ?? false,
+                });
+
                 await context.editor.edit((editBuilder) => {
                     for (const match of matches) {
                         editBuilder.delete(match.range);
@@ -401,10 +407,11 @@ export function buildActions(): Action[] {
             modes: ['normal'],
             textObjects: [newWholeLineTextObject({ keys: ['y'], includeLineBreak: true }), ...textObjects],
             execute: async (context, matches) => {
-                context.vimState.register.contents = matches.map((match) => ({
-                    text: context.document.getText(match.range),
-                    isLinewise: match.isLinewise ?? false,
-                }));
+                if (matches.length === 0) return;
+
+                saveCurrentSelectionsToRegister(context.vimState, context.editor, {
+                    isLinewise: matches[0].isLinewise ?? false,
+                });
             },
         }),
         newAction({
@@ -420,10 +427,12 @@ export function buildActions(): Action[] {
             modes: ['normal'],
             textObjects: [newWholeLineTextObject({ keys: ['c'], includeLineBreak: false }), ...textObjects],
             execute: async (context, matches) => {
-                context.vimState.register.contents = matches.map((match) => ({
-                    text: context.document.getText(match.range),
-                    isLinewise: match.isLinewise ?? false,
-                }));
+                if (matches.length === 0) return;
+
+                saveCurrentSelectionsToRegister(context.vimState, context.editor, {
+                    isLinewise: matches[0].isLinewise ?? false,
+                });
+
                 await context.editor.edit((editBuilder) => {
                     for (const match of matches) {
                         editBuilder.delete(match.range);
@@ -462,18 +471,12 @@ export function buildActions(): Action[] {
             keys: ['d'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                context.vimState.register.contents = context.editor.selections.map((selection) => {
-                    let adjustedSelection = selection;
-                    if (context.vimState.mode === 'visualLine' && selection.end.character !== 0) {
-                        // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
-                        adjustedSelection = new vscode.Selection(
-                            selection.start,
-                            selection.end.translate(1, 0).with({ character: 0 }),
-                        );
-                    }
-                    const text = context.document.getText(adjustedSelection);
-                    const isLinewise = context.vimState.mode === 'visualLine';
-                    return { text, isLinewise };
+                if (context.vimState.mode === 'visualLine') {
+                    // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
+                    expandSelectionsToNextLineStart(context.editor);
+                }
+                saveCurrentSelectionsToRegister(context.vimState, context.editor, {
+                    isLinewise: context.vimState.mode === 'visualLine',
                 });
 
                 await context.editor.edit((editBuilder) => {
@@ -481,6 +484,7 @@ export function buildActions(): Action[] {
                         editBuilder.delete(selection);
                     }
                 });
+
                 enterMode(context.vimState, context.editor, 'normal');
             },
         }),
@@ -489,19 +493,14 @@ export function buildActions(): Action[] {
             keys: ['y'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                context.vimState.register.contents = context.editor.selections.map((selection) => {
-                    let adjustedSelection = selection;
-                    if (context.vimState.mode === 'visualLine' && selection.end.character !== 0) {
-                        // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
-                        adjustedSelection = new vscode.Selection(
-                            selection.start,
-                            selection.end.translate(1, 0).with({ character: 0 }),
-                        );
-                    }
-                    const text = context.document.getText(adjustedSelection);
-                    const isLinewise = context.vimState.mode === 'visualLine';
-                    return { text, isLinewise };
+                if (context.vimState.mode === 'visualLine') {
+                    // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
+                    expandSelectionsToNextLineStart(context.editor);
+                }
+                saveCurrentSelectionsToRegister(context.vimState, context.editor, {
+                    isLinewise: context.vimState.mode === 'visualLine',
                 });
+
                 enterMode(context.vimState, context.editor, 'normal');
             },
         }),
@@ -510,18 +509,12 @@ export function buildActions(): Action[] {
             keys: ['c'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                context.vimState.register.contents = context.editor.selections.map((selection) => {
-                    let adjustedSelection = selection;
-                    if (context.vimState.mode === 'visualLine' && selection.end.character !== 0) {
-                        // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
-                        adjustedSelection = new vscode.Selection(
-                            selection.start,
-                            selection.end.translate(1, 0).with({ character: 0 }),
-                        );
-                    }
-                    const text = context.document.getText(adjustedSelection);
-                    const isLinewise = context.vimState.mode === 'visualLine';
-                    return { text, isLinewise };
+                if (context.vimState.mode === 'visualLine') {
+                    // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
+                    expandSelectionsToNextLineStart(context.editor);
+                }
+                saveCurrentSelectionsToRegister(context.vimState, context.editor, {
+                    isLinewise: context.vimState.mode === 'visualLine',
                 });
 
                 await context.editor.edit((editBuilder) => {
