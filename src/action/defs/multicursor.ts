@@ -67,7 +67,7 @@ export function buildMulticursorActions(): Action[] {
 
         // zgv - カーソル操作を元に戻す
         newAction({
-            keys: ['z', 'g', 'v'],
+            keys: ['z', 'u'],
             modes: ['normal'],
             execute: async (_context) => {
                 await vscode.commands.executeCommand('cursorUndo');
