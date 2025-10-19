@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import type { Context } from '../context';
-import { enterMode } from '../modes';
-import type { TextObject, TextObjectResult } from '../textObject/textObjectTypes';
-import { findAdjacentPosition, findInsideBalancedPairs } from '../utils/positionFinder';
-import { newRegexAction } from './actionBuilder';
-import type { Action, ActionResult } from './actionTypes';
+import type { Context } from '../../context';
+import { enterMode } from '../../modes';
+import type { TextObject, TextObjectResult } from '../../textObject/textObjectTypes';
+import { findAdjacentPosition, findInsideBalancedPairs } from '../../utils/positionFinder';
+import { newRegexAction } from '../actionBuilder';
+import type { Action, ActionResult } from '../actionTypes';
 
 /**
  * 囲み文字のペアをマッピング
