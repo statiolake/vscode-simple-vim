@@ -1,11 +1,11 @@
-import type * as vscode from 'vscode';
+import type { Position, Range } from 'vscode';
 import type { Context } from '../context';
 
 /**
  * TextObjectMatch: TextObject マッチ結果の詳細情報
  */
 export type TextObjectMatch = {
-    range: vscode.Range;
+    range: Range;
     isLinewise?: boolean;
 };
 
@@ -22,4 +22,4 @@ export type TextObjectResult =
  *
  * キーシーケンスをパースして、マッチした場合は範囲とメタデータを返す
  */
-export type TextObject = (context: Context, keys: string[], position: vscode.Position) => TextObjectResult;
+export type TextObject = (context: Context, keys: string[], position: Position) => TextObjectResult;

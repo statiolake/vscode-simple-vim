@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode';
+import type { Position } from 'vscode';
 import type { Context } from '../context';
 import { keysParserPrefix, keysParserRegex } from '../utils/keysParser/keysParser';
 import type { Motion, MotionResult } from './motionTypes';
@@ -8,11 +8,11 @@ import type { Motion, MotionResult } from './motionTypes';
  */
 export function newMotion(config: {
     keys: string[];
-    compute: (context: Context, position: vscode.Position) => vscode.Position;
+    compute: (context: Context, position: Position) => Position;
 }): Motion {
     const keysParser = keysParserPrefix(config.keys);
 
-    return (context: Context, keys: string[], position: vscode.Position): MotionResult => {
+    return (context: Context, keys: string[], position: Position): MotionResult => {
         const parseResult = keysParser(keys);
 
         if (parseResult.result === 'noMatch') {
@@ -34,11 +34,11 @@ export function newMotion(config: {
 export function newRegexMotion(config: {
     pattern: RegExp;
     partial: RegExp;
-    compute: (context: Context, position: vscode.Position, variables: Record<string, string>) => vscode.Position;
+    compute: (context: Context, position: Position, variables: Record<string, string>) => Position;
 }): Motion {
     const keysParser = keysParserRegex(config.pattern, config.partial);
 
-    return (context: Context, keys: string[], position: vscode.Position): MotionResult => {
+    return (context: Context, keys: string[], position: Position): MotionResult => {
         const parseResult = keysParser(keys);
 
         if (parseResult.result === 'noMatch') {

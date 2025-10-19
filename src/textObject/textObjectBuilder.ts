@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode';
+import type { Position, Range } from 'vscode';
 import type { Context } from '../context';
 import { keysParserPrefix, keysParserRegex } from '../utils/keysParser/keysParser';
 import type { TextObject, TextObjectResult } from './textObjectTypes';
@@ -8,11 +8,11 @@ import type { TextObject, TextObjectResult } from './textObjectTypes';
  */
 export function newTextObject(config: {
     keys: string[];
-    compute: (context: Context, position: vscode.Position) => vscode.Range;
+    compute: (context: Context, position: Position) => Range;
 }): TextObject {
     const keysParser = keysParserPrefix(config.keys);
 
-    return (context: Context, keys: string[], position: vscode.Position): TextObjectResult => {
+    return (context: Context, keys: string[], position: Position): TextObjectResult => {
         const parseResult = keysParser(keys);
 
         if (parseResult.result === 'noMatch') {
@@ -34,11 +34,11 @@ export function newTextObject(config: {
 export function newRegexTextObject(config: {
     pattern: RegExp;
     partial: RegExp;
-    compute: (context: Context, position: vscode.Position, variables: Record<string, string>) => vscode.Range;
+    compute: (context: Context, position: Position, variables: Record<string, string>) => Range;
 }): TextObject {
     const keysParser = keysParserRegex(config.pattern, config.partial);
 
-    return (context: Context, keys: string[], position: vscode.Position): TextObjectResult => {
+    return (context: Context, keys: string[], position: Position): TextObjectResult => {
         const parseResult = keysParser(keys);
 
         if (parseResult.result === 'noMatch') {
@@ -57,14 +57,14 @@ export function newRegexTextObject(config: {
 export function newWholeLineTextObject(config: { keys: string[]; includeLineBreak: boolean }): TextObject {
     const baseTextObject = newTextObject({
         keys: config.keys,
-        compute: (context: Context, position: vscode.Position) => {
+        compute: (context: Context, position: Position) => {
             const line = context.editor.document.lineAt(position.line);
             return config.includeLineBreak ? line.rangeIncludingLineBreak : line.range;
         },
     });
 
     // newWholeLineTextObject の結果に isLinewise: true を付与
-    return (context: Context, keys: string[], position: vscode.Position) => {
+    return (context: Context, keys: string[], position: Position) => {
         const result = baseTextObject(context, keys, position);
         if (result.result === 'match') {
             return {

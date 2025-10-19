@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import { Position, Range } from 'vscode';
 import type { Motion } from '../motion/motionTypes';
 import { findWordBoundary } from '../utils/positionFinder';
 import { isCharacterTypeBoundary, isWhitespaceBoundary } from '../utils/unicode';
@@ -24,12 +24,12 @@ export function motionToTextObject(motion: Motion): TextObject {
         // MotionのpositionからRangeを作成
         // VS Codeネイティブ仕様：カーソルは文字と文字の間にある
         const targetPosition = motionResult.position;
-        let range: vscode.Range;
+        let range: Range;
 
         if (targetPosition.isBefore(position)) {
-            range = new vscode.Range(targetPosition, position);
+            range = new Range(targetPosition, position);
         } else {
-            range = new vscode.Range(position, targetPosition);
+            range = new Range(position, targetPosition);
         }
 
         // Motion から remainingKeys を取得
@@ -61,10 +61,10 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
                 const end = findWordBoundary(document, 'further', 'after', position, isCharacterTypeBoundary);
 
                 if (start && end) {
-                    return new vscode.Range(start, end);
+                    return new Range(start, end);
                 }
 
-                return new vscode.Range(position, position);
+                return new Range(position, position);
             },
         }),
 
@@ -76,10 +76,10 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
                 const end = findWordBoundary(document, 'further', 'after', position, isCharacterTypeBoundary);
 
                 if (start && end) {
-                    return new vscode.Range(start, end);
+                    return new Range(start, end);
                 }
 
-                return new vscode.Range(position, position);
+                return new Range(position, position);
             },
         }),
 
@@ -91,10 +91,10 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
                 const end = findWordBoundary(document, 'further', 'after', position, isWhitespaceBoundary);
 
                 if (start && end) {
-                    return new vscode.Range(start, end);
+                    return new Range(start, end);
                 }
 
-                return new vscode.Range(position, position);
+                return new Range(position, position);
             },
         }),
 
@@ -106,10 +106,10 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
                 const end = findWordBoundary(document, 'further', 'after', position, isWhitespaceBoundary);
 
                 if (start && end) {
-                    return new vscode.Range(start, end);
+                    return new Range(start, end);
                 }
 
-                return new vscode.Range(position, position);
+                return new Range(position, position);
             },
         }),
     );
@@ -149,7 +149,7 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
                 }
 
                 if (openLine === undefined || openChar === undefined) {
-                    return new vscode.Range(position, position);
+                    return new Range(position, position);
                 }
 
                 // Search forward for closing bracket/quote (across multiple lines)
@@ -177,26 +177,26 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
                 }
 
                 if (closeLine === undefined || closeChar === undefined) {
-                    return new vscode.Range(position, position);
+                    return new Range(position, position);
                 }
 
                 if (inner) {
                     // Inner: exclude brackets/quotes
                     const startPos =
                         openChar === context.document.lineAt(openLine).text.length - 1 && openLine < closeLine
-                            ? new vscode.Position(openLine + 1, 0)
-                            : new vscode.Position(openLine, openChar + 1);
-                    const endPos = new vscode.Position(closeLine, closeChar);
-                    return new vscode.Range(startPos, endPos);
+                            ? new Position(openLine + 1, 0)
+                            : new Position(openLine, openChar + 1);
+                    const endPos = new Position(closeLine, closeChar);
+                    return new Range(startPos, endPos);
                 } else {
                     // Around: include brackets/quotes
-                    const startPos = new vscode.Position(openLine, openChar);
+                    const startPos = new Position(openLine, openChar);
                     const endPos =
                         closeChar === context.document.lineAt(closeLine).text.length - 1 &&
                         closeLine < context.document.lineCount - 1
-                            ? new vscode.Position(closeLine + 1, 0)
-                            : new vscode.Position(closeLine, closeChar + 1);
-                    return new vscode.Range(startPos, endPos);
+                            ? new Position(closeLine + 1, 0)
+                            : new Position(closeLine, closeChar + 1);
+                    return new Range(startPos, endPos);
                 }
             },
         });

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { Range } from 'vscode';
+import { Range, Selection } from 'vscode';
 import { enterMode } from '../../modes';
-import { findAdjacentPosition } from '../../utils/positionFinder';
 import { updateSelections } from '../../utils/cursor';
+import { findAdjacentPosition } from '../../utils/positionFinder';
 import { saveCurrentSelectionsToRegister } from '../../vimState';
 import { newAction, newRegexAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
@@ -19,7 +19,7 @@ export function buildEditActions(): Action[] {
             execute: async (context) => {
                 const newSelections = context.editor.selections.map((selection) => {
                     const newPosition = findAdjacentPosition(context.document, 'after', selection.active);
-                    return new vscode.Selection(selection.active, newPosition);
+                    return new Selection(selection.active, newPosition);
                 });
                 updateSelections(context.editor, newSelections);
                 saveCurrentSelectionsToRegister(context.vimState, context.editor, { isLinewise: false });
@@ -140,7 +140,7 @@ export function buildEditActions(): Action[] {
                     }
 
                     const adjustedPos = context.document.positionAt(adjustedOffset);
-                    return new vscode.Selection(adjustedPos, adjustedPos);
+                    return new Selection(adjustedPos, adjustedPos);
                 });
                 updateSelections(editor, newSelections);
 

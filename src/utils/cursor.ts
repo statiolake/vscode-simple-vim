@@ -1,5 +1,5 @@
-import type * as vscode from 'vscode';
+import type { Selection, TextEditor } from 'vscode';
 
-export function updateSelections(editor: vscode.TextEditor, newSelections: vscode.Selection[]) {
+export function updateSelections(editor: TextEditor, newSelections: Selection[]) {
     editor.selections = newSelections;
 }

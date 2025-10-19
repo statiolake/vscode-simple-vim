@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
+import { Selection, type TextEditor, TextEditorCursorStyle } from 'vscode';
 import type { Mode } from './modesTypes';
 import { typeHandler } from './typeHandler';
 import { updateSelections } from './utils/cursor';
 import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
 
-export async function enterMode(vimState: VimState, editor: vscode.TextEditor | undefined, mode: Mode): Promise<void> {
+export async function enterMode(vimState: VimState, editor: TextEditor | undefined, mode: Mode): Promise<void> {
     if (vimState.mode === mode) return;
 
     vimState.mode = mode;
@@ -16,9 +17,7 @@ export async function enterMode(vimState: VimState, editor: vscode.TextEditor | 
 
     if (mode === 'normal' && editor) {
         // ノーマルモードに入ったら、選択範囲を解除する
-        const newSelections = editor.selections.map(
-            (selection) => new vscode.Selection(selection.active, selection.active),
-        );
+        const newSelections = editor.selections.map((selection) => new Selection(selection.active, selection.active));
         updateSelections(editor, newSelections);
     }
 
@@ -32,15 +31,15 @@ function updateModeContext(mode: Mode) {
     vscode.commands.executeCommand('setContext', 'simple-vim.mode', mode);
 }
 
-function updateCursorStyle(editor: vscode.TextEditor | undefined, mode: Mode): void {
+function updateCursorStyle(editor: TextEditor | undefined, mode: Mode): void {
     if (!editor) return;
 
     if (mode === 'insert') {
-        editor.options.cursorStyle = vscode.TextEditorCursorStyle.LineThin;
+        editor.options.cursorStyle = TextEditorCursorStyle.LineThin;
     } else if (mode === 'normal') {
-        editor.options.cursorStyle = vscode.TextEditorCursorStyle.Line;
+        editor.options.cursorStyle = TextEditorCursorStyle.Line;
     } else if (mode === 'visual' || mode === 'visualLine') {
-        editor.options.cursorStyle = vscode.TextEditorCursorStyle.LineThin;
+        editor.options.cursorStyle = TextEditorCursorStyle.LineThin;
     }
 }
 

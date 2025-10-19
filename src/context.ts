@@ -1,5 +1,4 @@
-import type * as vscode from 'vscode';
-
+import type { TextDocument, TextEditor } from 'vscode';
 import type { CommentConfigProvider } from './utils/comment';
 import type { VimState } from './vimState';
 
@@ -8,8 +7,8 @@ import type { VimState } from './vimState';
  * Motion, TextObject, Actionすべてで使用される
  */
 export type Context = {
-    readonly editor: vscode.TextEditor;
-    readonly document: vscode.TextDocument;
+    readonly editor: TextEditor;
+    readonly document: TextDocument;
     readonly vimState: VimState;
     readonly commentConfigProvider: CommentConfigProvider;
 };

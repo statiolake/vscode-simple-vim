@@ -1,5 +1,4 @@
-import type { Position, Range } from 'vscode';
-import * as vscode from 'vscode';
+import { Position, type Range, type TextDocument } from 'vscode';
 import type { Context } from '../context';
 import {
     findAdjacentPosition,
@@ -20,7 +19,7 @@ import type { Motion } from './motionTypes';
 /**
  * ポジションを左に移動
  */
-function positionLeft(position: vscode.Position): vscode.Position {
+function positionLeft(position: Position): Position {
     if (position.character > 0) {
         return position.with({ character: position.character - 1 });
     }
@@ -30,7 +29,7 @@ function positionLeft(position: vscode.Position): vscode.Position {
 /**
  * ノーマルモード用の右移動（行末を超えない）
  */
-function positionRightNormal(document: vscode.TextDocument, position: vscode.Position): vscode.Position {
+function positionRightNormal(document: TextDocument, position: Position): Position {
     const lineLength = document.lineAt(position.line).text.length;
     if (position.character < lineLength) {
         return position.with({ character: position.character + 1 });
@@ -69,7 +68,7 @@ export function buildMotions(): Motion[] {
             keys: ['j'],
             compute: (context, position) => {
                 if (position.line + 1 < context.document.lineCount) {
-                    return new vscode.Position(position.line + 1, position.character);
+                    return new Position(position.line + 1, position.character);
                 }
                 return position;
             },
@@ -81,7 +80,7 @@ export function buildMotions(): Motion[] {
             keys: ['k'],
             compute: (_context, position) => {
                 if (position.line > 0) {
-                    return new vscode.Position(position.line - 1, position.character);
+                    return new Position(position.line - 1, position.character);
                 }
                 return position;
             },
@@ -253,7 +252,7 @@ export function buildMotions(): Motion[] {
                 const minDistance = (target: Range): number => Math.min(distance(target.start), distance(target.end));
 
                 // 各ペアで探索して、一番近いものを採用する
-                let bestRange: vscode.Range | undefined;
+                let bestRange: Range | undefined;
                 for (const [open, close] of pairs) {
                     const range = findInsideBalancedPairs(context.document, position, open, close);
                     if (!range) continue;
@@ -389,7 +388,7 @@ export function buildMotions(): Motion[] {
 
                 // 新しい行位置を計算
                 const newLine = Math.min(position.line + halfPage, context.document.lineCount - 1);
-                return new vscode.Position(newLine, position.character);
+                return new Position(newLine, position.character);
             },
         }),
     );
@@ -411,7 +410,7 @@ export function buildMotions(): Motion[] {
 
                 // 新しい行位置を計算
                 const newLine = Math.max(position.line - halfPage, 0);
-                return new vscode.Position(newLine, position.character);
+                return new Position(newLine, position.character);
             },
         }),
     );

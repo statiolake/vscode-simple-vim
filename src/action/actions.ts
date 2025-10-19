@@ -3,12 +3,12 @@ import { buildMotions } from '../motion/motions';
 import { buildTextObjects } from '../textObject/textObjects';
 import { motionToAction, textObjectToVisualAction } from './actionBuilder';
 import type { Action, ActionResult } from './actionTypes';
-import { buildModeActions } from './defs/mode';
 import { buildEditActions } from './defs/edit';
-import { buildOperatorActions } from './defs/operator';
-import { buildViewportActions } from './defs/viewport';
 import { buildMiscActions } from './defs/misc';
-import { createYsSurroundAction, dsSurroundAction, csSurroundAction, visualSurroundAction } from './defs/surround';
+import { buildModeActions } from './defs/mode';
+import { buildOperatorActions } from './defs/operator';
+import { createYsSurroundAction, csSurroundAction, dsSurroundAction, visualSurroundAction } from './defs/surround';
+import { buildViewportActions } from './defs/viewport';
 
 export function buildActions(): Action[] {
     const actions: Action[] = [];

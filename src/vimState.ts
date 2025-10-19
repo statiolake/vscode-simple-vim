@@ -1,5 +1,4 @@
-import type * as vscode from 'vscode';
-
+import type { Disposable, StatusBarItem, TextEditor } from 'vscode';
 import type { Action } from './action/actionTypes';
 import type { Mode } from './modesTypes';
 
@@ -7,8 +6,8 @@ import type { Mode } from './modesTypes';
  * Vimの状態 (mutableに変更される)
  */
 export type VimState = {
-    typeSubscriptions: vscode.Disposable[];
-    statusBarItem: vscode.StatusBarItem;
+    typeSubscriptions: Disposable[];
+    statusBarItem: StatusBarItem;
 
     mode: Mode;
     keysPressed: string[];
@@ -33,7 +32,7 @@ export type RegisterContent = {
 
 export function saveCurrentSelectionsToRegister(
     vimState: VimState,
-    editor: vscode.TextEditor,
+    editor: TextEditor,
     opts: { isLinewise: boolean },
 ): Array<RegisterContent> {
     const old = vimState.register.contents;

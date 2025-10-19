@@ -1,5 +1,12 @@
 import * as vscode from 'vscode';
-import { Range } from 'vscode';
+import {
+    type ConfigurationChangeEvent,
+    type ExtensionContext,
+    Range,
+    StatusBarAlignment,
+    type TextEditor,
+    type TextEditorSelectionChangeEvent,
+} from 'vscode';
 import { buildActions } from './action/actions';
 import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
@@ -11,7 +18,7 @@ import type { VimState } from './vimState';
 // グローバルな CommentConfigProvider（起動時に一度だけ初期化）
 export let globalCommentConfigProvider: CommentConfigProvider;
 
-async function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelectionChangeEvent): Promise<void> {
+async function onSelectionChange(vimState: VimState, e: TextEditorSelectionChangeEvent): Promise<void> {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
     if (allEmpty && vimState.mode !== 'insert') {
         // 選択範囲が無になった場合は、ノーマルモードに戻る。この条件だと
@@ -36,7 +43,7 @@ async function onSelectionChange(vimState: VimState, e: vscode.TextEditorSelecti
     e.textEditor.revealRange(new Range(e.selections[0].active, e.selections[0].active));
 }
 
-async function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.TextEditor | undefined): Promise<void> {
+async function onDidChangeActiveTextEditor(vimState: VimState, editor: TextEditor | undefined): Promise<void> {
     if (!editor) return;
 
     if (editor.selections.every((selection) => selection.isEmpty)) {
@@ -50,17 +57,17 @@ async function onDidChangeActiveTextEditor(vimState: VimState, editor: vscode.Te
     vimState.keysPressed = [];
 }
 
-function onDidChangeConfiguration(vimState: VimState, e: vscode.ConfigurationChangeEvent): void {
+function onDidChangeConfiguration(vimState: VimState, e: ConfigurationChangeEvent): void {
     if (!e.affectsConfiguration('simple-vim')) return;
     vimState.actions = buildActions();
 }
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: ExtensionContext): Promise<void> {
     // Create comment config provider
     globalCommentConfigProvider = new CommentConfigProvider();
 
     // Create status bar item
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    const statusBarItem = vscode.window.createStatusBarItem(StatusBarAlignment.Left, 100);
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
 
