@@ -1,6 +1,11 @@
 import { Range } from 'vscode';
 import type { Motion } from '../motion/motionTypes';
-import { findAdjacentPosition, findInsideBalancedPairs, findWordBoundary } from '../utils/positionFinder';
+import {
+    findAdjacentPosition,
+    findInsideBalancedPairs,
+    findMatchingTag,
+    findWordBoundary,
+} from '../utils/positionFinder';
 import { isCharacterTypeBoundary, isWhitespaceBoundary } from '../utils/unicode';
 import { newTextObject } from './textObjectBuilder';
 import type { TextObject } from './textObjectTypes';
@@ -177,6 +182,33 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
         // バッククォート
         createBracketTextObject('`', '`', ['i', '`'], true), // 内部バッククォート
         createBracketTextObject('`', '`', ['a', '`'], false), // 周辺バッククォート
+    );
+
+    // タグテキストオブジェクト
+    textObjects.push(
+        // 内部タグ
+        newTextObject({
+            keys: ['i', 't'],
+            compute: (context, position) => {
+                const tagInfo = findMatchingTag(context.document, position);
+                if (!tagInfo) return new Range(position, position);
+
+                // 内部: タグ自体は含まない
+                return tagInfo.innerRange;
+            },
+        }),
+
+        // 周辺タグ
+        newTextObject({
+            keys: ['a', 't'],
+            compute: (context, position) => {
+                const tagInfo = findMatchingTag(context.document, position);
+                if (!tagInfo) return new Range(position, position);
+
+                // 周辺: タグ自体を含む
+                return tagInfo.outerRange;
+            },
+        }),
     );
 
     return textObjects;

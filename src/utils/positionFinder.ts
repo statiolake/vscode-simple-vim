@@ -202,3 +202,97 @@ export function findInsideBalancedPairs(
 
     return new Range(foundAtBefore, foundAtAfter);
 }
+
+/**
+ * タグペア情報を返す型
+ */
+export type TagPairInfo = {
+    innerRange: Range; // タグ内部の範囲（タグ自体は含まない）
+    outerRange: Range; // タグ全体の範囲（タグを含む）
+};
+
+/**
+ * タグペアを検索し、内部と外部の範囲を返す
+ * @param document ドキュメント
+ * @param position 開始位置
+ * @returns タグペア情報 (innerRange: 内部, outerRange: 外部)、見つからない場合は undefined
+ */
+export function findMatchingTag(document: TextDocument, position: Position): TagPairInfo | undefined {
+    const text = document.getText();
+    const offset = document.offsetAt(position);
+
+    // タグの正規表現パターン
+    const tagPattern = /<([a-zA-Z][a-zA-Z0-9-]*)([\s/>]|>)/g;
+    const closeTagPattern = /<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/g;
+
+    // position の左側から最も近い開始タグを探す
+    let openingTagName = '';
+    let openingTagStart = 0;
+    let openingTagEnd = 0;
+
+    let match: RegExpExecArray | null;
+    while ((match = tagPattern.exec(text)) !== null) {
+        if (match.index >= offset) break;
+
+        const tagStart = match.index;
+        const tagEnd = tagPattern.lastIndex;
+        const fullTag = text.substring(tagStart, tagEnd);
+
+        // 自己閉じタグはスキップ
+        if (fullTag.includes('/>')) continue;
+
+        openingTagName = match[1];
+        openingTagStart = tagStart;
+        openingTagEnd = tagEnd;
+    }
+
+    if (openingTagName === '') return undefined;
+
+    // 対応する閉じタグを探す（ネストを考慮）
+    let tagDepth = 1;
+    let searchOffset = openingTagEnd;
+
+    while (tagDepth > 0) {
+        // 次の開始タグと閉じタグを探す
+        const nextOpenMatch = /(<([a-zA-Z][a-zA-Z0-9-]*)([\s/>]|>))/g;
+        nextOpenMatch.lastIndex = searchOffset;
+
+        const nextOpen = nextOpenMatch.exec(text);
+        const nextOpenOffset = nextOpen ? nextOpen.index : Infinity;
+
+        closeTagPattern.lastIndex = searchOffset;
+        const nextClose = closeTagPattern.exec(text);
+        const nextCloseOffset = nextClose ? nextClose.index : Infinity;
+        const nextCloseEnd = closeTagPattern.lastIndex;
+
+        if (nextCloseOffset === Infinity) return undefined;
+
+        if (nextOpenOffset < nextCloseOffset) {
+            // 次の開始タグが先
+            const openTag = text.substring(nextOpenOffset, nextOpenMatch.lastIndex);
+            if (!openTag.includes('/>') && nextOpen && nextOpen[1] === openingTagName) {
+                tagDepth++;
+            }
+            searchOffset = nextOpenMatch.lastIndex;
+        } else {
+            // 次の閉じタグが先
+            if (nextClose && nextClose[1] === openingTagName) {
+                tagDepth--;
+            }
+            if (tagDepth === 0) {
+                const innerStart = openingTagEnd;
+                const innerEnd = nextCloseOffset;
+                const outerStart = openingTagStart;
+                const outerEnd = nextCloseEnd;
+
+                return {
+                    innerRange: new Range(document.positionAt(innerStart), document.positionAt(innerEnd)),
+                    outerRange: new Range(document.positionAt(outerStart), document.positionAt(outerEnd)),
+                };
+            }
+            searchOffset = nextCloseEnd;
+        }
+    }
+
+    return undefined;
+}

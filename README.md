@@ -151,6 +151,13 @@ Text objects select ranges of text for use with operators. They must follow an o
 | `` i` `` | Inside backticks |
 | `` a` `` | Around backticks |
 
+### Tag Text Objects
+
+| Keys | Description |
+|-|-|
+| `it` | Inside tags (HTML/XML content without tags) |
+| `at` | Around tags (HTML/XML content with tags) |
+
 ### Paragraph Text Objects
 
 | Keys | Description |
