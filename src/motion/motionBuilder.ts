@@ -24,7 +24,7 @@ export function newMotion(config: {
         }
 
         const newPosition = config.compute(context, position);
-        return { result: 'match', position: newPosition };
+        return { result: 'match', position: newPosition, remainingKeys: parseResult.remainingKeys };
     };
 }
 
@@ -50,6 +50,6 @@ export function newRegexMotion(config: {
         }
 
         const newPosition = config.compute(context, position, parseResult.variables);
-        return { result: 'match', position: newPosition };
+        return { result: 'match', position: newPosition, remainingKeys: parseResult.remainingKeys };
     };
 }

@@ -5,7 +5,7 @@ import type { Context } from '../context';
  * MotionResult: Motion実行の結果
  */
 export type MotionResult =
-    | { result: 'match'; position: vscode.Position }
+    | { result: 'match'; position: vscode.Position; remainingKeys: string[] }
     | { result: 'needsMoreKey' }
     | { result: 'noMatch' };
 

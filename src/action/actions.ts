@@ -16,6 +16,7 @@ import {
     newRegexAction,
     textObjectToVisualAction,
 } from './actionBuilder';
+import { createYsSurroundAction, dsSurroundAction, csSurroundAction, visualSurroundAction } from './surroundActions';
 import type { Action, ActionResult } from './actionTypes';
 // VS Codeネイティブカーソル動作を常に使用
 
@@ -565,6 +566,10 @@ export function buildActions(): Action[] {
             },
         }),
     );
+
+    // Surround actions
+    console.log('Building surround actions');
+    actions.push(createYsSurroundAction(textObjects), dsSurroundAction, csSurroundAction, visualSurroundAction);
 
     console.log(`Built ${actions.length} total actions`);
     return actions;

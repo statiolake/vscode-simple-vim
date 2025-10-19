@@ -13,7 +13,7 @@ export type TextObjectMatch = {
  * TextObjectResult: TextObject実行の結果
  */
 export type TextObjectResult =
-    | { result: 'match'; data: TextObjectMatch }
+    | { result: 'match'; data: TextObjectMatch; remainingKeys: string[] }
     | { result: 'needsMoreKey' }
     | { result: 'noMatch' };
 

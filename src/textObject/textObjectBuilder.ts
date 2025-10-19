@@ -24,7 +24,7 @@ export function newTextObject(config: {
         }
 
         const range = config.compute(context, position);
-        return { result: 'match', data: { range } };
+        return { result: 'match', data: { range }, remainingKeys: parseResult.remainingKeys };
     };
 }
 
@@ -50,7 +50,7 @@ export function newRegexTextObject(config: {
         }
 
         const range = config.compute(context, position, parseResult.variables);
-        return { result: 'match', data: { range } };
+        return { result: 'match', data: { range }, remainingKeys: parseResult.remainingKeys };
     };
 }
 
@@ -67,7 +67,11 @@ export function newWholeLineTextObject(config: { keys: string[]; includeLineBrea
     return (context: Context, keys: string[], position: vscode.Position) => {
         const result = baseTextObject(context, keys, position);
         if (result.result === 'match') {
-            return { result: 'match', data: { range: result.data.range, isLinewise: true } };
+            return {
+                result: 'match',
+                data: { range: result.data.range, isLinewise: true },
+                remainingKeys: result.remainingKeys,
+            };
         }
         return result;
     };

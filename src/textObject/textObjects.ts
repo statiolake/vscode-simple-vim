@@ -32,7 +32,10 @@ export function motionToTextObject(motion: Motion): TextObject {
             range = new vscode.Range(position, targetPosition);
         }
 
-        return { result: 'match', data: { range } };
+        // Motion から remainingKeys を取得
+        const remainingKeys = motionResult.remainingKeys;
+
+        return { result: 'match', data: { range }, remainingKeys };
     };
 }
 
@@ -113,7 +116,7 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
 
     // Bracket text objects
     const createBracketTextObject = (open: string, close: string, keys: string[], inner: boolean): TextObject => {
-        return newTextObject({
+        const baseTextObject = newTextObject({
             keys,
             compute: (context, position) => {
                 let openLine: number | undefined;
@@ -197,6 +200,8 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
                 }
             },
         });
+
+        return baseTextObject;
     };
 
     // Bracket and brace text objects
