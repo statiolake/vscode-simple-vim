@@ -18,7 +18,7 @@ interface CommentConfig {
 }
 
 export class CommentConfigProvider {
-    private cache: Map<string, CommentConfig | null> = new Map();
+    private cache: Map<string, CommentConfig> = new Map();
 
     constructor() {
         this.loadAllLanguageConfigs();
@@ -42,15 +42,10 @@ export class CommentConfigProvider {
                     const configContent = fs.readFileSync(configPath, 'utf-8');
                     // JSONC (JSON with Comments) をパース
                     const config = jsonc.parse(configContent);
-
-                    if (config?.comments?.lineComment) {
-                        this.cache.set(language.id, { lineComment: config.comments.lineComment });
-                    } else {
-                        this.cache.set(language.id, null);
-                    }
+                    if (config?.comments?.lineComment == null) continue;
+                    this.cache.set(language.id, { lineComment: config.comments.lineComment });
                 } catch {
                     // エラーは無視
-                    this.cache.set(language.id, null);
                 }
             }
         }
@@ -59,14 +54,11 @@ export class CommentConfigProvider {
     /**
      * 指定された言語のコメント設定を取得
      */
-    getCommentConfig(languageId: string): CommentConfig | null {
+    getConfig(languageId: string): CommentConfig | null {
+        const cache = this.cache.get(languageId);
+        if (cache != null) return cache;
+        // キャッシュにない場合は念のため再読み込みを試みる (読み込み順序の問題かもしれないので)
+        this.loadAllLanguageConfigs();
         return this.cache.get(languageId) || null;
-    }
-
-    /**
-     * 指定された言語の行コメント文字を取得
-     */
-    getLineComment(languageId: string): string {
-        return this.cache.get(languageId)?.lineComment || '';
     }
 }

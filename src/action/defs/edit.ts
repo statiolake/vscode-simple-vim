@@ -174,7 +174,7 @@ export function buildEditActions(): Action[] {
                 const document = context.document;
 
                 // コメント文字を取得
-                const lineComment = context.commentConfigProvider.getLineComment(document.languageId);
+                const lineComment = context.commentConfigProvider.getConfig(document.languageId)?.lineComment || null;
 
                 // ASCII文字かどうかを判定
                 const isAscii = (char: string): boolean => char.charCodeAt(0) < 128;
