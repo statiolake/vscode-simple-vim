@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Range, Selection } from 'vscode';
 import { enterMode } from '../../modes';
+import { getRegisterContents, setRegisterContents } from '../../register';
 import {
     findAdjacentPosition,
     findReplacedOffsetRanges,
@@ -20,13 +21,14 @@ export function buildEditActions(): Action[] {
             keys: ['x'],
             modes: ['normal'],
             execute: async (context) => {
-                context.vimState.register.contents = context.editor.selections.map((selection) => {
+                const contents = context.editor.selections.map((selection) => {
                     const newPosition = findAdjacentPosition(context.document, 'after', selection.active);
                     return {
                         text: context.document.getText(new Range(selection.active, newPosition)),
                         isLinewise: false,
                     };
                 });
+                await setRegisterContents(context.vimState, contents);
                 await vscode.commands.executeCommand('deleteRight');
             },
         }),
@@ -38,8 +40,8 @@ export function buildEditActions(): Action[] {
             execute: async (context) => {
                 const editor = context.editor;
 
-                // レジスタの内容を取得する
-                const contents = context.vimState.register.contents;
+                // レジスタの内容を取得する（クリップボード変更検出を含む）
+                const contents = await getRegisterContents(context.vimState);
                 const replaces: Array<OffsetReplaceData> = [];
                 await editor.edit((editBuilder) => {
                     for (let i = 0; i < editor.selections.length; i++) {
@@ -102,8 +104,8 @@ export function buildEditActions(): Action[] {
             execute: async (context) => {
                 const editor = context.editor;
 
-                // レジスタの内容を取得する
-                const contents = context.vimState.register.contents;
+                // レジスタの内容を取得する（クリップボード変更検出を含む）
+                const contents = await getRegisterContents(context.vimState);
                 const replaces: Array<OffsetReplaceData> = [];
                 await editor.edit((editBuilder) => {
                     for (let i = 0; i < editor.selections.length; i++) {

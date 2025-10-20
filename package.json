@@ -89,6 +89,39 @@
         "key": "tab",
         "command": "waltz.noop",
         "when": "editorTextFocus && waltz.mode != 'insert'"
+      },
+      {
+        "key": "cmd+c",
+        "mac": "cmd+c",
+        "win": "ctrl+c",
+        "linux": "ctrl+c",
+        "command": "waltz.send",
+        "args": {
+          "keys": "<D-c>"
+        },
+        "when": "editorTextFocus"
+      },
+      {
+        "key": "cmd+x",
+        "mac": "cmd+x",
+        "win": "ctrl+x",
+        "linux": "ctrl+x",
+        "command": "waltz.send",
+        "args": {
+          "keys": "<D-x>"
+        },
+        "when": "editorTextFocus"
+      },
+      {
+        "key": "cmd+v",
+        "mac": "cmd+v",
+        "win": "ctrl+v",
+        "linux": "ctrl+v",
+        "command": "waltz.send",
+        "args": {
+          "keys": "<D-v>"
+        },
+        "when": "editorTextFocus"
       }
     ],
     "configuration": {

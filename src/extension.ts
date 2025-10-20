@@ -82,6 +82,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         actions: buildActions(),
         register: {
             contents: [],
+            lastClipboardText: '',
         },
         lastFt: undefined,
     };

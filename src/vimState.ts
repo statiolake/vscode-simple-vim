@@ -14,6 +14,7 @@ export type VimState = {
     actions: Action[];
     register: {
         contents: Array<RegisterContent>;
+        lastClipboardText: string;
     };
 
     lastFt:

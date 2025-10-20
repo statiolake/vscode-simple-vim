@@ -1,5 +1,6 @@
 import type { Context } from '../../context';
 import { enterMode } from '../../modes';
+import { setRegisterContents } from '../../register';
 import { newWholeLineTextObject } from '../../textObject/textObjectBuilder';
 import type { TextObject } from '../../textObject/textObjectTypes';
 import { expandSelectionsToNextLineStart } from '../../utils/visualLine';
@@ -25,10 +26,12 @@ export function buildOperatorActions(
             execute: async (context, matches) => {
                 if (matches.length === 0) return;
 
-                context.vimState.register.contents = matches.map((match) => ({
+                const contents = matches.map((match) => ({
                     text: context.document.getText(match.range),
                     isLinewise: match.isLinewise ?? false,
                 }));
+
+                await setRegisterContents(context.vimState, contents);
 
                 await context.editor.edit((editBuilder) => {
                     for (const match of matches) {
@@ -53,10 +56,12 @@ export function buildOperatorActions(
             execute: async (context, matches) => {
                 if (matches.length === 0) return;
 
-                context.vimState.register.contents = matches.map((match) => ({
+                const contents = matches.map((match) => ({
                     text: context.document.getText(match.range),
                     isLinewise: match.isLinewise ?? false,
                 }));
+
+                await setRegisterContents(context.vimState, contents);
             },
         }),
         newAction({
@@ -75,10 +80,12 @@ export function buildOperatorActions(
             execute: async (context, matches) => {
                 if (matches.length === 0) return;
 
-                context.vimState.register.contents = matches.map((match) => ({
+                const contents = matches.map((match) => ({
                     text: context.document.getText(match.range),
                     isLinewise: match.isLinewise ?? false,
                 }));
+
+                await setRegisterContents(context.vimState, contents);
 
                 await context.editor.edit((editBuilder) => {
                     for (const match of matches) {
@@ -124,10 +131,12 @@ export function buildOperatorActions(
                     // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
                     expandSelectionsToNextLineStart(context.editor);
                 }
-                context.vimState.register.contents = context.editor.selections.map((selection) => ({
+                const contents = context.editor.selections.map((selection) => ({
                     text: context.document.getText(selection),
                     isLinewise: context.vimState.mode === 'visualLine',
                 }));
+
+                await setRegisterContents(context.vimState, contents);
 
                 await context.editor.edit((editBuilder) => {
                     for (const selection of context.editor.selections) {
@@ -148,10 +157,12 @@ export function buildOperatorActions(
                     // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
                     expandSelectionsToNextLineStart(context.editor);
                 }
-                context.vimState.register.contents = context.editor.selections.map((selection) => ({
+                const contents = context.editor.selections.map((selection) => ({
                     text: context.document.getText(selection),
                     isLinewise: context.vimState.mode === 'visualLine',
                 }));
+
+                await setRegisterContents(context.vimState, contents);
 
                 enterMode(context.vimState, context.editor, 'normal');
             },
@@ -166,10 +177,12 @@ export function buildOperatorActions(
                     // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
                     expandSelectionsToNextLineStart(context.editor);
                 }
-                context.vimState.register.contents = context.editor.selections.map((selection) => ({
+                const contents = context.editor.selections.map((selection) => ({
                     text: context.document.getText(selection),
                     isLinewise: context.vimState.mode === 'visualLine',
                 }));
+
+                await setRegisterContents(context.vimState, contents);
 
                 await context.editor.edit((editBuilder) => {
                     for (const selection of context.editor.selections) {

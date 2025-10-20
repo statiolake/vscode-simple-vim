@@ -3,6 +3,7 @@ import { buildMotions } from '../motion/motions';
 import { buildTextObjects } from '../textObject/textObjects';
 import { motionToAction, textObjectToVisualAction } from './actionBuilder';
 import type { Action, ActionResult } from './actionTypes';
+import { buildClipboardActions } from './defs/clipboard';
 import { buildCustomActions } from './defs/custom';
 import { buildEditActions } from './defs/edit';
 import { buildLspActions } from './defs/lsp';
@@ -47,6 +48,9 @@ export function buildActions(): Action[] {
 
     console.log('Building viewport actions');
     actions.push(...buildViewportActions());
+
+    console.log('Building clipboard actions');
+    actions.push(...buildClipboardActions());
 
     // オペレータアクション
     console.log(`Building operator actions with ${textObjects.length} text objects`);
