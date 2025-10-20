@@ -1,9 +1,10 @@
+import { Range } from 'vscode';
 import type { Context } from '../../context';
 import { enterMode } from '../../modes';
 import { setRegisterContents } from '../../register';
 import { newWholeLineTextObject } from '../../textObject/textObjectBuilder';
 import type { TextObject } from '../../textObject/textObjectTypes';
-import { expandSelectionsToNextLineStart } from '../../utils/visualLine';
+import { findNextLineStart } from '../../utils/positionFinder';
 import { newAction, newOperatorAction } from '../actionBuilder';
 import type { Action, ActionResult } from '../actionTypes';
 
@@ -127,21 +128,16 @@ export function buildOperatorActions(
             keys: ['d'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                if (context.vimState.mode === 'visualLine') {
-                    // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
-                    expandSelectionsToNextLineStart(context.editor);
-                }
-                const contents = context.editor.selections.map((selection) => ({
-                    text: context.document.getText(selection),
+                const ranges = adjustSelectionRangeForVisualLine(context);
+                const contents = ranges.map((range) => ({
+                    text: context.document.getText(range),
                     isLinewise: context.vimState.mode === 'visualLine',
                 }));
 
                 await setRegisterContents(context.vimState, contents);
 
                 await context.editor.edit((editBuilder) => {
-                    for (const selection of context.editor.selections) {
-                        editBuilder.delete(selection);
-                    }
+                    for (const range of ranges) editBuilder.delete(range);
                 });
 
                 enterMode(context.vimState, context.editor, 'normal');
@@ -153,12 +149,9 @@ export function buildOperatorActions(
             keys: ['y'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                if (context.vimState.mode === 'visualLine') {
-                    // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
-                    expandSelectionsToNextLineStart(context.editor);
-                }
-                const contents = context.editor.selections.map((selection) => ({
-                    text: context.document.getText(selection),
+                const ranges = adjustSelectionRangeForVisualLine(context);
+                const contents = ranges.map((range) => ({
+                    text: context.document.getText(range),
                     isLinewise: context.vimState.mode === 'visualLine',
                 }));
 
@@ -173,21 +166,16 @@ export function buildOperatorActions(
             keys: ['c'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                if (context.vimState.mode === 'visualLine') {
-                    // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
-                    expandSelectionsToNextLineStart(context.editor);
-                }
-                const contents = context.editor.selections.map((selection) => ({
-                    text: context.document.getText(selection),
+                const ranges = adjustSelectionRangeForVisualLine(context);
+                const contents = ranges.map((range) => ({
+                    text: context.document.getText(range),
                     isLinewise: context.vimState.mode === 'visualLine',
                 }));
 
                 await setRegisterContents(context.vimState, contents);
 
                 await context.editor.edit((editBuilder) => {
-                    for (const selection of context.editor.selections) {
-                        editBuilder.delete(selection);
-                    }
+                    for (const range of ranges) editBuilder.delete(range);
                 });
                 enterMode(context.vimState, context.editor, 'insert');
             },
@@ -205,3 +193,15 @@ export function buildOperatorActions(
 
     return actions;
 }
+
+const adjustSelectionRangeForVisualLine = (context: Context) => {
+    return context.editor.selections.map((selection) => {
+        if (context.vimState.mode === 'visualLine') {
+            // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
+            const end = findNextLineStart(context.document, selection.end);
+            return new Range(selection.start, end);
+        } else {
+            return selection;
+        }
+    });
+};

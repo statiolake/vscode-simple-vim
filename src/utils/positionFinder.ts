@@ -53,6 +53,14 @@ export function findNearerPosition(
     return undefined;
 }
 
+/**
+ * 次の行の先頭を探す
+ */
+export function findNextLineStart(document: TextDocument, position: Position): Position {
+    const nextLine = document.lineAt(position.line + 1);
+    return nextLine.range.start;
+}
+
 export function findLineStart(_document: TextDocument, position: Position): Position {
     return new Position(position.line, 0);
 }
