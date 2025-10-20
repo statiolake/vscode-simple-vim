@@ -21,16 +21,15 @@ export let globalCommentConfigProvider: CommentConfigProvider;
 
 async function onSelectionChange(vimState: VimState, e: TextEditorSelectionChangeEvent): Promise<void> {
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
-    if (allEmpty && vimState.mode !== 'insert') {
-        // 選択範囲が無になった場合は、ノーマルモードに戻る。この条件だと
-        // Visualモードにいて移動したあと逆方向に動かして選択範囲が無になった
-        // ときもノーマルモードに戻るが、まあ良しとするというのは、VS Code が
-        // undoなどの組み込みコマンドが一時的に非空の選択範囲を作成することが
-        // あり、最終的には空になるものの、そこでノーマルモードに戻れるように
-        // しなければならないから。しかし、それらもあくまでも「コマンドによる
-        // 選択範囲変更」であり、このハンドラ内ではvlh のケースと区別がつかな
-        // い。 vlh などは比較的登場頻度が低いことを考えると、これでいいんじゃ
-        // ないか。
+    if (allEmpty && e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
+        // マウスによる選択解除の場合はノーマルモードに戻る
+        await enterMode(vimState, e.textEditor, 'normal');
+    } else if (allEmpty && vimState.mode !== 'insert') {
+        // 選択範囲が無になった場合は、ノーマルモードに戻る。この条件だとVisualモードにいて移動したあと逆方向に動かして
+        // 選択範囲が無になったときもノーマルモードに戻るが、まあ良しとする。というのは、VS Code がundoなどの組み込みコ
+        // マンドが一時的に非空の選択範囲を作成することがあり、最終的には空になるものの、そこでノーマルモードに戻れるよ
+        // うにしなければならないから。しかし、それらもあくまでも「コマンドによる選択範囲変更」であり、このハンドラ内で
+        // は vlh のケースと区別がつかない。 vlh などは比較的登場頻度が低いことを考えると、これでいいんじゃないか。
         await enterMode(vimState, e.textEditor, 'normal');
     } else if (vimState.mode === 'visualLine') {
         // Visual Line モードでは、選択範囲を行全体に拡張する
