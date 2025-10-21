@@ -27,7 +27,7 @@
       {
         "key": "Escape",
         "command": "waltz.escapeKey",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus && !suggestWidgetVisible"
       },
       {
         "key": "ctrl+r",
