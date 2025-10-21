@@ -99,7 +99,7 @@
         "args": {
           "keys": "<D-c>"
         },
-        "when": "editorTextFocus"
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
         "key": "cmd+x",
@@ -110,7 +110,7 @@
         "args": {
           "keys": "<D-x>"
         },
-        "when": "editorTextFocus"
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
         "key": "cmd+v",
@@ -121,7 +121,7 @@
         "args": {
           "keys": "<D-v>"
         },
-        "when": "editorTextFocus"
+        "when": "editorTextFocus && waltz.mode != 'insert'"
       }
     ],
     "configuration": {
