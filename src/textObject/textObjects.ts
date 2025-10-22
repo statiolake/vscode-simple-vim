@@ -2,6 +2,8 @@ import { Range } from 'vscode';
 import type { Motion } from '../motion/motionTypes';
 import {
     findAdjacentPosition,
+    findDocumentEnd,
+    findDocumentStart,
     findInsideBalancedPairs,
     findMatchingTag,
     findWordBoundary,
@@ -207,6 +209,29 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
 
                 // 周辺: タグ自体を含む
                 return tagInfo.outerRange;
+            },
+        }),
+    );
+
+    // ドキュメント全体テキストオブジェクト
+    textObjects.push(
+        // 周辺ドキュメント (ドキュメント全体)
+        newTextObject({
+            keys: ['a', 'e'],
+            compute: (context) => {
+                const start = findDocumentStart(context.document);
+                const end = findDocumentEnd(context.document);
+                return new Range(start, end);
+            },
+        }),
+
+        // 内部ドキュメント (ドキュメント全体、同じ動作)
+        newTextObject({
+            keys: ['i', 'e'],
+            compute: (context) => {
+                const start = findDocumentStart(context.document);
+                const end = findDocumentEnd(context.document);
+                return new Range(start, end);
             },
         }),
     );
