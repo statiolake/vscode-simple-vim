@@ -43,7 +43,7 @@ async function onSelectionChange(vimState: VimState, e: TextEditorSelectionChang
     // マルチカーソルの場合、最後のカーソル位置を reveal したいので最後のカーソルを見る
     const lastSelection = e.selections[e.selections.length - 1];
     // VisualLine モードの場合、通常行末にカーソルがあるが目線は行頭にあってほしいので、行頭を見る
-    const focusAt = vimState.mode === 'visualLine' ? lastSelection.end.with({ character: 0 }) : lastSelection.end;
+    const focusAt = vimState.mode === 'visualLine' ? lastSelection.active.with({ character: 0 }) : lastSelection.active;
     e.textEditor.revealRange(new Range(focusAt, focusAt));
 }
 
