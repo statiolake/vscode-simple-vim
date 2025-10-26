@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Selection } from 'vscode';
 import { enterMode } from '../../modes';
 import { findLineEnd, findLineStartAfterIndent } from '../../utils/positionFinder';
+import { filterRangeByPattern, splitRangeByPattern } from '../../utils/rangeUtils';
 import { newAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
 
@@ -142,6 +143,102 @@ export function buildMulticursorActions(): Action[] {
                 });
                 // Insert モードに入る
                 await enterMode(context.vimState, context.editor, 'insert');
+            },
+        }),
+
+        // S - 選択範囲を正規表現で分割
+        newAction({
+            keys: ['S'],
+            modes: ['visual', 'visualLine'],
+            execute: async (context) => {
+                const pattern = await vscode.window.showInputBox({
+                    prompt: 'Enter regex pattern to split selections',
+                    placeHolder: 'e.g., ", " or "\\s+" or "[,;]"',
+                });
+
+                if (pattern === undefined) {
+                    // ユーザーがキャンセルした場合
+                    return;
+                }
+
+                if (pattern === '') {
+                    void vscode.window.showWarningMessage('Pattern cannot be empty');
+                    return;
+                }
+
+                let regex: RegExp;
+                try {
+                    regex = new RegExp(pattern);
+                } catch (error) {
+                    void vscode.window.showErrorMessage(
+                        `Invalid regex pattern: ${error instanceof Error ? error.message : String(error)}`,
+                    );
+                    return;
+                }
+
+                const doc = context.editor.document;
+
+                // splitRangeByPattern は常に最低1つの範囲を返す
+                const newSelections = context.editor.selections.flatMap((selection) => {
+                    const ranges = splitRangeByPattern(doc, selection, regex);
+                    return ranges.map((range) => new Selection(range.start, range.end));
+                });
+
+                if (context.vimState.mode === 'visualLine') {
+                    // Visual Line モードの場合、Visual モードに切り替えないとせっかく分割しても行全体が選択されてしまう
+                    enterMode(context.vimState, context.editor, 'visual');
+                }
+                context.editor.selections = newSelections;
+            },
+        }),
+
+        // M - 正規表現にマッチする部分のみを選択
+        newAction({
+            keys: ['M'],
+            modes: ['visual', 'visualLine'],
+            execute: async (context) => {
+                const pattern = await vscode.window.showInputBox({
+                    prompt: 'Enter regex pattern to match',
+                    placeHolder: 'e.g., "\\w+" or "[a-z]+" or "\\d+"',
+                });
+
+                if (pattern === undefined) {
+                    // ユーザーがキャンセルした場合
+                    return;
+                }
+
+                if (pattern === '') {
+                    void vscode.window.showWarningMessage('Pattern cannot be empty');
+                    return;
+                }
+
+                let regex: RegExp;
+                try {
+                    regex = new RegExp(pattern);
+                } catch (error) {
+                    void vscode.window.showErrorMessage(
+                        `Invalid regex pattern: ${error instanceof Error ? error.message : String(error)}`,
+                    );
+                    return;
+                }
+
+                const doc = context.editor.document;
+
+                const newSelections = context.editor.selections.flatMap((selection) => {
+                    const ranges = filterRangeByPattern(doc, selection, regex);
+                    return ranges.map((range) => new Selection(range.start, range.end));
+                });
+
+                if (newSelections.length === 0) {
+                    void vscode.window.showWarningMessage('No matches found');
+                    return;
+                }
+
+                if (context.vimState.mode === 'visualLine') {
+                    // Visual Line モードの場合、Visual モードに切り替えないとせっかく分割しても行全体が選択されてしまう
+                    enterMode(context.vimState, context.editor, 'visual');
+                }
+                context.editor.selections = newSelections;
             },
         }),
     ];
