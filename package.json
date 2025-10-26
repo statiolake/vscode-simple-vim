@@ -193,7 +193,7 @@
     "prepare": "husky",
     "package": "vsce package",
     "pretest": "npm run compile && npm run lint",
-    "test": "npm run pretest && vscode-test"
+    "test": "vscode-test"
   },
   "lint-staged": {
     "*.{ts,js,mjs,json}": [
