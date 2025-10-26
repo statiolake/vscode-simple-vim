@@ -5,6 +5,8 @@ import { isWhitespace } from './unicode';
  * オフセット範囲のテキストを取得
  */
 function getTextOfOffsetRange(document: TextDocument, startOffset: number, endOffset: number): string {
+    startOffset = Math.max(0, startOffset);
+    endOffset = Math.max(0, endOffset);
     return document.getText(
         document.validateRange(new Range(document.positionAt(startOffset), document.positionAt(endOffset))),
     );
@@ -226,86 +228,150 @@ export type TagPairInfo = {
  * @returns タグペア情報 (innerRange: 内部, outerRange: 外部)、見つからない場合は undefined
  */
 export function findMatchingTag(document: TextDocument, position: Position): TagPairInfo | undefined {
-    const text = document.getText();
-    const offset = document.offsetAt(position);
+    // ===== ステップ1: 左側の開始タグを探す =====
+    const openingTag = scanForTag(document, position, 'before');
+    if (!openingTag) return undefined;
 
-    // タグの正規表現パターン
-    const tagPattern = /<([a-zA-Z][a-zA-Z0-9-]*)([\s/>]|>)/g;
-    const closeTagPattern = /<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/g;
+    // ===== ステップ2: 右側の閉じタグを探す =====
+    const closingTag = scanForTag(document, document.positionAt(openingTag.tagEnd), 'after', openingTag.tagName);
+    if (!closingTag) return undefined;
 
-    // position の左側から最も近い開始タグを探す
-    let openingTagName = '';
-    let openingTagStart = 0;
-    let openingTagEnd = 0;
+    return {
+        innerRange: new Range(document.positionAt(openingTag.tagEnd), document.positionAt(closingTag.tagStart)),
+        outerRange: new Range(document.positionAt(openingTag.tagStart), document.positionAt(closingTag.tagEnd)),
+    };
+}
 
-    let match: RegExpExecArray | null;
+/**
+ * タグをスキャンして探す（左方向 or 右方向）
+ * 左方向: カーソル位置の左で最も近い開始タグを探す（ネストを考慮）
+ * 右方向: 指定されたタグ名の閉じタグを探す（ネストを考慮）
+ */
+function scanForTag(
+    document: TextDocument,
+    position: Position,
+    direction: 'before' | 'after',
+    targetTagName?: string,
+): { tagName: string; tagStart: number; tagEnd: number } | undefined {
+    const tagStack: string[] = [];
+    let currentPos = position;
+
     while (true) {
-        match = tagPattern.exec(text);
-        if (match !== null) {
-            if (match.index >= offset) break;
+        // 次のタグ括弧を探す
+        const nextBracket =
+            direction === 'before'
+                ? findNearerPosition(document, (ch) => ch === '>', direction, currentPos, { withinLine: false })
+                : findNearerPosition(document, (ch) => ch === '<', direction, currentPos, { withinLine: false });
 
-            const tagStart = match.index;
-            const tagEnd = tagPattern.lastIndex;
-            const fullTag = text.substring(tagStart, tagEnd);
+        if (!nextBracket) return undefined;
 
-            // 自己閉じタグはスキップ
-            if (fullTag.includes('/>')) continue;
-
-            openingTagName = match[1];
-            openingTagStart = tagStart;
-            openingTagEnd = tagEnd;
+        // タグ範囲を取得（<...> のペア）
+        const tagRange = findTagRangeAt(document, nextBracket, direction);
+        if (!tagRange) {
+            currentPos = findAdjacentPosition(document, direction, nextBracket);
+            continue;
         }
-    }
 
-    if (openingTagName === '') return undefined;
+        // tagRange は findInsideBalancedPairs が返すもので、< と > の間（括弧自体は含まない）
+        const tagStart = document.offsetAt(tagRange.start);
+        const tagEnd = document.offsetAt(tagRange.end);
+        // tagRange.start から tagRange.end までのテキストを取得
+        const tagContent = getTextOfOffsetRange(document, tagStart, tagEnd).trim();
+        const tagInfo = parseTagContent(tagContent);
 
-    // 対応する閉じタグを探す（ネストを考慮）
-    let tagDepth = 1;
-    let searchOffset = openingTagEnd;
+        if (!tagInfo || tagInfo.isSelfClosing) {
+            currentPos = findAdjacentPosition(document, direction, nextBracket);
+            continue;
+        }
 
-    while (tagDepth > 0) {
-        // 次の開始タグと閉じタグを探す
-        const nextOpenMatch = /(<([a-zA-Z][a-zA-Z0-9-]*)([\s/>]|>))/g;
-        nextOpenMatch.lastIndex = searchOffset;
+        const { tagName, isOpeningTag } = tagInfo;
 
-        const nextOpen = nextOpenMatch.exec(text);
-        const nextOpenOffset = nextOpen ? nextOpen.index : Infinity;
-
-        closeTagPattern.lastIndex = searchOffset;
-        const nextClose = closeTagPattern.exec(text);
-        const nextCloseOffset = nextClose ? nextClose.index : Infinity;
-        const nextCloseEnd = closeTagPattern.lastIndex;
-
-        if (nextCloseOffset === Infinity) return undefined;
-
-        if (nextOpenOffset < nextCloseOffset) {
-            // 次の開始タグが先
-            const openTag = text.substring(nextOpenOffset, nextOpenMatch.lastIndex);
-            if (!openTag.includes('/>') && nextOpen && nextOpen[1] === openingTagName) {
-                tagDepth++;
+        if (direction === 'before') {
+            // 左方向: 開始タグを探す
+            if (isOpeningTag) {
+                if (tagStack.length === 0) {
+                    // tagStart は < の次、tagEnd は > の位置
+                    // 返すべきは: tagStart = < の位置、tagEnd = > の次の位置
+                    return { tagName, tagStart: tagStart - 1, tagEnd: tagEnd + 1 };
+                }
+                if (tagStack[tagStack.length - 1] === tagName) {
+                    tagStack.pop();
+                }
+            } else {
+                tagStack.push(tagName);
             }
-            searchOffset = nextOpenMatch.lastIndex;
         } else {
-            // 次の閉じタグが先
-            if (nextClose && nextClose[1] === openingTagName) {
-                tagDepth--;
+            // 右方向: targetTagName の閉じタグを探す
+            if (isOpeningTag) {
+                if (tagName === targetTagName) {
+                    tagStack.push(tagName);
+                }
+            } else {
+                if (tagName === targetTagName) {
+                    if (tagStack.length === 0) {
+                        // tagStart は < の次、tagEnd は > の位置
+                        // 返すべきは: tagStart = < の位置、tagEnd = > の次の位置
+                        return { tagName, tagStart: tagStart - 1, tagEnd: tagEnd + 1 };
+                    }
+                    tagStack.pop();
+                }
             }
-            if (tagDepth === 0) {
-                const innerStart = openingTagEnd;
-                const innerEnd = nextCloseOffset;
-                const outerStart = openingTagStart;
-                const outerEnd = nextCloseEnd;
-
-                return {
-                    innerRange: new Range(document.positionAt(innerStart), document.positionAt(innerEnd)),
-                    outerRange: new Range(document.positionAt(outerStart), document.positionAt(outerEnd)),
-                };
-            }
-            searchOffset = nextCloseEnd;
         }
+
+        currentPos = findAdjacentPosition(document, direction, nextBracket);
+    }
+}
+
+/**
+ * 指定された括弧位置からタグ範囲（<...>）を取得
+ * direction='before': > の位置から、対応する < を探して Range を返す
+ * direction='after': < の位置から、対応する > を探して Range を返す
+ */
+function findTagRangeAt(
+    document: TextDocument,
+    bracketPos: Position,
+    direction: 'before' | 'after',
+): Range | undefined {
+    // 括弧の内側の位置を取得
+    const insidePos = findAdjacentPosition(document, direction === 'before' ? 'before' : 'after', bracketPos);
+    // findInsideBalancedPairs で <...> のペアを探す
+    return findInsideBalancedPairs(document, insidePos, '<', '>');
+}
+
+/**
+ * タグのコンテンツ（< > の内側）をパースして、タグ情報を抽出
+ * @returns tagName, isOpeningTag, isSelfClosing
+ */
+function parseTagContent(
+    content: string,
+): { tagName: string; isOpeningTag: boolean; isSelfClosing: boolean } | undefined {
+    if (!content) return undefined;
+
+    // 閉じタグ判定 </tagname>
+    if (content.startsWith('/')) {
+        const tagName = extractTagName(content.substring(1));
+        if (!tagName) return undefined;
+        return { tagName, isOpeningTag: false, isSelfClosing: false };
     }
 
-    return undefined;
+    // 開始タグ / 自己閉じタグ
+    const isSelfClosing = content.endsWith('/');
+    const contentToCheck = isSelfClosing ? content.substring(0, content.length - 1) : content;
+
+    const tagName = extractTagName(contentToCheck);
+    if (!tagName) return undefined;
+
+    return { tagName, isOpeningTag: true, isSelfClosing };
+}
+
+/**
+ * コンテンツからタグ名を抽出
+ * <tagname attr="value"> → "tagname"
+ * </tagname> → "tagname"
+ */
+function extractTagName(content: string): string {
+    const match = content.match(/^([a-zA-Z][a-zA-Z0-9-]*)/);
+    return match ? match[1] : '';
 }
 
 export class OffsetRange {

@@ -1,6 +1,6 @@
 import type { Context } from '../../context';
-import { delegateAction } from '../actions';
 import { newAction } from '../actionBuilder';
+import { delegateAction } from '../actions';
 import type { Action } from '../actionTypes';
 
 /**

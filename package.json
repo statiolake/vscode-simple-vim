@@ -191,7 +191,9 @@
     "lint": "eslint src --ext ts && biome check .",
     "format": "biome format --write .",
     "prepare": "husky",
-    "package": "vsce package"
+    "package": "vsce package",
+    "pretest": "npm run compile && npm run lint",
+    "test": "vscode-test"
   },
   "lint-staged": {
     "*.{ts,js,mjs,json}": [
@@ -200,12 +202,17 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.6",
+    "@types/mocha": "^10.0.10",
     "@types/node": "24.7.2",
     "@types/vscode": "^1.75.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.6.2",
     "eslint": "9.37.0",
+    "glob": "^11.0.3",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.4",
+    "mocha": "^11.7.4",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.46.0"
   },
