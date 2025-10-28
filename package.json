@@ -180,6 +180,58 @@
               }
             }
           }
+        },
+        "waltz.cursorStyle.normal": {
+          "type": "string",
+          "default": "line",
+          "description": "Cursor style in normal mode.",
+          "enum": [
+            "block",
+            "block-outline",
+            "line",
+            "line-thin",
+            "underline",
+            "underline-thin"
+          ]
+        },
+        "waltz.cursorStyle.insert": {
+          "type": "string",
+          "default": "line-thin",
+          "description": "Cursor style in insert mode.",
+          "enum": [
+            "block",
+            "block-outline",
+            "line",
+            "line-thin",
+            "underline",
+            "underline-thin"
+          ]
+        },
+        "waltz.cursorStyle.visual": {
+          "type": "string",
+          "default": "line-thin",
+          "description": "Cursor style in visual mode.",
+          "enum": [
+            "block",
+            "block-outline",
+            "line",
+            "line-thin",
+            "underline",
+            "underline-thin"
+          ]
+        },
+        "waltz.cursorStyle.visualLine": {
+          "type": "string",
+          "default": "line-thin",
+          "description": "Cursor style in visual line mode.",
+          "enum": [
+            "block",
+            "block-outline",
+            "line",
+            "line-thin",
+            "underline",
+            "underline-thin"
+          ]
         }
       }
     }

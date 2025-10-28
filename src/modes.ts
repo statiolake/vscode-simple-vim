@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-import { Selection, type TextEditor, TextEditorCursorStyle } from 'vscode';
+import { Selection, type TextEditor } from 'vscode';
 import type { Mode } from './modesTypes';
 import { typeHandler } from './typeHandler';
+import { getCursorStyleForMode } from './utils/cursorStyle';
 import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
 
@@ -32,13 +33,7 @@ function updateModeContext(mode: Mode) {
 function updateCursorStyle(editor: TextEditor | undefined, mode: Mode): void {
     if (!editor) return;
 
-    if (mode === 'insert') {
-        editor.options.cursorStyle = TextEditorCursorStyle.LineThin;
-    } else if (mode === 'normal') {
-        editor.options.cursorStyle = TextEditorCursorStyle.Line;
-    } else if (mode === 'visual' || mode === 'visualLine') {
-        editor.options.cursorStyle = TextEditorCursorStyle.LineThin;
-    }
+    editor.options.cursorStyle = getCursorStyleForMode(mode);
 }
 
 function updateStatusBar(vimState: VimState, mode: Mode): void {

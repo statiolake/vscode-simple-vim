@@ -13,6 +13,7 @@ import { escapeHandler } from './escapeHandler';
 import { enterMode } from './modes';
 import { typeHandler } from './typeHandler';
 import { CommentConfigProvider } from './utils/comment';
+import { getCursorStyleForMode } from './utils/cursorStyle';
 import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
 
@@ -63,7 +64,15 @@ async function onDidChangeActiveTextEditor(vimState: VimState, editor: TextEdito
 
 function onDidChangeConfiguration(vimState: VimState, e: ConfigurationChangeEvent): void {
     if (!e.affectsConfiguration('waltz')) return;
+
+    // Rebuild actions
     vimState.actions = buildActions();
+
+    // Update cursor style if cursor style configuration changed
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+        editor.options.cursorStyle = getCursorStyleForMode(vimState.mode);
+    }
 }
 
 export async function activate(context: ExtensionContext): Promise<void> {
