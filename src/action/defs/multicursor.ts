@@ -146,9 +146,9 @@ export function buildMulticursorActions(): Action[] {
             },
         }),
 
-        // S - 選択範囲を正規表現で分割
+        // s - 選択範囲を正規表現で分割
         newAction({
-            keys: ['S'],
+            keys: ['s'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
                 const pattern = await vscode.window.showInputBox({
@@ -192,9 +192,9 @@ export function buildMulticursorActions(): Action[] {
             },
         }),
 
-        // M - 正規表現にマッチする部分のみを選択
+        // m - 正規表現にマッチする部分のみを選択
         newAction({
-            keys: ['M'],
+            keys: ['m'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
                 const pattern = await vscode.window.showInputBox({
