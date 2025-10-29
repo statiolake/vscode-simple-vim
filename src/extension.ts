@@ -152,9 +152,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
             // 結果の出力
             if (result === 'noMatch') {
-                vscode.window.showWarningMessage(
-                    `Waltz: どのアクションともマッチしませんでした: ${args.keys.join('')}`,
-                );
+                vscode.window.showWarningMessage(`Waltz: No action match: ${args.keys.join('')}`);
             }
         }),
     );
