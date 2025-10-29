@@ -3,6 +3,7 @@ import { Selection, type TextEditor } from 'vscode';
 import type { Mode } from './modesTypes';
 import { typeHandler } from './typeHandler';
 import { getCursorStyleForMode } from './utils/cursorStyle';
+import { getModeDisplayText } from './utils/modeDisplay';
 import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
 
@@ -40,21 +41,7 @@ function updateStatusBar(vimState: VimState, mode: Mode): void {
     const { statusBarItem } = vimState;
     if (!statusBarItem) return;
 
-    switch (mode) {
-        case 'normal':
-            statusBarItem.text = '-- NORMAL --';
-            break;
-        case 'insert':
-            statusBarItem.text = '-- INSERT --';
-            break;
-        case 'visual':
-            statusBarItem.text = '-- VISUAL --';
-            break;
-        case 'visualLine':
-            statusBarItem.text = '-- VISUAL LINE --';
-            break;
-    }
-
+    statusBarItem.text = getModeDisplayText(mode);
     statusBarItem.show();
 }
 

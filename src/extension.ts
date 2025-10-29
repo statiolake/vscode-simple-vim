@@ -14,6 +14,7 @@ import { enterMode } from './modes';
 import { typeHandler } from './typeHandler';
 import { CommentConfigProvider } from './utils/comment';
 import { getCursorStyleForMode } from './utils/cursorStyle';
+import { getModeDisplayText } from './utils/modeDisplay';
 import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
 
@@ -72,6 +73,11 @@ function onDidChangeConfiguration(vimState: VimState, e: ConfigurationChangeEven
     const editor = vscode.window.activeTextEditor;
     if (editor) {
         editor.options.cursorStyle = getCursorStyleForMode(vimState.mode);
+    }
+
+    // Update mode display if configuration changed
+    if (vimState.statusBarItem) {
+        vimState.statusBarItem.text = getModeDisplayText(vimState.mode);
     }
 }
 

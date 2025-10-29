@@ -232,6 +232,26 @@
             "underline",
             "underline-thin"
           ]
+        },
+        "waltz.modeDisplay.normal.label": {
+          "type": "string",
+          "default": "-- NORMAL --",
+          "description": "Display text for normal mode in the status bar."
+        },
+        "waltz.modeDisplay.insert.label": {
+          "type": "string",
+          "default": "-- INSERT --",
+          "description": "Display text for insert mode in the status bar."
+        },
+        "waltz.modeDisplay.visual.label": {
+          "type": "string",
+          "default": "-- VISUAL --",
+          "description": "Display text for visual mode in the status bar."
+        },
+        "waltz.modeDisplay.visualLine.label": {
+          "type": "string",
+          "default": "-- VISUAL LINE --",
+          "description": "Display text for visual line mode in the status bar."
         }
       }
     }
