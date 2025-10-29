@@ -22,6 +22,10 @@ import type { VimState } from './vimState';
 export let globalCommentConfigProvider: CommentConfigProvider;
 
 async function onSelectionChange(vimState: VimState, e: TextEditorSelectionChangeEvent): Promise<void> {
+    // マウスで吹っ飛んだ後適当に入力したらキーコンビネーションとして認識されたとかはうれしくないので、入力されたキーは
+    // リセットする。
+    vimState.keysPressed = [];
+
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
     if (allEmpty && e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
         // マウスによる選択解除の場合はノーマルモードに戻る
