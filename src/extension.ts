@@ -111,7 +111,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
         vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(vimState, editor)),
         vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(vimState, e)),
         vscode.workspace.onDidChangeConfiguration((e) => onDidChangeConfiguration(vimState, e)),
-        vscode.commands.registerCommand('waltz.escapeKey', async () => escapeHandler(vimState)),
+        vscode.commands.registerCommand('waltz.escapeKey', async () => {
+            await vscode.commands.executeCommand('hideSuggestWidget');
+            await escapeHandler(vimState);
+        }),
         vscode.commands.registerCommand('waltz.noop', () => {
             // Do nothing - used to ignore keys in certain modes
         }),
