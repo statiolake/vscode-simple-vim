@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { Position } from 'vscode';
 import {
     findAdjacentPosition,
+    findCurrentArgument,
     findDocumentEnd,
     findDocumentStart,
     findInsideBalancedPairs,
@@ -529,5 +530,197 @@ suite('findInsideBalancedPairs', () => {
         assert.deepStrictEqual(result.start, new Position(0, 1));
         // result.end = (3, 0): before ')'
         assert.deepStrictEqual(result.end, new Position(3, 0));
+    });
+});
+
+suite('findCurrentArgument', () => {
+    test('should find first argument', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, b, c)' });
+        // Position (0, 6): between 'a' and ','
+        const position = new Position(0, 6);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'a' (with leading space stripped)
+        assert.deepStrictEqual(result.start, new Position(0, 5));
+        assert.deepStrictEqual(result.end, new Position(0, 6));
+    });
+
+    test('should find middle argument', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, b, c)' });
+        // Position (0, 9): between 'b' and ','
+        const position = new Position(0, 9);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'b' (with spaces stripped)
+        assert.deepStrictEqual(result.start, new Position(0, 8));
+        assert.deepStrictEqual(result.end, new Position(0, 9));
+    });
+
+    test('should find last argument', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, b, c)' });
+        // Position (0, 12): between 'c' and ')'
+        const position = new Position(0, 12);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'c'
+        assert.deepStrictEqual(result.start, new Position(0, 11));
+        assert.deepStrictEqual(result.end, new Position(0, 12));
+    });
+
+    test('should handle arguments with spaces', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a,  b  , c)' });
+        // Position (0, 10): in the space before 'b'
+        const position = new Position(0, 10);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'b' (spaces excluded)
+        assert.deepStrictEqual(result.start, new Position(0, 9));
+        assert.deepStrictEqual(result.end, new Position(0, 10));
+    });
+
+    test('should ignore commas inside double-quoted strings', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func("hello, world", b)' });
+        // Position (0, 10): inside the string "hello, world"
+        const position = new Position(0, 10);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select the entire string "hello, world"
+        assert.deepStrictEqual(result.start, new Position(0, 5));
+        assert.deepStrictEqual(result.end, new Position(0, 19));
+    });
+
+    test('should ignore commas inside single-quoted strings', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: "func('hello, world', b)" });
+        // Position (0, 10): inside the string 'hello, world'
+        const position = new Position(0, 10);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select the entire string 'hello, world'
+        assert.deepStrictEqual(result.start, new Position(0, 5));
+        assert.deepStrictEqual(result.end, new Position(0, 19));
+    });
+
+    test('should ignore commas inside character literals', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: "func(',', b)" });
+        // Position (0, 6): between ',' and '\'
+        const position = new Position(0, 6);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select the character literal ','
+        assert.deepStrictEqual(result.start, new Position(0, 5));
+        assert.deepStrictEqual(result.end, new Position(0, 8));
+    });
+
+    test('should handle nested parentheses', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, bar(x, y), c)' });
+        // Position (0, 13): between 'x' and ','
+        const position = new Position(0, 13);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'x'
+        assert.deepStrictEqual(result.start, new Position(0, 12));
+        assert.deepStrictEqual(result.end, new Position(0, 13));
+    });
+
+    test('should handle nested parentheses second argument', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, bar(x, y), c)' });
+        // Position (0, 16): between 'y' and ')'
+        const position = new Position(0, 16);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'y' within the nested function
+        assert.deepStrictEqual(result.start, new Position(0, 15));
+        assert.deepStrictEqual(result.end, new Position(0, 16));
+    });
+
+    test('should return undefined if cursor is outside parentheses', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, b)' });
+        // Position (0, 0): before 'f' (outside parentheses)
+        const position = new Position(0, 0);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.strictEqual(result, undefined);
+    });
+
+    test('should return undefined if no parentheses found', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'hello world' });
+        // Position (0, 5): between 'o' and space
+        const position = new Position(0, 5);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.strictEqual(result, undefined);
+    });
+
+    // aa (around argument) tests with includeComma option
+    test('should include comma after first argument', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, b, c)' });
+        // Position (0, 6): between 'a' and ','
+        const position = new Position(0, 6);
+
+        const result = findCurrentArgument(doc, position, { includeComma: true });
+
+        assert.ok(result !== undefined);
+        // Should select 'a,' (including the comma but not the space)
+        assert.deepStrictEqual(result.start, new Position(0, 5));
+        assert.deepStrictEqual(result.end, new Position(0, 7));
+    });
+
+    test('should include comma before middle argument', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, b, c)' });
+        // Position (0, 9): between 'b' and ','
+        const position = new Position(0, 9);
+
+        const result = findCurrentArgument(doc, position, { includeComma: true });
+
+        assert.ok(result !== undefined);
+        // Should select ', b' (including comma before)
+        assert.deepStrictEqual(result.start, new Position(0, 6));
+        assert.deepStrictEqual(result.end, new Position(0, 9));
+    });
+
+    test('should include comma before last argument', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a, b, c)' });
+        // Position (0, 12): between 'c' and ')'
+        const position = new Position(0, 12);
+
+        const result = findCurrentArgument(doc, position, { includeComma: true });
+
+        assert.ok(result !== undefined);
+        // Should select ', c' (including comma before)
+        assert.deepStrictEqual(result.start, new Position(0, 9));
+        assert.deepStrictEqual(result.end, new Position(0, 12));
+    });
+
+    test('should handle single argument with includeComma', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'func(a)' });
+        // Position (0, 6): between 'a' and ')'
+        const position = new Position(0, 6);
+
+        const result = findCurrentArgument(doc, position, { includeComma: true });
+
+        assert.ok(result !== undefined);
+        // Should select just 'a' (no comma to include)
+        assert.deepStrictEqual(result.start, new Position(0, 5));
+        assert.deepStrictEqual(result.end, new Position(0, 6));
     });
 });

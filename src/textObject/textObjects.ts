@@ -2,6 +2,7 @@ import { Range } from 'vscode';
 import type { Motion } from '../motion/motionTypes';
 import {
     findAdjacentPosition,
+    findCurrentArgument,
     findDocumentEnd,
     findDocumentStart,
     findInsideBalancedPairs,
@@ -232,6 +233,29 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
                 const start = findDocumentStart(context.document);
                 const end = findDocumentEnd(context.document);
                 return new Range(start, end);
+            },
+        }),
+    );
+
+    // 引数テキストオブジェクト
+    textObjects.push(
+        // 内部引数（コンマを含まない）
+        newTextObject({
+            keys: ['i', 'a'],
+            compute: (context, position) => {
+                const range = findCurrentArgument(context.document, position);
+                if (!range) return new Range(position, position);
+                return range;
+            },
+        }),
+
+        // 周辺引数（コンマを含む）
+        newTextObject({
+            keys: ['a', 'a'],
+            compute: (context, position) => {
+                const range = findCurrentArgument(context.document, position, { includeComma: true });
+                if (!range) return new Range(position, position);
+                return range;
             },
         }),
     );
