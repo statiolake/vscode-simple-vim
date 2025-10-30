@@ -1,3 +1,4 @@
+import { Mutex } from 'await-semaphore';
 import * as vscode from 'vscode';
 import {
     type ConfigurationChangeEvent,
@@ -97,6 +98,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
     const vimState: VimState = {
         typeSubscriptions: [],
         statusBarItem,
+        actionMutex: new Mutex(),
         mode: 'insert',
         keysPressed: [],
         actions: buildActions(),

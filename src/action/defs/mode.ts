@@ -60,6 +60,7 @@ export function buildModeActions(): Action[] {
             modes: ['normal'],
             execute: async (context) => {
                 await vscode.commands.executeCommand('editor.action.insertLineAfter');
+                // await new Promise((resolve) => setTimeout(resolve, 1000));
                 enterMode(context.vimState, context.editor, 'insert');
             },
         }),

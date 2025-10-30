@@ -8,12 +8,17 @@ import { expandSelectionsToFullLines } from './utils/visualLine';
 import type { VimState } from './vimState';
 
 export async function enterMode(vimState: VimState, editor: TextEditor | undefined, mode: Mode): Promise<void> {
-    if (vimState.mode === mode) return;
+    const oldMode = vimState.mode;
 
+    // UI 関連は念のため常に再反映する
     vimState.mode = mode;
     updateModeContext(mode);
     updateCursorStyle(editor, mode);
     updateStatusBar(vimState, mode);
+
+    // ここから先の処理は重たく副作用も大きいので、モードが変わらなかった場合はスキップする
+    if (oldMode === mode) return;
+
     updateTypeHandler(vimState, mode);
 
     if (mode === 'normal' && editor) {
@@ -49,11 +54,13 @@ function updateTypeHandler(vimState: VimState, mode: Mode): void {
     if (mode === 'insert' && vimState.typeSubscriptions.length > 0) {
         for (const sub of vimState.typeSubscriptions) sub.dispose();
         vimState.typeSubscriptions = [];
+        // 入力バッファに溜まっているキーを再度 type コマンドで流す
+        vscode.commands.executeCommand('type', { text: vimState.keysPressed.join('') });
     } else if (vimState.typeSubscriptions.length === 0) {
         vimState.typeSubscriptions = [];
         vimState.typeSubscriptions.push(
             vscode.commands.registerCommand('type', (e) => {
-                typeHandler(vimState, e.text);
+                void typeHandler(vimState, e.text);
             }),
             vscode.commands.registerCommand('compositionStart', (_) => {
                 // composition 関連のイベントはすべて無視する

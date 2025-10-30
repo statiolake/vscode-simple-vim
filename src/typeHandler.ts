@@ -8,46 +8,56 @@ export async function typeHandler(vimState: VimState, char: string): Promise<voi
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
-    // In other modes, add to pressed keys and try to execute actions
-    vimState.keysPressed.push(char);
-
-    const context: Context = {
-        editor,
-        document: editor.document,
-        vimState,
-        commentConfigProvider: globalCommentConfigProvider,
-    };
-
-    // Try to execute an action
-    let executed = false;
-    let needsMore = false;
-
-    for (const action of vimState.actions) {
-        const result = await action(context, vimState.keysPressed);
-
-        if (result === 'executed') {
-            executed = true;
-            console.log('Action executed for keys:', vimState.keysPressed);
-            break;
-        } else if (result === 'needsMoreKey') {
-            needsMore = true;
+    // Use mutex to ensure no concurrent action executions
+    // Looking at the implementation, the mutex seems "fair" - requests are handled in order they arrive
+    await vimState.actionMutex.use(async () => {
+        if (vimState.mode === 'insert') {
+            // In Insert mode, directly type the character
+            await vscode.commands.executeCommand('type', { text: char });
+            return;
         }
-    }
 
-    // Debug logging
-    if (!executed && !needsMore) {
-        console.log('No action matched for keys:', vimState.keysPressed);
-    } else if (!executed && needsMore) {
-        console.log('Action needs more keys:', vimState.keysPressed);
-    }
+        // In other modes, add to pressed keys and try to execute actions
+        vimState.keysPressed.push(char);
 
-    if (executed) {
-        // If an action was executed, clear the keys
-        vimState.keysPressed = [];
-        console.log('cleared due to execution');
-    } else if (!needsMore) {
-        // No action matched and no action needs more input, clear the keys
-        vimState.keysPressed = [];
-        console.log('cleared due to no match');
-    }
+        const context: Context = {
+            editor,
+            document: editor.document,
+            vimState,
+            commentConfigProvider: globalCommentConfigProvider,
+        };
+
+        // Try to execute an action
+        let executed = false;
+        let needsMore = false;
+
+        for (const action of vimState.actions) {
+            const result = await action(context, vimState.keysPressed);
+
+            if (result === 'executed') {
+                executed = true;
+                console.log('Action executed for keys:', vimState.keysPressed);
+                break;
+            } else if (result === 'needsMoreKey') {
+                needsMore = true;
+            }
+        }
+
+        // Debug logging
+        if (!executed && !needsMore) {
+            console.log('No action matched for keys:', vimState.keysPressed);
+        } else if (!executed && needsMore) {
+            console.log('Action needs more keys:', vimState.keysPressed);
+        }
+
+        if (executed) {
+            // If an action was executed, clear the keys
+            vimState.keysPressed = [];
+            console.log('cleared due to execution');
+        } else if (!needsMore) {
+            // No action matched and no action needs more input, clear the keys
+            vimState.keysPressed = [];
+            console.log('cleared due to no match');
+        }
+    });
 }
