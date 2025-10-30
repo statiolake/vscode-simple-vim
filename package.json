@@ -19,7 +19,8 @@
     "Keymaps"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCommand:type"
   ],
   "main": "./out/extension",
   "contributes": {
