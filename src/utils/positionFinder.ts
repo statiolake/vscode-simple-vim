@@ -59,7 +59,7 @@ export function findNearerPosition(
  * 次の行の先頭を探す
  */
 export function findNextLineStart(document: TextDocument, position: Position): Position {
-    const nextLine = document.lineAt(position.line + 1);
+    const nextLine = document.lineAt(Math.min(document.lineCount, position.line + 1));
     return nextLine.range.start;
 }
 
