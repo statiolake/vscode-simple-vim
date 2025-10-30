@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { Range, type TextDocument } from 'vscode';
 import type { Context } from '../../context';
 import { enterMode } from '../../modes';
@@ -94,6 +95,12 @@ export function buildOperatorActions(
                     }
                 });
                 await enterMode(context.vimState, context.editor, 'insert');
+                if (matches[0].isLinewise) {
+                    // なぜか一回につき一つしかインデントしてくれないので回数分呼び出す
+                    for (let i = 0; i < matches.length; i++) {
+                        await vscode.commands.executeCommand('editor.action.reindentselectedlines');
+                    }
+                }
             },
         }),
         newAction({
