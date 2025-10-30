@@ -651,6 +651,58 @@ suite('findCurrentArgument', () => {
         assert.deepStrictEqual(result.end, new Position(0, 16));
     });
 
+    test('should handle cursor in outer argument containing nested call at function name', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'foo(bar(), baz, qux)' });
+        // Position (0, 6): at 'r' in 'bar()'
+        const position = new Position(0, 6);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'bar()' only, not all arguments
+        assert.deepStrictEqual(result.start, new Position(0, 4));
+        assert.deepStrictEqual(result.end, new Position(0, 9));
+    });
+
+    test('should handle cursor in outer argument containing nested call at opening paren', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'foo(bar(), baz, qux)' });
+        // Position (0, 7): at '(' in 'bar()'
+        const position = new Position(0, 7);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'bar()' only
+        assert.deepStrictEqual(result.start, new Position(0, 4));
+        assert.deepStrictEqual(result.end, new Position(0, 9));
+    });
+
+    test('should handle second argument after nested call', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'foo(bar(), baz, qux)' });
+        // Position (0, 12): at 'a' in 'baz'
+        const position = new Position(0, 12);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'baz' only
+        assert.deepStrictEqual(result.start, new Position(0, 11));
+        assert.deepStrictEqual(result.end, new Position(0, 14));
+    });
+
+    test('should handle multiple nested calls in different arguments', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'foo(bar(1), baz(2), qux)' });
+        // Position (0, 13): at 'a' in 'baz(2)'
+        const position = new Position(0, 13);
+
+        const result = findCurrentArgument(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should select 'baz(2)' only
+        assert.deepStrictEqual(result.start, new Position(0, 12));
+        assert.deepStrictEqual(result.end, new Position(0, 18));
+    });
+
     test('should return undefined if cursor is outside parentheses', async () => {
         const doc = await vscode.workspace.openTextDocument({ content: 'func(a, b)' });
         // Position (0, 0): before 'f' (outside parentheses)

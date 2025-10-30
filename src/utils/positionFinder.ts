@@ -435,10 +435,16 @@ export function findCurrentArgument(
         // 開き括弧/角括弧/中括弧があればその中身もスキップ
         if (char === '(' || char === '[' || char === '{') {
             const closeChar = char === '(' ? ')' : char === '[' ? ']' : '}';
-            const innerRange = findInsideBalancedPairs(document, document.positionAt(startOffset + i), char, closeChar);
-            if (innerRange) {
-                i = document.offsetAt(innerRange.end) - startOffset;
-            } else {
+            // ネストした括弧を手動でカウントしてスキップ
+            let depth = 1;
+            i++; // 開き括弧の次から開始
+            while (i < insideText.length && depth > 0) {
+                const nextChar = insideText[i];
+                if (nextChar === char) {
+                    depth++;
+                } else if (nextChar === closeChar) {
+                    depth--;
+                }
                 i++;
             }
             continue;
