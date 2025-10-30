@@ -23,8 +23,14 @@ export function newMotion(config: {
             return { result: 'needsMoreKey' };
         }
 
-        const newPosition = config.compute(context, position);
-        return { result: 'match', position: newPosition, remainingKeys: parseResult.remainingKeys };
+        const requestedPosition = config.compute(context, position);
+        const newPosition = context.document.validatePosition(requestedPosition);
+        if (newPosition.character !== requestedPosition.character) {
+            context.vimState.keptColumn = requestedPosition.character;
+        } else {
+            context.vimState.keptColumn = null;
+        }
+        return { result: 'match', position: requestedPosition, remainingKeys: parseResult.remainingKeys };
     };
 }
 

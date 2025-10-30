@@ -104,6 +104,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
             contents: [],
             lastClipboardText: '',
         },
+        keptColumn: null,
         lastFt: undefined,
     };
 

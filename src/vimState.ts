@@ -17,6 +17,7 @@ export type VimState = {
         lastClipboardText: string;
     };
 
+    keptColumn: number | null;
     lastFt:
         | {
               character: string;

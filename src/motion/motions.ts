@@ -68,7 +68,7 @@ export function buildMotions(): Motion[] {
             keys: ['j'],
             compute: (context, position) => {
                 if (position.line + 1 < context.document.lineCount) {
-                    return new Position(position.line + 1, position.character);
+                    return new Position(position.line + 1, context.vimState.keptColumn ?? position.character);
                 }
                 return position;
             },
@@ -78,9 +78,9 @@ export function buildMotions(): Motion[] {
     motions.push(
         newMotion({
             keys: ['k'],
-            compute: (_context, position) => {
+            compute: (context, position) => {
                 if (position.line > 0) {
-                    return new Position(position.line - 1, position.character);
+                    return new Position(position.line - 1, context.vimState.keptColumn ?? position.character);
                 }
                 return position;
             },
