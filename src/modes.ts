@@ -54,8 +54,6 @@ function updateTypeHandler(vimState: VimState, mode: Mode): void {
     if (mode === 'insert' && vimState.typeSubscriptions.length > 0) {
         for (const sub of vimState.typeSubscriptions) sub.dispose();
         vimState.typeSubscriptions = [];
-        // 入力バッファに溜まっているキーを再度 type コマンドで流す
-        vscode.commands.executeCommand('type', { text: vimState.keysPressed.join('') });
     } else if (vimState.typeSubscriptions.length === 0) {
         vimState.typeSubscriptions = [];
         vimState.typeSubscriptions.push(

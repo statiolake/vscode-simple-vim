@@ -81,11 +81,6 @@
         "when": "editorTextFocus && waltz.mode != 'insert'"
       },
       {
-        "key": "enter",
-        "command": "waltz.noop",
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
         "key": "tab",
         "command": "waltz.noop",
         "when": "editorTextFocus && waltz.mode != 'insert'"

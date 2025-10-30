@@ -12,6 +12,7 @@ export type VimState = {
     actionMutex: Mutex;
 
     mode: Mode;
+    keysQueued: string[];
     keysPressed: string[];
     actions: Action[];
     register: {

@@ -100,6 +100,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         statusBarItem,
         actionMutex: new Mutex(),
         mode: 'insert',
+        keysQueued: [],
         keysPressed: [],
         actions: buildActions(),
         register: {
