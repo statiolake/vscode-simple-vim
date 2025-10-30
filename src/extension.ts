@@ -46,12 +46,18 @@ async function onSelectionChange(vimState: VimState, e: TextEditorSelectionChang
         await enterMode(vimState, e.textEditor, 'visual');
     }
 
-    // 選択範囲の先頭が表示されるようにスクロールする
-    // マルチカーソルの場合、最後のカーソル位置を reveal したいので最後のカーソルを見る
-    const lastSelection = e.selections[e.selections.length - 1];
-    // VisualLine モードの場合、通常行末にカーソルがあるが目線は行頭にあってほしいので、行頭を見る
-    const focusAt = vimState.mode === 'visualLine' ? lastSelection.active.with({ character: 0 }) : lastSelection.active;
-    e.textEditor.revealRange(new Range(focusAt, focusAt));
+    if (e.kind !== vscode.TextEditorSelectionChangeKind.Mouse) {
+        // マウスでない場合は選択範囲の先頭が表示されるようにスクロールする
+        // マウスの場合は、reveal によって勝手にスクロールされると画面上部の単語をダブルクリックしたいときに困るため除外
+        // している。
+
+        // マルチカーソルの場合、最後のカーソル位置を reveal したいので最後のカーソルを見る
+        const lastSelection = e.selections[e.selections.length - 1];
+        // VisualLine モードの場合、通常行末にカーソルがあるが目線は行頭にあってほしいので、行頭を見る
+        const focusAt =
+            vimState.mode === 'visualLine' ? lastSelection.active.with({ character: 0 }) : lastSelection.active;
+        e.textEditor.revealRange(new Range(focusAt, focusAt));
+    }
 }
 
 async function onDidChangeActiveTextEditor(vimState: VimState, editor: TextEditor | undefined): Promise<void> {
