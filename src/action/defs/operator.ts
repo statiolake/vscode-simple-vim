@@ -1,4 +1,4 @@
-import { Range } from 'vscode';
+import { Range, type TextDocument } from 'vscode';
 import type { Context } from '../../context';
 import { enterMode } from '../../modes';
 import { setRegisterContents } from '../../register';
@@ -128,7 +128,7 @@ export function buildOperatorActions(
             keys: ['d'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                const ranges = adjustSelectionRangeForVisualLine(context);
+                const ranges = getAdjustedSelectionRangesIfVisualLine(context);
                 const contents = ranges.map((range) => ({
                     text: context.document.getText(range),
                     isLinewise: context.vimState.mode === 'visualLine',
@@ -149,7 +149,7 @@ export function buildOperatorActions(
             keys: ['y'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                const ranges = adjustSelectionRangeForVisualLine(context);
+                const ranges = getAdjustedSelectionRangesIfVisualLine(context);
                 const contents = ranges.map((range) => ({
                     text: context.document.getText(range),
                     isLinewise: context.vimState.mode === 'visualLine',
@@ -166,7 +166,7 @@ export function buildOperatorActions(
             keys: ['c'],
             modes: ['visual', 'visualLine'],
             execute: async (context) => {
-                const ranges = adjustSelectionRangeForVisualLine(context);
+                const ranges = getAdjustedSelectionRangesIfVisualLine(context);
                 const contents = ranges.map((range) => ({
                     text: context.document.getText(range),
                     isLinewise: context.vimState.mode === 'visualLine',
@@ -194,12 +194,15 @@ export function buildOperatorActions(
     return actions;
 }
 
-const adjustSelectionRangeForVisualLine = (context: Context) => {
+export const adjustRangeForVisualLine = (document: TextDocument, range: Range): Range => {
+    // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
+    return new Range(range.start, findNextLineStart(document, range.end));
+};
+
+const getAdjustedSelectionRangesIfVisualLine = (context: Context) => {
     return context.editor.selections.map((selection) => {
         if (context.vimState.mode === 'visualLine') {
-            // Visual Line モードは行末までしか選択しないので改行が含まれず、直接追加する必要がある
-            const end = findNextLineStart(context.document, selection.end);
-            return new Range(selection.start, end);
+            return adjustRangeForVisualLine(context.document, selection);
         } else {
             return selection;
         }

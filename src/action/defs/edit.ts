@@ -10,6 +10,7 @@ import {
 } from '../../utils/positionFinder';
 import { newAction, newRegexAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
+import { adjustRangeForVisualLine } from './operator';
 
 /**
  * 編集アクション
@@ -70,7 +71,11 @@ export function buildEditActions(): Action[] {
                             editBuilder.insert(insertPos, insertText);
                         } else {
                             // 通常: 選択範囲位置に挿入
-                            editBuilder.replace(selection, content.text);
+                            const range =
+                                context.vimState.mode === 'visualLine'
+                                    ? adjustRangeForVisualLine(context.document, selection)
+                                    : selection;
+                            editBuilder.replace(range, content.text);
                             replaces.push({
                                 range: OffsetRange.fromRange(context.document, selection),
                                 newText: content.text,
@@ -133,8 +138,12 @@ export function buildEditActions(): Action[] {
                             });
                             editBuilder.insert(insertPos, insertText);
                         } else {
-                            // 通常: カーソル位置に挿入
-                            editBuilder.replace(selection, content.text);
+                            // 通常: 選択範囲位置に挿入
+                            const range =
+                                context.vimState.mode === 'visualLine'
+                                    ? adjustRangeForVisualLine(context.document, selection)
+                                    : selection;
+                            editBuilder.replace(range, content.text);
                             replaces.push({
                                 range: OffsetRange.fromRange(context.document, selection),
                                 newText: content.text,
