@@ -22,9 +22,9 @@ import type { VimState } from './vimState';
 // グローバルな CommentConfigProvider（起動時に一度だけ初期化）
 export let globalCommentConfigProvider: CommentConfigProvider;
 
-async function onSelectionChange(vimState: VimState, e: TextEditorSelectionChangeEvent): Promise<void> {
-    // マウスで吹っ飛んだ後適当に入力したらキーコンビネーションとして認識されたとかはうれしくないので、入力されたキーは
-    // リセットする。
+async function onDidChangeTextEditorSelection(vimState: VimState, e: TextEditorSelectionChangeEvent): Promise<void> {
+    // マウスで吹っ飛んだ後適当に入力したらキーコンビネーションとして認識されたとかはうれしくないので、選択範囲が変更さ
+    // れたら入力されたキーはリセットする。
     vimState.keysPressed = [];
 
     const allEmpty = e.selections.every((selection) => selection.isEmpty);
@@ -32,11 +32,12 @@ async function onSelectionChange(vimState: VimState, e: TextEditorSelectionChang
         // マウスによる選択解除の場合はノーマルモードに戻る
         await enterMode(vimState, e.textEditor, 'normal');
     } else if (allEmpty && vimState.mode !== 'insert') {
-        // 選択範囲が無になった場合は、ノーマルモードに戻る。この条件だとVisualモードにいて移動したあと逆方向に動かして
-        // 選択範囲が無になったときもノーマルモードに戻るが、まあ良しとする。というのは、VS Code がundoなどの組み込みコ
-        // マンドが一時的に非空の選択範囲を作成することがあり、最終的には空になるものの、そこでノーマルモードに戻れるよ
-        // うにしなければならないから。しかし、それらもあくまでも「コマンドによる選択範囲変更」であり、このハンドラ内で
-        // は vlh のケースと区別がつかない。 vlh などは比較的登場頻度が低いことを考えると、これでいいんじゃないか。
+        // 選択範囲が無になった場合は、ノーマルモードに戻る。この条件だと visual モードにいて移動したあと逆方向に動かし
+        // て選択範囲が無になったときもノーマルモードに戻るが、まあ良しとする。というのは、VS Code が undo などの組み込
+        // みコマンドが一時的に非空の選択範囲を作成することがあるのだ。最終的には空になるものの、途中で非空の選択範囲が
+        // 作られた瞬間 visual モードに移行してしまうので、最後の空になった瞬間にノーマルモードに戻れるようにしない
+        // と、undo 後に勝手に visual モードになっているなどの不便が生じる。ただ当然ながら、そのようなケースと `vlh` は
+        // 区別がつかないので、`vlh` の方が若干違和感を生じるのは避けられなかった。
         await enterMode(vimState, e.textEditor, 'normal');
     } else if (vimState.mode === 'visualLine') {
         // Visual Line モードでは、選択範囲を行全体に拡張する
@@ -64,11 +65,9 @@ async function onDidChangeActiveTextEditor(vimState: VimState, editor: TextEdito
     if (!editor) return;
 
     if (editor.selections.every((selection) => selection.isEmpty)) {
-        if (vimState.mode === 'visual' || vimState.mode === 'visualLine') await enterMode(vimState, editor, 'normal');
+        await enterMode(vimState, editor, 'normal');
     } else {
-        if (vimState.mode === 'normal') {
-            await enterMode(vimState, editor, 'visual');
-        }
+        await enterMode(vimState, editor, 'visual');
     }
 
     vimState.keysPressed = [];
@@ -119,7 +118,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor((editor) => onDidChangeActiveTextEditor(vimState, editor)),
-        vscode.window.onDidChangeTextEditorSelection((e) => onSelectionChange(vimState, e)),
+        vscode.window.onDidChangeTextEditorSelection((e) => onDidChangeTextEditorSelection(vimState, e)),
         vscode.workspace.onDidChangeConfiguration((e) => onDidChangeConfiguration(vimState, e)),
         vscode.commands.registerCommand('waltz.escapeKey', async () => {
             await vscode.commands.executeCommand('hideSuggestWidget');
