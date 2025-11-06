@@ -488,14 +488,13 @@ export function findCurrentArgument(
     let finalEnd = argEndInside;
 
     if (opts?.includeComma) {
-        const documentText = document.getText();
         const startOffsetInDoc = startOffset + argStartInside;
         const endOffsetInDoc = startOffset + argEndInside;
 
         // 前にコンマがあるかチェック
         let hasCommaBefore = false;
         for (let i = startOffsetInDoc - 1; i >= 0; i--) {
-            const char = documentText[i];
+            const char = getTextOfOffsetRange(document, i, i + 1);
             if (char === ',') {
                 hasCommaBefore = true;
                 finalStart = i - startOffset;
@@ -509,8 +508,12 @@ export function findCurrentArgument(
 
         // 前にコンマがなければ（第一引数）、後ろのコンマを含める
         if (!hasCommaBefore) {
-            for (let i = endOffsetInDoc; i < documentText.length; i++) {
-                const char = documentText[i];
+            for (
+                let i = endOffsetInDoc;
+                i < document.offsetAt(document.lineAt(document.lineCount - 1).range.end);
+                i++
+            ) {
+                const char = getTextOfOffsetRange(document, i, i + 1);
                 if (char === ',') {
                     finalEnd = i + 1 - startOffset;
                     break;
