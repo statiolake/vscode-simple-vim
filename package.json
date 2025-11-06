@@ -52,11 +52,6 @@
         "when": "textInputFocus && !editorReadonly"
       },
       {
-        "key": "ctrl+w",
-        "command": "deleteWordLeft",
-        "when": "textInputFocus && !editorReadonly && waltz.mode == 'insert'"
-      },
-      {
         "key": "backspace",
         "command": "waltz.noop",
         "when": "editorTextFocus && waltz.mode != 'insert'"
