@@ -31,11 +31,6 @@
         "when": "editorTextFocus"
       },
       {
-        "key": "ctrl+r",
-        "command": "redo",
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
         "key": "ctrl+d",
         "command": "waltz.send",
         "args": {
@@ -55,16 +50,6 @@
         "key": "ctrl+o",
         "command": "-lineBreakInsert",
         "when": "textInputFocus && !editorReadonly"
-      },
-      {
-        "key": "ctrl+o",
-        "command": "workbench.action.navigateBack",
-        "when": "editorTextFocus && waltz.mode == 'normal'"
-      },
-      {
-        "key": "ctrl+i",
-        "command": "workbench.action.navigateForward",
-        "when": "editorTextFocus && waltz.mode == 'normal'"
       },
       {
         "key": "ctrl+w",

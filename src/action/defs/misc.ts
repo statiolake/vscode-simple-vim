@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { enterMode } from '../../modes';
 import { newAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
 
@@ -8,16 +7,6 @@ import type { Action } from '../actionTypes';
  */
 export function buildMiscActions(): Action[] {
     return [
-        // u - アンドゥ
-        newAction({
-            keys: ['u'],
-            modes: ['normal', 'visual', 'visualLine'],
-            execute: async (context) => {
-                await vscode.commands.executeCommand('undo');
-                enterMode(context.vimState, context.editor, 'normal');
-            },
-        }),
-
         // gj - 画面上一つ下の行へ移動（折り返し行を考慮）
         newAction({
             keys: ['g', 'j'],
