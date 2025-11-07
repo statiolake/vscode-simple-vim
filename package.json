@@ -240,6 +240,7 @@
     "format": "eslint src --ext ts --fix && biome check --write",
     "prepare": "husky",
     "package": "vsce package",
+    "publish": "vsce publish",
     "pretest": "npm run compile && npm run lint",
     "test": "vscode-test"
   },
