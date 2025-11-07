@@ -123,6 +123,16 @@ export async function activate(context: ExtensionContext): Promise<void> {
         // 保存する前にはノーマルモードに戻る - 本当は別に保存に限る必要はないが、「保存」という操作がある一定の処理の完
         // 了を意味するため。
         vscode.workspace.onWillSaveTextDocument(() => enterMode(vimState, vscode.window.activeTextEditor, 'normal')),
+        vscode.workspace.onDidChangeTextDocument((e) => {
+            // ドキュメントが Undo, Redo によって変更された場合、ノーマルモードへ戻る
+            if (
+                e.reason !== vscode.TextDocumentChangeReason.Undo &&
+                e.reason !== vscode.TextDocumentChangeReason.Redo
+            ) {
+                return;
+            }
+            enterMode(vimState, vscode.window.activeTextEditor, 'normal');
+        }),
         vscode.commands.registerCommand('waltz.escapeKey', async () => {
             await vscode.commands.executeCommand('hideSuggestWidget');
             await escapeHandler(vimState);
