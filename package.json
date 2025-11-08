@@ -2,7 +2,7 @@
   "name": "waltz",
   "displayName": "Waltz",
   "description": "Graceful modal editing for VS Code. A Vim-inspired editor with VS Code-native selection handling.",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "license": "MIT",
   "publisher": "statiolake",
   "repository": {
