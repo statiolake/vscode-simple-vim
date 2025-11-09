@@ -31,11 +31,6 @@
         "when": "editorTextFocus"
       },
       {
-        "key": "ctrl+o",
-        "command": "-lineBreakInsert",
-        "when": "textInputFocus && !editorReadonly"
-      },
-      {
         "key": "backspace",
         "command": "waltz.noop",
         "when": "editorTextFocus && waltz.mode != 'insert'"
@@ -57,7 +52,7 @@
         "linux": "ctrl+c",
         "command": "waltz.send",
         "args": {
-          "keys": "<D-c>"
+          "keys": ["<D-c>"]
         },
         "when": "editorTextFocus && waltz.mode != 'insert'"
       },
@@ -68,7 +63,7 @@
         "linux": "ctrl+x",
         "command": "waltz.send",
         "args": {
-          "keys": "<D-x>"
+          "keys": ["<D-x>"]
         },
         "when": "editorTextFocus && waltz.mode != 'insert'"
       },
@@ -79,7 +74,7 @@
         "linux": "ctrl+v",
         "command": "waltz.send",
         "args": {
-          "keys": "<D-v>"
+          "keys": ["<D-v>"]
         },
         "when": "editorTextFocus && waltz.mode != 'insert'"
       }
