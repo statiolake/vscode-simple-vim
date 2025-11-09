@@ -362,6 +362,77 @@ Extend Waltz with custom key bindings via the `waltz.customBindings` setting:
 
 Custom bindings are checked before default bindings, allowing you to override built-in mappings.
 
+### Customizable Keybindings
+
+Many of Waltz's actions use symbolic keybindings that can be remapped via your VS Code `keybindings.json`. This allows you to customize frequently-used actions without modifying the extension itself.
+
+#### Page Navigation
+
+Default mappings for half-page movement can be customized:
+
+```json
+{
+    "key": "ctrl+d",
+    "command": "waltz.send",
+    "args": {
+        "keys": "<Waltz>half-page-down"
+    },
+    "when": "editorTextFocus && waltz.mode != 'insert'"
+},
+{
+    "key": "ctrl+u",
+    "command": "waltz.send",
+    "args": {
+        "keys": "<Waltz>half-page-up"
+    },
+    "when": "editorTextFocus && waltz.mode != 'insert'"
+}
+```
+
+You can remap these to different keys by modifying the `"key"` field. The action names (`<Waltz>half-page-down`, `<Waltz>half-page-up`) remain the same.
+
+#### Clipboard Operations
+
+Copy, cut, and paste operations can be customized:
+
+```json
+{
+    "mac": "cmd+c",
+    "win": "ctrl+c",
+    "linux": "ctrl+c",
+    "command": "waltz.send",
+    "args": {
+        "keys": "<Waltz>copy"
+    },
+    "when": "editorTextFocus && waltz.mode != 'insert'"
+},
+{
+    "mac": "cmd+x",
+    "win": "ctrl+x",
+    "linux": "ctrl+x",
+    "command": "waltz.send",
+    "args": {
+        "keys": "<Waltz>cut"
+    },
+    "when": "editorTextFocus && waltz.mode != 'insert'"
+},
+{
+    "mac": "cmd+v",
+    "win": "ctrl+v",
+    "linux": "ctrl+v",
+    "command": "waltz.send",
+    "args": {
+        "keys": "<Waltz>paste"
+    },
+    "when": "editorTextFocus && waltz.mode != 'insert'"
+}
+```
+
+The available actions are:
+- `<Waltz>copy` - Copy (yank) selection or line
+- `<Waltz>cut` - Cut (delete) selection or line
+- `<Waltz>paste` - Paste from clipboard
+
 ## Tips & Tricks
 
 ### Navigate with Multiple Cursors
