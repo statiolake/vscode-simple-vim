@@ -371,10 +371,10 @@ export function buildMotions(): Motion[] {
         }),
     );
 
-    // <C-d> - 半ページ下へ移動
+    // <Waltz>half-page-down - 半ページ下へ移動
     motions.push(
         newMotion({
-            keys: ['<C-d>'],
+            keys: ['<Waltz>half-page-down'],
             compute: (context, position) => {
                 const editor = context.editor;
                 const visibleRanges = editor.visibleRanges;
@@ -393,10 +393,10 @@ export function buildMotions(): Motion[] {
         }),
     );
 
-    // <C-u> - 半ページ上へ移動
+    // <Waltz>half-page-up - 半ページ上へ移動
     motions.push(
         newMotion({
-            keys: ['<C-u>'],
+            keys: ['<Waltz>half-page-up'],
             compute: (context, position) => {
                 const editor = context.editor;
                 const visibleRanges = editor.visibleRanges;

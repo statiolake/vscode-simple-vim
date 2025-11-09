@@ -19,9 +19,18 @@ export async function typeHandler(vimState: VimState, char: string): Promise<voi
             // 原則的には一文字ずつ処理するが、直前の動作で insert mode に入った場合、Pending しているすべてのキー入力を
             // 一文字ずつ入力してしまうと後続の type と順番が入れ替わってしまったりするので、そのリスクを最小化するため
             // にまとめて一気に単なる入力として渡してしまう。残念ながら完璧ではないが...
-            await vscode.commands.executeCommand('type', {
-                text: vimState.keysPressed.join('') + vimState.keysQueued.join(''),
-            });
+            const text = [...vimState.keysPressed, ...vimState.keysQueued]
+                .filter((key) => {
+                    // <Waltz> や <C- <A- <D- などで始まるキーは特殊キーなので、文字として入力しない。
+                    return (
+                        !key.startsWith('<Waltz>') &&
+                        !key.startsWith('<C-') &&
+                        !key.startsWith('<A-') &&
+                        !key.startsWith('<D-')
+                    );
+                })
+                .join('');
+            await vscode.commands.executeCommand('type', { text });
             vimState.keysPressed = [];
             vimState.keysQueued = [];
             return;

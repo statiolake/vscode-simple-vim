@@ -31,22 +31,6 @@
         "when": "editorTextFocus"
       },
       {
-        "key": "ctrl+d",
-        "command": "waltz.send",
-        "args": {
-          "keys": "<C-d>"
-        },
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
-        "key": "ctrl+u",
-        "command": "waltz.send",
-        "args": {
-          "keys": "<C-u>"
-        },
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
         "key": "ctrl+o",
         "command": "-lineBreakInsert",
         "when": "textInputFocus && !editorReadonly"
