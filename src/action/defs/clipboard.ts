@@ -12,7 +12,7 @@ export function buildClipboardActions(): Action[] {
     // Cmd+C - Normal mode: 行全体をyank (yy相当)
     actions.push(
         newAction({
-            keys: ['<D-c>'],
+            keys: ['<Waltz>copy'],
             modes: ['normal'],
             execute: async (context: Context) => {
                 await delegateAction(context.vimState.actions, context, ['y', 'y']);
@@ -23,7 +23,7 @@ export function buildClipboardActions(): Action[] {
     // Cmd+C - Visual/VisualLine mode: 選択範囲をyank (y相当)
     actions.push(
         newAction({
-            keys: ['<D-c>'],
+            keys: ['<Waltz>copy'],
             modes: ['visual', 'visualLine'],
             execute: async (context: Context) => {
                 await delegateAction(context.vimState.actions, context, ['y']);
@@ -34,7 +34,7 @@ export function buildClipboardActions(): Action[] {
     // Cmd+X - Normal mode: 行全体をカット (dd相当)
     actions.push(
         newAction({
-            keys: ['<D-x>'],
+            keys: ['<Waltz>cut'],
             modes: ['normal'],
             execute: async (context: Context) => {
                 await delegateAction(context.vimState.actions, context, ['d', 'd']);
@@ -45,7 +45,7 @@ export function buildClipboardActions(): Action[] {
     // Cmd+X - Visual/VisualLine mode: 選択範囲をカット (d相当)
     actions.push(
         newAction({
-            keys: ['<D-x>'],
+            keys: ['<Waltz>cut'],
             modes: ['visual', 'visualLine'],
             execute: async (context: Context) => {
                 await delegateAction(context.vimState.actions, context, ['d']);
@@ -56,7 +56,7 @@ export function buildClipboardActions(): Action[] {
     // Cmd+V - Normal/Visual/VisualLine mode: ペースト (p相当)
     actions.push(
         newAction({
-            keys: ['<D-v>'],
+            keys: ['<Waltz>paste'],
             modes: ['normal', 'visual', 'visualLine'],
             execute: async (context: Context) => {
                 await delegateAction(context.vimState.actions, context, ['p']);

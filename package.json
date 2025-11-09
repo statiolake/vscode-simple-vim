@@ -52,7 +52,7 @@
                 "command": "waltz.send",
                 "args": {
                     "keys": [
-                        "<D-c>"
+                        "<Waltz>copy"
                     ]
                 },
                 "when": "editorTextFocus && waltz.mode != 'insert'"
@@ -64,7 +64,7 @@
                 "command": "waltz.send",
                 "args": {
                     "keys": [
-                        "<D-x>"
+                        "<Waltz>cut"
                     ]
                 },
                 "when": "editorTextFocus && waltz.mode != 'insert'"
@@ -76,7 +76,7 @@
                 "command": "waltz.send",
                 "args": {
                     "keys": [
-                        "<D-v>"
+                        "<Waltz>paste"
                     ]
                 },
                 "when": "editorTextFocus && waltz.mode != 'insert'"

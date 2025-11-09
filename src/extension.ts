@@ -140,11 +140,13 @@ export async function activate(context: ExtensionContext): Promise<void> {
         vscode.commands.registerCommand('waltz.noop', () => {
             // Do nothing - used to ignore keys in certain modes
         }),
-        vscode.commands.registerCommand('waltz.send', async (args: { keys: string[] }) => {
-            if (!args || !args.keys) {
-                console.error('waltz.send: keys argument is required');
+        vscode.commands.registerCommand('waltz.send', async (args: unknown) => {
+            // バリデーション
+            if (!args || typeof args !== 'object' || !('keys' in args) || !Array.isArray(args.keys)) {
+                console.error('waltz.send: keys argument must be an array');
                 return;
             }
+
             for (const char of args.keys) {
                 await typeHandler(vimState, char);
             }
