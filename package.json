@@ -1,252 +1,386 @@
 {
-  "name": "waltz",
-  "displayName": "Waltz",
-  "description": "Graceful modal editing for VS Code. A Vim-inspired editor with VS Code-native selection handling.",
-  "version": "0.6.9",
-  "license": "MIT",
-  "publisher": "statiolake",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/statiolake/vscode-waltz.git"
-  },
-  "engines": {
-    "vscode": "^1.75.0"
-  },
-  "extensionKind": [
-    "ui"
-  ],
-  "categories": [
-    "Keymaps"
-  ],
-  "activationEvents": [
-    "onStartupFinished",
-    "onCommand:type"
-  ],
-  "main": "./out/extension",
-  "contributes": {
-    "keybindings": [
-      {
-        "key": "Escape",
-        "command": "waltz.escapeKey",
-        "when": "editorTextFocus"
-      },
-      {
-        "key": "backspace",
-        "command": "waltz.noop",
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
-        "key": "delete",
-        "command": "waltz.noop",
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
-        "key": "tab",
-        "command": "waltz.noop",
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
-        "key": "cmd+c",
-        "mac": "cmd+c",
-        "win": "ctrl+c",
-        "linux": "ctrl+c",
-        "command": "waltz.send",
-        "args": {
-          "keys": ["<D-c>"]
-        },
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
-        "key": "cmd+x",
-        "mac": "cmd+x",
-        "win": "ctrl+x",
-        "linux": "ctrl+x",
-        "command": "waltz.send",
-        "args": {
-          "keys": ["<D-x>"]
-        },
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      },
-      {
-        "key": "cmd+v",
-        "mac": "cmd+v",
-        "win": "ctrl+v",
-        "linux": "ctrl+v",
-        "command": "waltz.send",
-        "args": {
-          "keys": ["<D-v>"]
-        },
-        "when": "editorTextFocus && waltz.mode != 'insert'"
-      }
+    "name": "waltz",
+    "displayName": "Waltz",
+    "description": "Graceful modal editing for VS Code. A Vim-inspired editor with VS Code-native selection handling.",
+    "version": "0.6.9",
+    "license": "MIT",
+    "publisher": "statiolake",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/statiolake/vscode-waltz.git"
+    },
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "extensionKind": [
+        "ui"
     ],
-    "configuration": {
-      "type": "object",
-      "title": "Waltz Configuration",
-      "properties": {
-        "waltz.customBindings": {
-          "type": "array",
-          "default": [],
-          "description": "Custom key bindings that execute VSCode commands.",
-          "items": {
-            "type": "object",
-            "required": [
-              "keys",
-              "commands"
-            ],
-            "properties": {
-              "keys": {
-                "type": "array",
-                "description": "Key sequence to trigger the commands (e.g., [\"g\", \"d\"]).",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "modes": {
-                "type": "array",
-                "description": "Vim modes where this binding is active. If not specified, applies to all modes.",
-                "items": {
-                  "type": "string",
-                  "enum": [
-                    "normal",
-                    "visual",
-                    "visualLine",
-                    "insert"
-                  ]
-                }
-              },
-              "commands": {
-                "type": "array",
-                "description": "Array of VSCode commands to execute sequentially.",
-                "items": {
-                  "type": "object",
-                  "required": [
-                    "command"
-                  ],
-                  "properties": {
-                    "command": {
-                      "type": "string",
-                      "description": "VSCode command to execute (e.g., \"editor.action.revealDefinition\")."
-                    },
-                    "args": {
-                      "description": "Optional arguments to pass to the command."
-                    }
-                  }
-                }
-              }
+    "categories": [
+        "Keymaps"
+    ],
+    "activationEvents": [
+        "onStartupFinished",
+        "onCommand:type"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "keybindings": [
+            {
+                "key": "Escape",
+                "command": "waltz.escapeKey",
+                "when": "editorTextFocus"
+            },
+            {
+                "key": "backspace",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "key": "delete",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "key": "tab",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "cmd+c",
+                "win": "ctrl+c",
+                "linux": "ctrl+c",
+                "command": "waltz.send",
+                "args": {
+                    "keys": [
+                        "<D-c>"
+                    ]
+                },
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "cmd+x",
+                "win": "ctrl+x",
+                "linux": "ctrl+x",
+                "command": "waltz.send",
+                "args": {
+                    "keys": [
+                        "<D-x>"
+                    ]
+                },
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "cmd+v",
+                "win": "ctrl+v",
+                "linux": "ctrl+v",
+                "command": "waltz.send",
+                "args": {
+                    "keys": [
+                        "<D-v>"
+                    ]
+                },
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+
+            {
+                "mac": "ctrl+a",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+b",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+c",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+d",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+e",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+f",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+g",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+h",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+i",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+j",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+k",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+l",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+m",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+n",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+o",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+p",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+q",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+r",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+s",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+t",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+u",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+v",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+w",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+x",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+y",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
+            },
+            {
+                "mac": "ctrl+z",
+                "command": "waltz.noop",
+                "when": "editorTextFocus && waltz.mode != 'insert'"
             }
-          }
-        },
-        "waltz.cursorStyle.normal": {
-          "type": "string",
-          "default": "line",
-          "description": "Cursor style in normal mode.",
-          "enum": [
-            "block",
-            "block-outline",
-            "line",
-            "line-thin",
-            "underline",
-            "underline-thin"
-          ]
-        },
-        "waltz.cursorStyle.insert": {
-          "type": "string",
-          "default": "line-thin",
-          "description": "Cursor style in insert mode.",
-          "enum": [
-            "block",
-            "block-outline",
-            "line",
-            "line-thin",
-            "underline",
-            "underline-thin"
-          ]
-        },
-        "waltz.cursorStyle.visual": {
-          "type": "string",
-          "default": "line-thin",
-          "description": "Cursor style in visual mode.",
-          "enum": [
-            "block",
-            "block-outline",
-            "line",
-            "line-thin",
-            "underline",
-            "underline-thin"
-          ]
-        },
-        "waltz.cursorStyle.visualLine": {
-          "type": "string",
-          "default": "line-thin",
-          "description": "Cursor style in visual line mode.",
-          "enum": [
-            "block",
-            "block-outline",
-            "line",
-            "line-thin",
-            "underline",
-            "underline-thin"
-          ]
-        },
-        "waltz.modeDisplay.normal.label": {
-          "type": "string",
-          "default": "-- NORMAL --",
-          "description": "Display text for normal mode in the status bar."
-        },
-        "waltz.modeDisplay.insert.label": {
-          "type": "string",
-          "default": "-- INSERT --",
-          "description": "Display text for insert mode in the status bar."
-        },
-        "waltz.modeDisplay.visual.label": {
-          "type": "string",
-          "default": "-- VISUAL --",
-          "description": "Display text for visual mode in the status bar."
-        },
-        "waltz.modeDisplay.visualLine.label": {
-          "type": "string",
-          "default": "-- VISUAL LINE --",
-          "description": "Display text for visual line mode in the status bar."
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Waltz Configuration",
+            "properties": {
+                "waltz.customBindings": {
+                    "type": "array",
+                    "default": [],
+                    "description": "Custom key bindings that execute VSCode commands.",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "keys",
+                            "commands"
+                        ],
+                        "properties": {
+                            "keys": {
+                                "type": "array",
+                                "description": "Key sequence to trigger the commands (e.g., [\"g\", \"d\"]).",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "modes": {
+                                "type": "array",
+                                "description": "Vim modes where this binding is active. If not specified, applies to all modes.",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "normal",
+                                        "visual",
+                                        "visualLine",
+                                        "insert"
+                                    ]
+                                }
+                            },
+                            "commands": {
+                                "type": "array",
+                                "description": "Array of VSCode commands to execute sequentially.",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "command"
+                                    ],
+                                    "properties": {
+                                        "command": {
+                                            "type": "string",
+                                            "description": "VSCode command to execute (e.g., \"editor.action.revealDefinition\")."
+                                        },
+                                        "args": {
+                                            "description": "Optional arguments to pass to the command."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "waltz.cursorStyle.normal": {
+                    "type": "string",
+                    "default": "line",
+                    "description": "Cursor style in normal mode.",
+                    "enum": [
+                        "block",
+                        "block-outline",
+                        "line",
+                        "line-thin",
+                        "underline",
+                        "underline-thin"
+                    ]
+                },
+                "waltz.cursorStyle.insert": {
+                    "type": "string",
+                    "default": "line-thin",
+                    "description": "Cursor style in insert mode.",
+                    "enum": [
+                        "block",
+                        "block-outline",
+                        "line",
+                        "line-thin",
+                        "underline",
+                        "underline-thin"
+                    ]
+                },
+                "waltz.cursorStyle.visual": {
+                    "type": "string",
+                    "default": "line-thin",
+                    "description": "Cursor style in visual mode.",
+                    "enum": [
+                        "block",
+                        "block-outline",
+                        "line",
+                        "line-thin",
+                        "underline",
+                        "underline-thin"
+                    ]
+                },
+                "waltz.cursorStyle.visualLine": {
+                    "type": "string",
+                    "default": "line-thin",
+                    "description": "Cursor style in visual line mode.",
+                    "enum": [
+                        "block",
+                        "block-outline",
+                        "line",
+                        "line-thin",
+                        "underline",
+                        "underline-thin"
+                    ]
+                },
+                "waltz.modeDisplay.normal.label": {
+                    "type": "string",
+                    "default": "-- NORMAL --",
+                    "description": "Display text for normal mode in the status bar."
+                },
+                "waltz.modeDisplay.insert.label": {
+                    "type": "string",
+                    "default": "-- INSERT --",
+                    "description": "Display text for insert mode in the status bar."
+                },
+                "waltz.modeDisplay.visual.label": {
+                    "type": "string",
+                    "default": "-- VISUAL --",
+                    "description": "Display text for visual mode in the status bar."
+                },
+                "waltz.modeDisplay.visualLine.label": {
+                    "type": "string",
+                    "default": "-- VISUAL LINE --",
+                    "description": "Display text for visual line mode in the status bar."
+                }
+            }
         }
-      }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts && biome check .",
+        "format": "eslint src --ext ts --fix && biome check --write",
+        "prepare": "husky",
+        "package": "vsce package",
+        "publish": "vsce publish",
+        "pretest": "npm run compile && npm run lint",
+        "test": "vscode-test"
+    },
+    "lint-staged": {
+        "*.{ts,js,mjs,json}": [
+            "biome format --write --no-errors-on-unmatched"
+        ]
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.2.6",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "24.7.2",
+        "@types/vscode": "^1.75.0",
+        "@vscode/test-cli": "^0.0.11",
+        "@vscode/test-electron": "^2.5.2",
+        "@vscode/vsce": "^3.6.2",
+        "eslint": "9.37.0",
+        "glob": "^11.0.3",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.2.4",
+        "mocha": "^11.7.4",
+        "typescript": "5.9.3",
+        "typescript-eslint": "^8.46.0"
+    },
+    "dependencies": {
+        "await-semaphore": "^0.1.3",
+        "jsonc-parser": "^3.3.1",
+        "zod": "^4.1.12"
     }
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "lint": "eslint src --ext ts && biome check .",
-    "format": "eslint src --ext ts --fix && biome check --write",
-    "prepare": "husky",
-    "package": "vsce package",
-    "publish": "vsce publish",
-    "pretest": "npm run compile && npm run lint",
-    "test": "vscode-test"
-  },
-  "lint-staged": {
-    "*.{ts,js,mjs,json}": [
-      "biome format --write --no-errors-on-unmatched"
-    ]
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.2.6",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "24.7.2",
-    "@types/vscode": "^1.75.0",
-    "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.6.2",
-    "eslint": "9.37.0",
-    "glob": "^11.0.3",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.4",
-    "mocha": "^11.7.4",
-    "typescript": "5.9.3",
-    "typescript-eslint": "^8.46.0"
-  },
-  "dependencies": {
-    "await-semaphore": "^0.1.3",
-    "jsonc-parser": "^3.3.1",
-    "zod": "^4.1.12"
-  }
 }
