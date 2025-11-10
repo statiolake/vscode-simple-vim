@@ -21,8 +21,19 @@ export async function enterMode(vimState: VimState, editor: TextEditor | undefin
 
     updateTypeHandler(vimState, mode);
 
-    if (mode === 'normal' && editor) {
+    if (mode === 'normal' && editor && editor.selections.some((selection) => !selection.isEmpty)) {
         // ノーマルモードに入ったら、選択範囲を解除する
+        // 副作用を避けるため、不要な場合 (どれも空の場合) は実行しないようにしておく。
+        // たとえば undo などは以下のようなフローをたどるため、最終的なカーソル位置が先祖返りすることがある。
+        // 1. undo コマンド実行
+        // 2. テキスト部分が戻る (カーソルはまだ戻っていないのでずれている)
+        // 3. onDidChangeTextDocument 発行 (カーソルはずれている)
+        //     -> ここでノーマルモードに入る (ずれた位置にカーソルセットを試みる)
+        // 4. 先に？ undo コマンドの後続処理でカーソル位置も復元される
+        // 5. 3 でセットした位置が遅れて反映され、結果としてカーソル位置がずれる
+        // どういうわけかわからないが、こういう順番で不整合が起きてしまうっぽい。
+        // これ自体はイベント発火の仕組みなのかな。とりあえず避けられそうにないので、影響を最小化するため不必要な場合
+        // はセットしないようにしておく。
         editor.selections = editor.selections.map((selection) => new Selection(selection.active, selection.active));
     }
 
