@@ -223,6 +223,14 @@ Miscellaneous editing commands.
 | `o` | Insert line below and enter Insert mode | Normal |
 | `O` | Insert line above and enter Insert mode | Normal |
 
+### Insert Mode Editing
+
+In Insert mode, you can customize additional editing commands:
+
+| Action Name | Default Key | Description |
+|-|-|-|
+| `<Waltz>delete-word-left` | `Ctrl+w` | Delete the word to the left of cursor |
+
 ### Register Operations
 
 | Keys | Description | Modes |

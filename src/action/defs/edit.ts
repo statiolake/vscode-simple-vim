@@ -5,9 +5,11 @@ import { getRegisterContents, setRegisterContents } from '../../register';
 import {
     findAdjacentPosition,
     findReplacedOffsetRanges,
+    findWordBoundary,
     OffsetRange,
     type OffsetReplaceData,
 } from '../../utils/positionFinder';
+import { isCharacterTypeBoundary } from '../../utils/unicode';
 import { newAction, newRegexAction } from '../actionBuilder';
 import type { Action } from '../actionTypes';
 import { adjustRangeForVisualLine } from './operator';
@@ -265,6 +267,35 @@ export function buildEditActions(): Action[] {
                     }
                 });
                 enterMode(context.vimState, context.editor, 'normal');
+            },
+        }),
+
+        // <Waltz>delete-word-left - Insert モードで前の単語を削除 (db相当、レジスタに保存しない)
+        newAction({
+            keys: ['<Waltz>delete-word-left'],
+            modes: ['insert'],
+            execute: async (context) => {
+                const editor = context.editor;
+                await editor.edit((editBuilder) => {
+                    for (const selection of editor.selections) {
+                        if (selection.isEmpty) {
+                            const position = selection.active;
+                            // b motion と同じ要領で前の単語の開始位置を探す
+                            const nextPos = findAdjacentPosition(context.document, 'before', position);
+                            const wordStart = findWordBoundary(
+                                context.document,
+                                'further',
+                                'before',
+                                nextPos,
+                                isCharacterTypeBoundary,
+                            );
+
+                            if (wordStart) {
+                                editBuilder.delete(new Range(wordStart, position));
+                            }
+                        }
+                    }
+                });
             },
         }),
     ];
