@@ -20,7 +20,11 @@
     ],
     "activationEvents": [
         "onStartupFinished",
-        "onCommand:type"
+        "onCommand:type",
+        "onCommand:waltz.escapeKey",
+        "onCommand:waltz.noop",
+        "onCommand:waltz.send",
+        "onCommand:waltz.execute"
     ],
     "main": "./out/extension",
     "contributes": {
