@@ -6,6 +6,7 @@ import {
     findCurrentArgument,
     findDocumentEnd,
     findDocumentStart,
+    findInnerWordAtBoundary,
     findInsideBalancedPairs,
     findLineEnd,
     findLineStart,
@@ -774,5 +775,174 @@ suite('findCurrentArgument', () => {
         // Should select just 'a' (no comma to include)
         assert.deepStrictEqual(result.start, new Position(0, 5));
         assert.deepStrictEqual(result.end, new Position(0, 6));
+    });
+});
+
+suite('findInnerWordAtBoundary', () => {
+    test('should select word when cursor is at boundary before variable - foo(|variable)', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'foo(variable)' });
+        // Position (0, 4): between '(' and 'v'
+        const position = new Position(0, 4);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'variable' (word has priority over symbol)
+        assert.deepStrictEqual(result.start, new Position(0, 4));
+        assert.deepStrictEqual(result.end, new Position(0, 12));
+    });
+
+    test('should select word when cursor is at boundary after variable - foo(variable|)', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'foo(variable)' });
+        // Position (0, 12): between 'e' and ')'
+        const position = new Position(0, 12);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'variable' (word has priority over symbol)
+        assert.deepStrictEqual(result.start, new Position(0, 4));
+        assert.deepStrictEqual(result.end, new Position(0, 12));
+    });
+
+    test('should select all symbols when both sides are symbols - (|)', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '()' });
+        // Position (0, 1): between '(' and ')'
+        const position = new Position(0, 1);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select both symbols '()' (symbols are treated as one word)
+        assert.deepStrictEqual(result.start, new Position(0, 0));
+        assert.deepStrictEqual(result.end, new Position(0, 2));
+    });
+
+    test('should prioritize word over symbol at boundary', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'hello(world)' });
+        // Position (0, 5): between 'o' and '('
+        const position = new Position(0, 5);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'hello' (word before has priority)
+        assert.deepStrictEqual(result.start, new Position(0, 0));
+        assert.deepStrictEqual(result.end, new Position(0, 5));
+    });
+
+    test('should work with Japanese hiragana at boundary', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'こんにちは(world)' });
+        // Position (0, 5): between 'は' and '('
+        const position = new Position(0, 5);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'こんにちは' (hiragana has priority over symbol)
+        assert.deepStrictEqual(result.start, new Position(0, 0));
+        assert.deepStrictEqual(result.end, new Position(0, 5));
+    });
+
+    test('should work with Japanese katakana at boundary', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'テスト(test)' });
+        // Position (0, 3): between 'ト' and '('
+        const position = new Position(0, 3);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'テスト' (katakana has priority over symbol)
+        assert.deepStrictEqual(result.start, new Position(0, 0));
+        assert.deepStrictEqual(result.end, new Position(0, 3));
+    });
+
+    test('should work with Japanese kanji at boundary', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '漢字(kanji)' });
+        // Position (0, 2): between '字' and '('
+        const position = new Position(0, 2);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select '漢字' (kanji has priority over symbol)
+        assert.deepStrictEqual(result.start, new Position(0, 0));
+        assert.deepStrictEqual(result.end, new Position(0, 2));
+    });
+
+    test('should prioritize right side when both have equal priority', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'hello世界' });
+        // Position (0, 5): between 'o' and '世'
+        const position = new Position(0, 5);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Both are high-priority words (word vs kanji), should choose right
+        assert.deepStrictEqual(result.start, new Position(0, 5));
+        assert.deepStrictEqual(result.end, new Position(0, 7));
+    });
+
+    test('should work in middle of word (existing behavior)', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'hello world' });
+        // Position (0, 2): between 'e' and 'l' in "hello"
+        const position = new Position(0, 2);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select current word 'hello'
+        assert.deepStrictEqual(result.start, new Position(0, 0));
+        assert.deepStrictEqual(result.end, new Position(0, 5));
+    });
+
+    test('should handle multiple symbols in a row', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '((variable))' });
+        // Position (0, 2): between second '(' and 'v'
+        const position = new Position(0, 2);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'variable' (word has priority)
+        assert.deepStrictEqual(result.start, new Position(0, 2));
+        assert.deepStrictEqual(result.end, new Position(0, 10));
+    });
+
+    test('should return empty range at document start with no content', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '' });
+        const position = new Position(0, 0);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should return empty range
+        assert.deepStrictEqual(result.start, position);
+        assert.deepStrictEqual(result.end, position);
+    });
+
+    test('should handle symbol before and word after', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(abc' });
+        // Position (0, 1): between '(' and 'a'
+        const position = new Position(0, 1);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'abc' (word has priority over symbol)
+        assert.deepStrictEqual(result.start, new Position(0, 1));
+        assert.deepStrictEqual(result.end, new Position(0, 4));
+    });
+
+    test('should handle word before and symbol after', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'abc)' });
+        // Position (0, 3): between 'c' and ')'
+        const position = new Position(0, 3);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'abc' (word has priority over symbol)
+        assert.deepStrictEqual(result.start, new Position(0, 0));
+        assert.deepStrictEqual(result.end, new Position(0, 3));
+    });
+
+    test('should handle symbol before and single char word after - (|a)', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(a)' });
+        // Position (0, 1): between '(' and 'a'
+        const position = new Position(0, 1);
+
+        const result = findInnerWordAtBoundary(doc, position);
+
+        // Should select 'a' (word has priority over symbol)
+        assert.deepStrictEqual(result.start, new Position(0, 1));
+        assert.deepStrictEqual(result.end, new Position(0, 2));
     });
 });

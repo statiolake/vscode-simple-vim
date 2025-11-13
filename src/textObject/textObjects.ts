@@ -5,11 +5,12 @@ import {
     findCurrentArgument,
     findDocumentEnd,
     findDocumentStart,
+    findInnerWordAtBoundary,
     findInsideBalancedPairs,
     findMatchingTag,
     findWordBoundary,
 } from '../utils/positionFinder';
-import { isCharacterTypeBoundary, isWhitespaceBoundary } from '../utils/unicode';
+import { isWhitespaceBoundary } from '../utils/unicode';
 import { newTextObject } from './textObjectBuilder';
 import type { TextObject } from './textObjectTypes';
 
@@ -65,14 +66,7 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
             keys: ['i', 'w'],
             compute: (context, position) => {
                 const { document } = context;
-                const start = findWordBoundary(document, 'further', 'before', position, isCharacterTypeBoundary);
-                const end = findWordBoundary(document, 'further', 'after', position, isCharacterTypeBoundary);
-
-                if (start && end) {
-                    return new Range(start, end);
-                }
-
-                return new Range(position, position);
+                return findInnerWordAtBoundary(document, position);
             },
         }),
 
@@ -80,14 +74,7 @@ export function buildTextObjects(motions: Motion[]): TextObject[] {
             keys: ['a', 'w'],
             compute: (context, position) => {
                 const { document } = context;
-                const start = findWordBoundary(document, 'further', 'before', position, isCharacterTypeBoundary);
-                const end = findWordBoundary(document, 'further', 'after', position, isCharacterTypeBoundary);
-
-                if (start && end) {
-                    return new Range(start, end);
-                }
-
-                return new Range(position, position);
+                return findInnerWordAtBoundary(document, position);
             },
         }),
 

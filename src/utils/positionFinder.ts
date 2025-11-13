@@ -1,5 +1,5 @@
 import { Position, Range, type TextDocument } from 'vscode';
-import { isWhitespace } from './unicode';
+import { getCharacterType, getWordTypePriority, isCharacterTypeBoundary, isWhitespace } from './unicode';
 
 /**
  * オフセット範囲のテキストを取得
@@ -92,6 +92,73 @@ export function findDocumentEnd(document: TextDocument): Position {
     const lastLineIndex = document.lineCount - 1;
     const lastLine = document.lineAt(lastLineIndex);
     return lastLine.range.end;
+}
+
+/**
+ * iw コマンド用の賢い単語選択
+ * カーソルが単語境界にある場合、記号ではない方を優先して選択
+ * 優先順位: word/hiragana/katakana/kanji > 記号
+ * 同じ優先度の場合は右側を優先
+ *
+ * @param document ドキュメント
+ * @param position カーソル位置
+ * @returns 選択範囲、見つからない場合は空の範囲
+ */
+export function findInnerWordAtBoundary(document: TextDocument, position: Position): Range {
+    const offset = document.offsetAt(position);
+
+    // Stage 1: 現在位置で単語を探す
+    let start = findWordBoundary(document, 'further', 'before', position, isCharacterTypeBoundary);
+    let end = findWordBoundary(document, 'further', 'after', position, isCharacterTypeBoundary);
+
+    // 単語が見つかった場合（空でない範囲）
+    if (start && end && !start.isEqual(end)) {
+        return new Range(start, end);
+    }
+
+    // Stage 2: 境界にいる場合 - 左右の優先度を比較して選択
+    const charBefore = getTextOfOffsetRange(document, offset - 1, offset);
+    const charAfter = getTextOfOffsetRange(document, offset, offset + 1);
+
+    // 文字が存在しない場合は空の範囲を返す
+    if (!charBefore && !charAfter) {
+        return new Range(position, position);
+    }
+
+    const typeBefore = charBefore ? getCharacterType(charBefore) : 'whitespace';
+    const typeAfter = charAfter ? getCharacterType(charAfter) : 'whitespace';
+    const priorityBefore = getWordTypePriority(typeBefore);
+    const priorityAfter = getWordTypePriority(typeAfter);
+
+    // 両方が空白の場合は空の範囲を返す
+    if (priorityBefore === 0 && priorityAfter === 0) {
+        return new Range(position, position);
+    }
+
+    // 優先度が高い方を選ぶ、同じなら右を選ぶ
+    const moveRight = priorityAfter >= priorityBefore;
+
+    // 現在位置は確実に境界なので、それを片側の境界として使い、
+    // 選択した方向の境界だけを探す
+    if (moveRight) {
+        // 右を選択: position = START、ENDだけを探す
+        // 1文字右に進んでから、その単語の終わりを探す
+        const nextPos = document.positionAt(offset + 1);
+        end = findWordBoundary(document, 'further', 'after', nextPos, isCharacterTypeBoundary);
+        if (end) {
+            return new Range(position, end);
+        }
+    } else {
+        // 左を選択: position = END、STARTだけを探す
+        // 1文字左に進んでから、その単語の始まりを探す
+        const prevPos = document.positionAt(offset - 1);
+        start = findWordBoundary(document, 'further', 'before', prevPos, isCharacterTypeBoundary);
+        if (start) {
+            return new Range(start, position);
+        }
+    }
+
+    return new Range(position, position);
 }
 
 /**

@@ -80,3 +80,23 @@ export function isCharacterTypeBoundary(char1: string, char2: string): boolean {
 export function isWhitespaceBoundary(char1: string, char2: string): boolean {
     return isWhitespace(char1) !== isWhitespace(char2);
 }
+
+/**
+ * 文字種の優先度を取得（iw コマンドの境界選択用）
+ * - word/hiragana/katakana/kanji: 高優先度（通常の単語）
+ * - other: 低優先度（記号）
+ * - whitespace: 選択しない
+ */
+export function getWordTypePriority(charType: CharacterType): number {
+    switch (charType) {
+        case 'word':
+        case 'hiragana':
+        case 'katakana':
+        case 'kanji':
+            return 2; // 高優先度
+        case 'whitespace':
+            return 0; // 選択しない
+        case 'other':
+            return 1; // 低優先度（記号）
+    }
+}
