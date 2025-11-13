@@ -260,7 +260,7 @@ export function findInsideBalancedPairs(
         while (true) {
             foundAt = findNearerPosition(document, (char) => char === findTarget, direction, nextPosition, {
                 withinLine: false,
-                maxOffsetWidth: 10000,
+                maxOffsetWidth: 100000,
             });
             if (!foundAt) return undefined;
 
@@ -278,6 +278,78 @@ export function findInsideBalancedPairs(
     if (!foundAtBefore || !foundAtAfter) return undefined;
 
     return new Range(foundAtBefore, foundAtAfter);
+}
+
+/**
+ * Find the matching bracket for the % motion.
+ * Supports jumping both from inside brackets (existing behavior) and from outside brackets (new behavior).
+ *
+ * Examples:
+ * - From inside: (f|oo) → (foo|)
+ * - From outside after closing: (foo)| → (|foo)
+ * - From outside before opening: |(foo) → (foo|)
+ */
+export function findMatchingBracket(document: TextDocument, position: Position): Position | undefined {
+    const pairs: [string, string][] = [
+        ['(', ')'],
+        ['[', ']'],
+        ['{', '}'],
+    ];
+
+    // Determine if we need to adjust cursor position before searching
+    const posBefore = findAdjacentPosition(document, 'before', position);
+    const posAfter = findAdjacentPosition(document, 'after', position);
+
+    const charBefore = document.getText(new Range(posBefore, position));
+    const charAfter = document.getText(new Range(position, posAfter));
+
+    const hasOpeningBefore = pairs.some(([open, _]) => charBefore === open);
+    const hasOpeningAfter = pairs.some(([open, _]) => charAfter === open);
+    const hasClosingAfter = pairs.some(([_, close]) => charAfter === close);
+
+    // Determine search position based on three cases:
+    let searchPos: Position;
+    if (hasOpeningAfter) {
+        // Case 1: Opening bracket on right -> adjust cursor to the right
+        searchPos = posAfter;
+    } else if (!hasOpeningBefore && !hasClosingAfter) {
+        // Case 2: No closing bracket on right -> adjust cursor to the left
+        searchPos = posBefore;
+    } else {
+        // Case 3: Otherwise (closing bracket on right) -> don't adjust cursor
+        searchPos = position;
+    }
+
+    // Find the shortest bracket pair from the search position
+    let shortestRange: Range | undefined;
+    const searchOffset = document.offsetAt(searchPos);
+
+    for (const [open, close] of pairs) {
+        const range = findInsideBalancedPairs(document, searchPos, open, close);
+        if (!range) continue;
+
+        // Choose the shortest range (measured by total span)
+        const rangeLength = document.offsetAt(range.end) - document.offsetAt(range.start);
+
+        if (!shortestRange) {
+            shortestRange = range;
+        } else {
+            const shortestLength = document.offsetAt(shortestRange.end) - document.offsetAt(shortestRange.start);
+            if (rangeLength < shortestLength) {
+                shortestRange = range;
+            }
+        }
+    }
+
+    if (!shortestRange) {
+        return undefined;
+    }
+
+    // Return the farther position from the search position
+    const distToStart = Math.abs(document.offsetAt(shortestRange.start) - searchOffset);
+    const distToEnd = Math.abs(document.offsetAt(shortestRange.end) - searchOffset);
+
+    return distToStart > distToEnd ? shortestRange.start : shortestRange.end;
 }
 
 /**

@@ -1,13 +1,13 @@
-import { Position, type Range, type TextDocument } from 'vscode';
+import { Position, type TextDocument } from 'vscode';
 import type { Context } from '../context';
 import {
     findAdjacentPosition,
     findDocumentEnd,
     findDocumentStart,
-    findInsideBalancedPairs,
     findLineEnd,
     findLineStart,
     findLineStartAfterIndent,
+    findMatchingBracket,
     findNearerPosition,
     findParagraphBoundary,
     findWordBoundary,
@@ -239,33 +239,7 @@ export function buildMotions(): Motion[] {
     motions.push(
         newMotion({
             keys: ['%'],
-            compute: (context, position) => {
-                const pairs: [string, string][] = [
-                    ['(', ')'],
-                    ['[', ']'],
-                    ['{', '}'],
-                ];
-
-                const distance = (target: Position): number =>
-                    Math.abs(context.document.offsetAt(target) - context.document.offsetAt(position));
-
-                const minDistance = (target: Range): number => Math.min(distance(target.start), distance(target.end));
-
-                // 各ペアで探索して、一番近いものを採用する
-                let bestRange: Range | undefined;
-                for (const [open, close] of pairs) {
-                    const range = findInsideBalancedPairs(context.document, position, open, close);
-                    if (!range) continue;
-
-                    if (!bestRange || minDistance(range) < minDistance(bestRange)) {
-                        bestRange = range;
-                    }
-                }
-                if (!bestRange) return position;
-
-                // 遠い方の位置に移動する
-                return distance(bestRange.start) > distance(bestRange.end) ? bestRange.start : bestRange.end;
-            },
+            compute: (context, position) => findMatchingBracket(context.document, position) ?? position,
         }),
     );
 

@@ -11,6 +11,7 @@ import {
     findLineEnd,
     findLineStart,
     findLineStartAfterIndent,
+    findMatchingBracket,
     findMatchingTag,
     findNearerPosition,
     findParagraphBoundary,
@@ -531,6 +532,198 @@ suite('findInsideBalancedPairs', () => {
         assert.deepStrictEqual(result.start, new Position(0, 1));
         // result.end = (3, 0): before ')'
         assert.deepStrictEqual(result.end, new Position(3, 0));
+    });
+});
+
+suite('findMatchingBracket', () => {
+    test('should jump from inside to closing bracket (existing behavior)', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(foo)' });
+        // Position (0, 1): between '(' and 'f' in "(foo)"
+        const position = new Position(0, 1);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to position (0, 4): between 'o' and ')'
+        assert.deepStrictEqual(result, new Position(0, 4));
+    });
+
+    test('should jump from inside to opening bracket (existing behavior)', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(foo)' });
+        // Position (0, 4): between 'o' and ')' in "(foo)"
+        const position = new Position(0, 4);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to position (0, 1): between '(' and 'f'
+        assert.deepStrictEqual(result, new Position(0, 1));
+    });
+
+    test('should jump from after closing paren to inside opening paren', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(foo)' });
+        // Position (0, 5): after ')' in "(foo)|"
+        const position = new Position(0, 5);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to position (0, 1): between '(' and 'f' -> "(|foo)"
+        assert.deepStrictEqual(result, new Position(0, 1));
+    });
+
+    test('should jump from before opening paren to inside closing paren', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(foo)' });
+        // Position (0, 0): before '(' in "|(foo)"
+        const position = new Position(0, 0);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to position (0, 4): between 'o' and ')' -> "(foo|)"
+        assert.deepStrictEqual(result, new Position(0, 4));
+    });
+
+    test('should work with square brackets from outside', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '[bar]' });
+        // Position (0, 5): after ']' in "[bar]|"
+        const position = new Position(0, 5);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to position (0, 1): between '[' and 'b' -> "[|bar]"
+        assert.deepStrictEqual(result, new Position(0, 1));
+    });
+
+    test('should work with curly braces from outside', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '{baz}' });
+        // Position (0, 5): after '}' in "{baz}|"
+        const position = new Position(0, 5);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to position (0, 1): between '{' and 'b' -> "{|baz}"
+        assert.deepStrictEqual(result, new Position(0, 1));
+    });
+
+    test('should handle nested brackets from outside', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(outer (inner))' });
+        // Position (0, 15): after the outer ')' in "(outer (inner))|"
+        const position = new Position(0, 15);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to inside the outer opening bracket -> "(|outer (inner))"
+        assert.deepStrictEqual(result, new Position(0, 1));
+    });
+
+    test('should jump from after inner closing paren to inner opening paren (adjacent priority)', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(outer (inner) outer)' });
+        // Position (0, 14): after inner ')' in "(outer (inner)| outer)"
+        const position = new Position(0, 14);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to the inner opening bracket because ')' is adjacent -> "(outer (|inner) outer)"
+        assert.deepStrictEqual(result, new Position(0, 8));
+    });
+
+    test('should jump to outer bracket when not adjacent to any bracket', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(outer (inner) outer)' });
+        // Position (0, 16): after space, not adjacent to any bracket in "(outer (inner) |outer)"
+        const position = new Position(0, 16);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to the outer opening bracket (not adjacent to inner brackets) -> "(|outer (inner) outer)"
+        assert.deepStrictEqual(result, new Position(0, 1));
+    });
+
+    test('should prioritize right bracket when opening brackets on both sides', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '((inner))' });
+        // Position (0, 1): between two '(' in "(|(inner))"
+        const position = new Position(0, 1);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should match the right (inner) bracket, not the left one -> "((inner|))"
+        assert.deepStrictEqual(result, new Position(0, 7));
+    });
+
+    test('should prioritize right bracket when closing brackets on both sides', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '((inner))' });
+        // Position (0, 8): between two ')' in "((inner)|)"
+        const position = new Position(0, 8);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should match the right (outer) bracket, not the left one -> "(|(inner))"
+        assert.deepStrictEqual(result, new Position(0, 1));
+    });
+
+    test('should find closest bracket pair', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(foo) [bar]' });
+        // Position (0, 5): after ')' in "(foo)| [bar]"
+        const position = new Position(0, 5);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should match with the '(' bracket, not the '[' bracket
+        assert.deepStrictEqual(result, new Position(0, 1));
+    });
+
+    test('should work with brackets in text', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'text (foo) more' });
+        // Position (0, 10): after ')' in "text (foo)| more"
+        const position = new Position(0, 10);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to inside opening paren
+        assert.deepStrictEqual(result, new Position(0, 6));
+    });
+
+    test('should return undefined when no bracket found', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: 'no brackets here' });
+        // Position (0, 5): in the middle of text
+        const position = new Position(0, 5);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.strictEqual(result, undefined);
+    });
+
+    test('should return undefined for unbalanced brackets', async () => {
+        const doc = await vscode.workspace.openTextDocument({ content: '(unclosed' });
+        // Position (0, 9): after the text "(unclosed|"
+        const position = new Position(0, 9);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.strictEqual(result, undefined);
+    });
+
+    test('should work with multiline content', async () => {
+        const doc = await vscode.workspace.openTextDocument({
+            content: '(\nfoo\n)',
+        });
+        // Position (2, 1): after ')' on line 2
+        const position = new Position(2, 1);
+
+        const result = findMatchingBracket(doc, position);
+
+        assert.ok(result !== undefined);
+        // Should jump to after the opening paren
+        assert.deepStrictEqual(result, new Position(0, 1));
     });
 });
 
